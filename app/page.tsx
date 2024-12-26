@@ -1,19 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  DocumentData,
+} from "firebase/firestore";
 import app from "../firebase/client";
 
 const fetchData = async () => {
   const db = getFirestore(app);
   const querySnapshot = await getDocs(collection(db, "testCollection"));
-  return querySnapshot.docs.map((doc) => doc.data());
+  return querySnapshot.docs.map((doc) => doc.data()) as DocumentData[];
 };
 
 import "./globals.css";
 
 export default function Home() {
-  const [documents, setDocuments] = useState([]);
+  const [documents, setDocuments] = useState<DocumentData[]>([]);
 
   useEffect(() => {
     fetchData().then((documents) => setDocuments(documents));
