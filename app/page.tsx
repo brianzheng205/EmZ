@@ -1,7 +1,33 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
+import app from "../firebase/client";
+
+const fetchData = async () => {
+  const db = getFirestore(app);
+  const querySnapshot = await getDocs(collection(db, "testCollection"));
+  return querySnapshot.docs.map((doc) => doc.data());
+};
+
 import "./globals.css";
 
 export default function Home() {
+  const [documents, setDocuments] = useState([]);
+
+  useEffect(() => {
+    fetchData().then((documents) => setDocuments(documents));
+  }, []);
+
   return (
-    <h1 className="text-3xl font-bold underline text-red-500">Hello world!</h1>
+    <div>
+      <h1>EmZ</h1>
+      <h2>Test Collection</h2>
+      <ul>
+        {documents.map((document) => (
+          <li key={document.name}>{document.name}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
