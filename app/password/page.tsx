@@ -3,17 +3,26 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import crypto from "crypto";
+
 import "../globals.css";
+
+function hashValue(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
 
 export default function PasswordPage() {
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password === process.env.NEXT_PUBLIC_APP_PASSWORD) {
+    const hashedPassword =
+      "db3c867ca74f7d91b1a265ffa949e62e3095aede758916b34e49975457ee0987";
+
+    if (hashValue(password) === hashedPassword) {
       document.cookie = "accessGranted=true; path=/";
       router.push("/");
     } else {
