@@ -74,6 +74,9 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
+              {headers.map(() => (
+                <td className="border-collapse border border-black"></td>
+              ))}
             </tr>
           ))}
           {[...pretax].map((category, index) => (
@@ -92,6 +95,9 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
+              {headers.map(() => (
+                <td className="border-collapse border border-black"></td>
+              ))}
             </tr>
           ))}
         </tbody>
