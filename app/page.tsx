@@ -29,8 +29,8 @@ export default function Home() {
       <h1>EmZ</h1>
       <h2>Test Collection</h2>
       <ul>
-        {documents.map((document) => (
-          <li key={document.name}>{document.name}</li>
+        {documents.map((document, index) => (
+          <li key={index}>{document.name}</li>
         ))}
       </ul>
     </div>
