@@ -1,3 +1,5 @@
+import "../globals.css";
+
 export default function Finance() {
   const names = ["Em", "Z"];
   const pretax = new Set([
