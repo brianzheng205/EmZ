@@ -1,3 +1,5 @@
+import SideBar from "./SideBar";
+
 export default function RootLayout({
   children,
 }: {
@@ -5,7 +7,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-background mt-8">{children}</body>
+      <body className="flex w-full h-screen bg-background">
+        <SideBar />
+        <div className="flex-grow p-4">{children}</div>
+      </body>
     </html>
   );
 }

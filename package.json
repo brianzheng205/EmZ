@@ -3,7 +3,8 @@
     "firebase": "^11.1.0",
     "next": "^15.0.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.4.0"
   },
   "scripts": {
     "dev": "next dev",
