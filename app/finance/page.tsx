@@ -133,8 +133,6 @@ export default function Finance() {
     });
   }, [brianBudgetPath]);
 
-  console.log(emilyBudget);
-
   const posttax = new Set([
     ...Object.keys(emilyBudget?.postTax || {}),
     ...Object.keys(brianBudget?.postTax || {}),
