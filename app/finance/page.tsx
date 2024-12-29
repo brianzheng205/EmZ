@@ -29,19 +29,19 @@ export default function Finance() {
     "Dates",
   ]);
 
-  function calculateGross(person) {
-    let gross = 0;
-    if (person.pretax["Gross Base"] !== undefined) {
-      gross += person.pretax["Gross Base"].amount;
-    }
-    if (person.pretax["Gross Stipend"] !== undefined) {
-      gross += person.pretax["Gross Stipend"].amount;
-    }
-    if (person.pretax["Gross Bonus"] !== undefined) {
-      gross += person.pretax["Gross Bonus"].amount;
-    }
-    return gross;
-  }
+  // function calculateGross(person) {
+  //   let gross = 0;
+  //   if (person.pretax["Gross Base"] !== undefined) {
+  //     gross += person.pretax["Gross Base"].amount;
+  //   }
+  //   if (person.pretax["Gross Stipend"] !== undefined) {
+  //     gross += person.pretax["Gross Stipend"].amount;
+  //   }
+  //   if (person.pretax["Gross Bonus"] !== undefined) {
+  //     gross += person.pretax["Gross Bonus"].amount;
+  //   }
+  //   return gross;
+  // }
 
   return (
     <div>
@@ -51,7 +51,7 @@ export default function Finance() {
             <th></th>
             <th className="border-collapse border border-black">Category</th>
             {headers.map((header, index) => (
-              <th className="border-collapse border border-black" key={index}>
+              <th key={index} className="border-collapse border border-black">
                 {header}
               </th>
             ))}
@@ -60,8 +60,8 @@ export default function Finance() {
         <tbody>
           {[...posttax].map((category, index) => (
             <tr
-              className="border-collapse border border-black"
               key={`post-tax-${index}`}
+              className="border-collapse border border-black"
             >
               {index === 0 && (
                 <td
@@ -74,15 +74,18 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
-              {headers.map(() => (
-                <td className="border-collapse border border-black"></td>
+              {headers.map((header, index) => (
+                <td
+                  key={index}
+                  className="border-collapse border border-black"
+                ></td>
               ))}
             </tr>
           ))}
           {[...pretax].map((category, index) => (
             <tr
-              className="border-collapse border border-black"
               key={`pre-tax-${index}`}
+              className="border-collapse border border-black"
             >
               {index === 0 && (
                 <td
@@ -95,8 +98,11 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
-              {headers.map(() => (
-                <td className="border-collapse border border-black"></td>
+              {headers.map((header, index) => (
+                <td
+                  key={index}
+                  className="border-collapse border border-black"
+                ></td>
               ))}
             </tr>
           ))}
