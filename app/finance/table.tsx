@@ -1,5 +1,8 @@
+import { DocumentData } from "firebase/firestore";
+
 import "../globals.css";
-export function calculateGross(person): number {
+
+export function calculateGross(person: DocumentData): number {
   let gross = 0;
   if (person?.preTax?.["Gross Base"]) {
     gross += person.preTax["Gross Base"].amount;
@@ -12,7 +15,7 @@ export function calculateGross(person): number {
   }
   return gross;
 }
-function calculateMonthlyTakeHome(person) {
+function calculateMonthlyTakeHome(person: DocumentData) {
   let takeHome = 0;
   if (person?.preTax?.["Gross Base"]) {
     takeHome += person.preTax["Gross Base"].amount;
@@ -25,7 +28,7 @@ function calculateMonthlyTakeHome(person) {
 }
 
 // TODO
-function calculateYearlyTakeHome(person) {
+function calculateYearlyTakeHome(person: DocumentData) {
   let takeHome = 0;
   if (person?.preTax?.["Gross Base"]) {
     takeHome += person.preTax["Gross Base"].amount;
@@ -45,15 +48,18 @@ function calculateYearlyTakeHome(person) {
   return takeHome;
 }
 
-function removeDeductions(person): number {
+function removeDeductions(person: DocumentData): number {
   return 0;
 }
 
 // TODO
-function taxBracketDeductions(amount): number {
+function taxBracketDeductions(amount: number): number {
   return amount;
 }
-export default function PostTax(props: { category: string; person }) {
+export default function PostTax(props: {
+  category: string;
+  person: DocumentData;
+}) {
   return (
     <>
       <td className="border-collapse border border-black">
@@ -101,7 +107,7 @@ export default function PostTax(props: { category: string; person }) {
   );
 }
 
-export function PreTax(props: { category: string; person }) {
+export function PreTax(props: { category: string; person: DocumentData }) {
   return (
     <>
       <td className="border-collapse border border-black">
