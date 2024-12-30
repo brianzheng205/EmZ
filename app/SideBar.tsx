@@ -11,7 +11,7 @@ import {
 
 import "./globals.css";
 
-export const links = [
+export const routes = [
   { route: "/", label: "Home", icon: <FiHome /> },
   {
     route: "/finance",
@@ -20,14 +20,35 @@ export const links = [
   },
 ];
 
-export default function SideBar(props: { isOpen: boolean }) {
+const styles = {
+  routerContainer:
+    "block w-full min-h-10 px-4 py-2 rounded-md hover:bg-secondary flex items-center gap-2",
+};
+
+function RouterContainer(props: { route: string; children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const styles = {
-    routerContainer:
-      "block w-full px-4 py-2 rounded-md hover:bg-secondary flex items-center gap-2",
-  };
+  return pathname === props.route ? (
+    <div className={`${styles.routerContainer} bg-secondary`}>
+      {props.children}
+    </div>
+  ) : (
+    <Link href={props.route} className={styles.routerContainer}>
+      {props.children}
+    </Link>
+  );
+}
 
+function Route(props: { route: string; label: string; icon: React.ReactNode }) {
+  return (
+    <RouterContainer route={props.route}>
+      <div>{props.icon}</div>
+      <span>{props.label}</span>
+    </RouterContainer>
+  );
+}
+
+export default function SideBar(props: { isOpen: boolean }) {
   return (
     <div
       className={`h-full bg-primary text-white transition-all duration-500 overflow-hidden ${
@@ -37,23 +58,9 @@ export default function SideBar(props: { isOpen: boolean }) {
       }`}
     >
       <ul className="flex flex-col gap-2 p-4">
-        {links.map(({ route, label, icon }) => (
+        {routes.map(({ route, label, icon }) => (
           <li key={route}>
-            {pathname === route ? (
-              <div className={`${styles.routerContainer} bg-secondary`}>
-                <div className="flex items-center justify-center min-w-6 h-6">
-                  {icon}
-                </div>
-                <span>{label}</span>
-              </div>
-            ) : (
-              <Link href={route} className={styles.routerContainer}>
-                <div className="flex items-center justify-center min-w-6 h-6">
-                  {icon}
-                </div>
-                <span>{label}</span>
-              </Link>
-            )}
+            <Route route={route} label={label} icon={icon} />
           </li>
         ))}
       </ul>

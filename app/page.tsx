@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { links } from "./SideBar";
+import { routes } from "./SideBar";
 
 import "./globals.css";
 
@@ -11,7 +11,7 @@ export default function Home() {
     <div className="flex flex-col items-center gap-16 w-full">
       <h1 className="text-8xl">Apps</h1>
       <div className="grid grid-cols-2 gap-4 justify-items-stretch w-full">
-        {links.slice(1).map(({ label, route, icon }) => (
+        {routes.slice(1).map(({ label, route, icon }) => (
           <Link
             key={route}
             href={route}
