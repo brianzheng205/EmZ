@@ -1,7 +1,9 @@
 "use client";
+
+import { useEffect, useState } from "react";
+
 import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
 import app from "../../firebase/client";
-import { useEffect, useState } from "react";
 
 // TODO: Get rid of the math.max thing after 2025
 const fetchData = async () => {
@@ -113,8 +115,8 @@ export default function Finance() {
         <tbody>
           {[...posttax].map((category, index) => (
             <tr
-              className="border-collapse border border-black"
               key={`post-tax-${index}`}
+              className="border-collapse border border-black"
             >
               {index === 0 && (
                 <td
@@ -133,8 +135,8 @@ export default function Finance() {
           ))}
           {[...pretax].map((category, index) => (
             <tr
-              className="border-collapse border border-black"
               key={`pre-tax-${index}`}
+              className="border-collapse border border-black"
             >
               {index === 0 && (
                 <td

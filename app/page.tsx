@@ -1,38 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  DocumentData,
-} from "firebase/firestore";
-import app from "../firebase/client";
+import Link from "next/link";
 
-const fetchData = async () => {
-  const db = getFirestore(app);
-  const querySnapshot = await getDocs(collection(db, "testCollection"));
-  return querySnapshot.docs.map((doc) => doc.data()) as DocumentData[];
-};
+import { routes } from "./SideBar";
 
 import "./globals.css";
 
 export default function Home() {
-  const [documents, setDocuments] = useState<DocumentData[]>([]);
-
-  useEffect(() => {
-    fetchData().then((documents) => setDocuments(documents));
-  }, []);
-
   return (
-    <div>
-      <h1>EmZ</h1>
-      <h2>Test Collection</h2>
-      <ul>
-        {documents.map((document, index) => (
-          <li key={index}>{document.name}</li>
+    <div className="flex flex-col items-center gap-16 w-full">
+      <h1 className="text-8xl">Apps</h1>
+      <div className="grid grid-cols-2 gap-4 justify-items-stretch w-full">
+        {routes.slice(1).map(({ label, route, icon }) => (
+          <Link
+            key={route}
+            href={route}
+            className="flex flex-col items-center justify-center gap-2 w-full p-8 rounded-3xl bg-primary hover:bg-secondary text-white"
+          >
+            <div className="flex items-center text-9xl">{icon}</div>
+            <span className="text-2xl">{label}</span>
+          </Link>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
