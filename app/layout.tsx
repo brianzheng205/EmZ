@@ -31,7 +31,7 @@ export default function RootLayout({
         </div>
 
         <div className="flex flex-grow">
-          {isSideBarOpen && <SideBar />}
+          <SideBar isOpen={isSideBarOpen} />
           <div className="flex flex-col flex-grow p-4">{children}</div>
         </div>
       </body>

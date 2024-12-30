@@ -20,11 +20,15 @@ export const links = [
   },
 ];
 
-export default function SideBar() {
+export default function SideBar(props: { isOpen: boolean }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-w-[200px] flex flex-col h-screen bg-primary text-white">
+    <div
+      className={`bg-primary text-white transition-all duration-500 overflow-hidden ${
+        props.isOpen ? "w-[200px] opacity-100" : "w-0 opacity-30"
+      }`}
+    >
       <ul className="flex flex-col gap-2 p-4">
         {links.map(({ route, label, icon }) => (
           <li key={route}>
