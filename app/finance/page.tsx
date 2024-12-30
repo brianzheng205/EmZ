@@ -1,4 +1,44 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
+import app from "../../firebase/client";
+
+// TODO: Get rid of the math.max thing after 2025
+const fetchData = async () => {
+  const db = getFirestore(app);
+  const docRef = doc(
+    db,
+    "activeBudgets",
+    Math.max(new Date().getFullYear(), 2025).toString()
+  );
+  const docSnap = await getDoc(docRef);
+  return docSnap.data() as DocumentData;
+};
+
+const fetchBudgets = async (path: string) => {
+  if (path === undefined || path.length === 0) {
+    return {};
+  }
+  const db = getFirestore(app);
+  const docRef = doc(db, path);
+  const docSnap = await getDoc(docRef);
+  return docSnap.data() as DocumentData;
+};
+
+const fetchTaxBrackets = async (path: string) => {
+  if (path === undefined || path.length === 0) {
+    return {};
+  }
+  const db = getFirestore(app);
+  const docRef = doc(db, path);
+  const docSnap = await getDoc(docRef);
+  return docSnap.data() as DocumentData;
+};
+
 import "../globals.css";
+import PostTax, { PreTax, calculateGross } from "./table";
 
 export default function Finance() {
   const headers = [
@@ -11,37 +51,48 @@ export default function Finance() {
     "Yearly Z (%)",
     "Yearly Z ($)",
   ];
-  const pretax = new Set([
-    "401k",
-    "HSA",
-    "Insurance",
-    "Commute",
-    "Gross Base",
-    "Gross Stipend",
-    "Gross Bonus",
-  ]);
+
+  const [emilyBudgetPath, setEmilyBudgetPath] = useState<string[]>([]);
+  const [brianBudgetPath, setBrianBudgetPath] = useState<string[]>([]);
+  const [emilyBudget, setEmilyBudget] = useState<DocumentData>({});
+  const [brianBudget, setBrianBudget] = useState<DocumentData>({});
+
+  useEffect(() => {
+    fetchData().then((document) => {
+      setEmilyBudgetPath(
+        document?.emily?._key.path.segments.slice(
+          document?.emily?._key.path.offset
+        )
+      );
+      setBrianBudgetPath(
+        document?.brian?._key.path.segments.slice(
+          document?.brian?._key.path.offset
+        )
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchBudgets(emilyBudgetPath?.join("/")).then((document) => {
+      setEmilyBudget(document);
+    });
+  }, [emilyBudgetPath]);
+
+  useEffect(() => {
+    fetchBudgets(brianBudgetPath?.join("/")).then((document) => {
+      setBrianBudget(document);
+    });
+  }, [brianBudgetPath]);
+
   const posttax = new Set([
-    "Roth IRA",
-    "Housing",
-    "Utilities",
-    "Food",
-    "Insurance",
-    "Dates",
+    ...Object.keys(emilyBudget?.postTax || {}),
+    ...Object.keys(brianBudget?.postTax || {}),
   ]);
 
-  // function calculateGross(person) {
-  //   let gross = 0;
-  //   if (person.pretax["Gross Base"] !== undefined) {
-  //     gross += person.pretax["Gross Base"].amount;
-  //   }
-  //   if (person.pretax["Gross Stipend"] !== undefined) {
-  //     gross += person.pretax["Gross Stipend"].amount;
-  //   }
-  //   if (person.pretax["Gross Bonus"] !== undefined) {
-  //     gross += person.pretax["Gross Bonus"].amount;
-  //   }
-  //   return gross;
-  // }
+  const pretax = new Set([
+    ...Object.keys(emilyBudget?.preTax || {}),
+    ...Object.keys(brianBudget?.preTax || {}),
+  ]);
 
   return (
     <div>
@@ -51,7 +102,10 @@ export default function Finance() {
             <th></th>
             <th className="border-collapse border border-black">Category</th>
             {headers.map((header, index) => (
-              <th key={index} className="border-collapse border border-black">
+              <th
+                className="border-collapse border border-black"
+                key={`header-${index}`}
+              >
                 {header}
               </th>
             ))}
@@ -74,12 +128,8 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
-              {headers.map((header, index) => (
-                <td
-                  key={index}
-                  className="border-collapse border border-black"
-                ></td>
-              ))}
+              <PostTax category={category} person={emilyBudget} />
+              <PostTax category={category} person={brianBudget} />
             </tr>
           ))}
           {[...pretax].map((category, index) => (
@@ -90,7 +140,7 @@ export default function Finance() {
               {index === 0 && (
                 <td
                   className="border-collapse border border-black"
-                  rowSpan={pretax.size}
+                  rowSpan={pretax.size + 1}
                 >
                   Pre-Tax
                 </td>
@@ -98,14 +148,21 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
-              {headers.map((header, index) => (
-                <td
-                  key={index}
-                  className="border-collapse border border-black"
-                ></td>
-              ))}
+              <PreTax category={category} person={emilyBudget} />
+              <PreTax category={category} person={brianBudget} />
             </tr>
           ))}
+          <tr>
+            <td className="border-collapse border border-black">Gross</td>
+            <td className="border-collapse border border-black">100%</td>
+            <td className="border-collapse border border-black">
+              ${(calculateGross(emilyBudget) / 6).toFixed(0)}
+            </td>
+            <td className="border-collapse border border-black">100%</td>
+            <td className="border-collapse border border-black">
+              ${calculateGross(emilyBudget)}
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
