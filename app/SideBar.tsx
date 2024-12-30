@@ -11,7 +11,7 @@ import {
 
 import "./globals.css";
 
-const links = [
+export const links = [
   { route: "/", label: "Home", icon: <FiHome /> },
   {
     route: "/finance",
