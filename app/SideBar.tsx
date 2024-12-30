@@ -2,13 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiDollarSign,
+  FiHome,
+} from "react-icons/fi";
 
 import "./globals.css";
 
 const links = [
-  { route: "/", label: "Home" },
-  { route: "/finance", label: "Finance" },
+  { route: "/", label: "Home", icon: <FiHome className="mr-2" /> },
+  {
+    route: "/finance",
+    label: "Finance",
+    icon: <FiDollarSign className="mr-2" />,
+  },
 ];
 
 export default function SideBar() {
@@ -17,18 +26,22 @@ export default function SideBar() {
   return (
     <div className="min-w-[200px] flex flex-col h-screen bg-primary text-white">
       <ul className="flex flex-col gap-2 p-4">
-        {links.map(({ route, label }) => (
+        {links.map(({ route, label, icon }) => (
           <li key={route}>
             {pathname === route ? (
-              <span className="block w-full px-4 py-2 rounded-md bg-secondary">
+              <span className="block w-full px-4 py-2 rounded-md bg-secondary flex items-center">
+                {icon}
                 {label}
               </span>
             ) : (
               <Link
                 href={route}
-                className="block w-full px-4 py-2 rounded-md hover:bg-secondary"
+                className="block w-full px-4 py-2 rounded-md hover:bg-secondary flex items-center"
               >
-                <span>{label}</span>
+                <span className="flex items-center">
+                  {icon}
+                  {label}
+                </span>
               </Link>
             )}
           </li>
