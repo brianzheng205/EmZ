@@ -23,26 +23,34 @@ export const links = [
 export default function SideBar(props: { isOpen: boolean }) {
   const pathname = usePathname();
 
+  const styles = {
+    routerContainer:
+      "block w-full px-4 py-2 rounded-md hover:bg-secondary flex items-center gap-2",
+  };
+
   return (
     <div
-      className={`bg-primary text-white transition-all duration-500 overflow-hidden ${
-        props.isOpen ? "w-[200px] opacity-100" : "w-0 opacity-30"
+      className={`h-full bg-primary text-white transition-all duration-500 overflow-hidden ${
+        props.isOpen
+          ? "min-w-[200px] max-w-[200px] opacity-100"
+          : "min-w-0 max-w-0 opacity-30"
       }`}
     >
       <ul className="flex flex-col gap-2 p-4">
         {links.map(({ route, label, icon }) => (
           <li key={route}>
             {pathname === route ? (
-              <div className="block w-full px-4 py-2 rounded-md bg-secondary flex flex-row items-center gap-2">
-                {icon}
+              <div className={`${styles.routerContainer} bg-secondary`}>
+                <div className="flex items-center justify-center min-w-6 h-6">
+                  {icon}
+                </div>
                 <span>{label}</span>
               </div>
             ) : (
-              <Link
-                href={route}
-                className="block w-full px-4 py-2 rounded-md hover:bg-secondary flex items-center gap-2"
-              >
-                {icon}
+              <Link href={route} className={styles.routerContainer}>
+                <div className="flex items-center justify-center min-w-6 h-6">
+                  {icon}
+                </div>
                 <span>{label}</span>
               </Link>
             )}
