@@ -11,14 +11,11 @@ const links = [
   { route: "/finance", label: "Finance" },
 ];
 
-export default function SideBar(props: { onClick: () => void }) {
+export default function SideBar() {
   const pathname = usePathname();
 
   return (
     <div className="min-w-[200px] flex flex-col h-screen bg-primary text-white">
-      <div className="flex items-center h-16 bg-primary p-4">
-        <ToggleSideBar isOpen={true} onClick={props.onClick} />
-      </div>
       <ul className="flex flex-col gap-2 p-4">
         {links.map(({ route, label }) => (
           <li key={route}>
