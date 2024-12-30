@@ -37,6 +37,7 @@ const fetchTaxBrackets = async (path: string) => {
 
 import "../globals.css";
 import PostTax, { PreTax, calculateGross } from "./table";
+import EditableCell from "./EditableCell";
 
 export default function Finance() {
   const headers = [
@@ -151,7 +152,7 @@ export default function Finance() {
             </tr>
           ))}
           <tr>
-            <td className="border-collapse border border-black">Gross</td>
+            <td className="border-collapse border border-black">Gross</td>{" "}
             <td className="border-collapse border border-black">100%</td>
             <td className="border-collapse border border-black">
               ${(calculateGross(emilyBudget) / 6).toFixed(0)}

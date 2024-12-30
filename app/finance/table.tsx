@@ -1,4 +1,5 @@
 import "../globals.css";
+import EditableCell from "./EditableCell";
 export function calculateGross(person): number {
   let gross = 0;
   if (person?.preTax?.["Gross Base"]) {
@@ -78,6 +79,7 @@ export default function PostTax(props: { category: string; person }) {
           : 0}
       </td>
       <td className="border-collapse border border-black">
+        {" "}
         {(
           (props.person?.postTax?.[props.category]
             ? props.person.postTax[props.category].time === "month"
