@@ -1,8 +1,8 @@
 import { DocumentData } from "firebase/firestore";
 
 import "../globals.css";
-
-export function calculateGross(person: DocumentData): number {
+import EditableCell from "./EditableCell";
+export function calculateGross(person): number {
   let gross = 0;
   if (person?.preTax?.["Gross Base"]) {
     gross += person.preTax["Gross Base"].amount;
@@ -84,6 +84,7 @@ export default function PostTax(props: {
           : 0}
       </td>
       <td className="border-collapse border border-black">
+        {" "}
         {(
           (props.person?.postTax?.[props.category]
             ? props.person.postTax[props.category].time === "month"
