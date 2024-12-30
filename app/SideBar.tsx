@@ -12,11 +12,11 @@ import {
 import "./globals.css";
 
 const links = [
-  { route: "/", label: "Home", icon: <FiHome className="mr-2" /> },
+  { route: "/", label: "Home", icon: <FiHome /> },
   {
     route: "/finance",
     label: "Finance",
-    icon: <FiDollarSign className="mr-2" />,
+    icon: <FiDollarSign />,
   },
 ];
 
@@ -29,19 +29,17 @@ export default function SideBar() {
         {links.map(({ route, label, icon }) => (
           <li key={route}>
             {pathname === route ? (
-              <span className="block w-full px-4 py-2 rounded-md bg-secondary flex items-center">
+              <div className="block w-full px-4 py-2 rounded-md bg-secondary flex flex-row items-center gap-2">
                 {icon}
-                {label}
-              </span>
+                <span>{label}</span>
+              </div>
             ) : (
               <Link
                 href={route}
-                className="block w-full px-4 py-2 rounded-md hover:bg-secondary flex items-center"
+                className="block w-full px-4 py-2 rounded-md hover:bg-secondary flex items-center gap-2"
               >
-                <span className="flex items-center">
-                  {icon}
-                  {label}
-                </span>
+                {icon}
+                <span>{label}</span>
               </Link>
             )}
           </li>
