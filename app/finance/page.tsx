@@ -38,7 +38,7 @@ const fetchTaxBrackets = async (path: string) => {
 };
 
 import "../globals.css";
-import PostTax, { PreTax, calculateGross } from "./table";
+import DataRow, { calculateGross } from "./table";
 import EditableCell from "./EditableCell";
 
 export default function Finance() {
@@ -129,8 +129,16 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
-              <PostTax category={category} person={emilyBudget} />
-              <PostTax category={category} person={brianBudget} />
+              <DataRow
+                category={category}
+                person={emilyBudget}
+                isPreTax={false}
+              />
+              <DataRow
+                category={category}
+                person={brianBudget}
+                isPreTax={false}
+              />
             </tr>
           ))}
           {[...pretax].map((category, index) => (
@@ -149,8 +157,8 @@ export default function Finance() {
               <td className="border-collapse border border-black">
                 {category}
               </td>
-              <PreTax category={category} person={emilyBudget} />
-              <PreTax category={category} person={brianBudget} />
+              <DataRow category={category} person={emilyBudget} isPreTax />
+              <DataRow category={category} person={brianBudget} isPreTax />
             </tr>
           ))}
           <tr>

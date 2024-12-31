@@ -2,6 +2,14 @@ import { DocumentData } from "firebase/firestore";
 
 import "../globals.css";
 
+type RowData = {
+  amount: number;
+  time: string;
+};
+
+const NULL_VALUE = "N/A";
+const BONUS_TAKE_HOME = 0.88;
+
 export function calculateGross(person: DocumentData): number {
   let gross = 0;
   if (person?.preTax?.["Gross Base"]) {
@@ -15,142 +23,91 @@ export function calculateGross(person: DocumentData): number {
   }
   return gross;
 }
+
 function calculateMonthlyTakeHome(person: DocumentData) {
-  let takeHome = 0;
-  if (person?.preTax?.["Gross Base"]) {
-    takeHome += person.preTax["Gross Base"].amount;
-  }
-
-  takeHome = removeDeductions(person);
-  takeHome = taxBracketDeductions(takeHome);
-
+  let takeHome = person?.preTax["Gross Base"]?.amount || 0;
+  takeHome -= removeDeductions(person);
+  takeHome = removeTax(takeHome);
   return takeHome / 12;
 }
 
 // TODO
 function calculateYearlyTakeHome(person: DocumentData) {
   let takeHome = 0;
-  if (person?.preTax?.["Gross Base"]) {
+
+  if (person?.preTax?.["Gross Base"])
     takeHome += person.preTax["Gross Base"].amount;
-  }
-
-  if (person?.preTax?.["Gross Stipend"]) {
+  if (person?.preTax?.["Gross Stipend"])
     takeHome += person.preTax["Gross Stipend"].amount;
-  }
 
-  takeHome = removeDeductions(person);
-  takeHome = taxBracketDeductions(takeHome);
+  takeHome -= removeDeductions(person);
+  takeHome = removeTax(takeHome);
 
-  if (person?.preTax?.["Gross Bonus"]) {
-    takeHome += person.preTax["Gross Bonus"].amount * 0.88;
-  }
+  if (person?.preTax?.["Gross Bonus"])
+    takeHome += person.preTax["Gross Bonus"].amount * BONUS_TAKE_HOME;
 
   return takeHome;
 }
 
+// TODO
 function removeDeductions(person: DocumentData): number {
   return 0;
 }
 
 // TODO
-function taxBracketDeductions(amount: number): number {
+function removeTax(amount: number): number {
   return amount;
 }
-export default function PostTax(props: {
-  category: string;
-  person: DocumentData;
-}) {
+
+function TableCell(props: { children: React.ReactNode }) {
   return (
-    <>
-      <td className="border-collapse border border-black">
-        {(
-          (props.person?.postTax?.[props.category]
-            ? props.person.postTax[props.category].time === "month"
-              ? props.person.postTax[props.category].amount /
-                calculateMonthlyTakeHome(props.person)
-              : props.person.postTax[props.category].amount /
-                6 /
-                calculateMonthlyTakeHome(props.person)
-            : 0) * 100
-        ).toFixed(0)}
-        %
-      </td>
-      <td className="border-collapse border border-black">
-        $
-        {props.person?.postTax?.[props.category]
-          ? props.person.postTax[props.category].time === "month"
-            ? props.person.postTax[props.category].amount.toFixed(0)
-            : (props.person.postTax[props.category].amount / 6).toFixed(0)
-          : 0}
-      </td>
-      <td className="border-collapse border border-black">
-        {" "}
-        {(
-          (props.person?.postTax?.[props.category]
-            ? props.person.postTax[props.category].time === "month"
-              ? (props.person.postTax[props.category].amount * 6) /
-                calculateYearlyTakeHome(props.person)
-              : props.person.postTax[props.category].amount /
-                calculateYearlyTakeHome(props.person)
-            : 0) * 100
-        ).toFixed(0)}
-        %
-      </td>
-      <td className="border-collapse border border-black">
-        $
-        {props.person?.postTax?.[props.category]
-          ? props.person.postTax[props.category].time === "month"
-            ? (props.person.postTax[props.category].amount * 6).toFixed(0)
-            : props.person.postTax[props.category].amount.toFixed(0)
-          : 0}
-      </td>
-    </>
+    <td className="border-collapse border border-black">{props.children}</td>
   );
 }
 
-export function PreTax(props: { category: string; person: DocumentData }) {
+export default function DataRow(props: {
+  category: string;
+  person: DocumentData;
+  isPreTax: boolean;
+}) {
+  const data: RowData | undefined = props.isPreTax
+    ? props.person?.preTax?.[props.category]
+    : props.person?.postTax?.[props.category];
+
+  if (!data)
+    return (
+      <>
+        <TableCell>{NULL_VALUE}</TableCell>
+        <TableCell>{NULL_VALUE}</TableCell>
+        <TableCell>{NULL_VALUE}</TableCell>
+        <TableCell>{NULL_VALUE}</TableCell>
+      </>
+    );
+
+  const monthlyAmount = data.time === "month" ? data.amount : data.amount / 6;
+  const yearlyAmount = data.time === "month" ? data.amount * 6 : data.amount;
+
+  let monthlyTakeHome: number;
+  let yearlyTakeHome: number;
+
+  if (props.isPreTax) {
+    yearlyTakeHome = calculateGross(props.person);
+    monthlyTakeHome = yearlyTakeHome / 6;
+  } else {
+    monthlyTakeHome = calculateMonthlyTakeHome(props.person);
+    yearlyTakeHome = calculateYearlyTakeHome(props.person);
+  }
+
   return (
     <>
-      <td className="border-collapse border border-black">
-        {(
-          (props.person?.preTax?.[props.category]
-            ? props.person.preTax[props.category].time === "month"
-              ? props.person.preTax[props.category].amount /
-                (calculateGross(props.person) / 6)
-              : props.person.preTax[props.category].amount /
-                calculateGross(props.person)
-            : 0) * 100
-        ).toFixed(0)}
-        %
-      </td>
-      <td className="border-collapse border border-black">
-        $
-        {props.person?.preTax?.[props.category]
-          ? props.person.preTax[props.category].time === "month"
-            ? props.person.preTax[props.category].amount.toFixed(0)
-            : (props.person.preTax[props.category].amount / 6).toFixed(0)
-          : 0}
-      </td>
-      <td className="border-collapse border border-black">
-        {(
-          (props.person?.preTax?.[props.category]
-            ? props.person.preTax[props.category].time === "month"
-              ? (props.person.preTax[props.category].amount * 6) /
-                calculateGross(props.person)
-              : props.person.preTax[props.category].amount /
-                calculateGross(props.person)
-            : 0) * 100
-        ).toFixed(0)}
-        %
-      </td>
-      <td className="border-collapse border border-black">
-        $
-        {props.person?.preTax?.[props.category]
-          ? props.person.preTax[props.category].time === "month"
-            ? (props.person.preTax[props.category].amount * 6).toFixed(0)
-            : props.person.preTax[props.category].amount.toFixed(0)
-          : 0}
-      </td>
+      <TableCell>
+        {((monthlyAmount / monthlyTakeHome) * 100).toFixed(0)}%
+      </TableCell>
+      <TableCell>${monthlyAmount.toFixed(0)}</TableCell>
+      <TableCell>
+        {((yearlyAmount / yearlyTakeHome) * 100).toFixed(0)}%
+      </TableCell>
+      <TableCell>${yearlyAmount.toFixed(0)}</TableCell>
     </>
   );
 }
