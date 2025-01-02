@@ -1,15 +1,15 @@
 import { DocumentData } from "firebase/firestore";
 
+import EditableCell from "./EditableCell";
+
 import "../globals.css";
-import { get } from "http";
 
 type RowData = {
   amount: number;
   time: string;
 };
 
-const NULL_VALUE = "N/A";
-const BONUS_TAKE_HOME = 0.88;
+const BONUS_TAKE_HOME = 0.78;
 
 export function calculateGross(person: DocumentData): number {
   let gross = 0;
@@ -68,8 +68,8 @@ function getYearlyAmount(data: RowData): number {
   return data.time === "month" ? data.amount * 6 : data.amount;
 }
 
-export function TableCell(props: {
-  children: React.ReactNode;
+export function UneditableCell(props: {
+  children?: React.ReactNode;
   className?: string;
   tdProps?: React.TdHTMLAttributes<HTMLTableCellElement>;
 }) {
@@ -84,7 +84,7 @@ export function TableCell(props: {
 }
 
 export function NullTableCell() {
-  return <TableCell className="bg-accent">{null}</TableCell>;
+  return <td className="border-collapse border border-black bg-muted"></td>;
 }
 
 export default function DataRow(props: {
@@ -99,10 +99,10 @@ export default function DataRow(props: {
   if (!data)
     return (
       <>
-        <NullTableCell />
-        <NullTableCell />
-        <NullTableCell />
-        <NullTableCell />
+        <UneditableCell />
+        <EditableCell />
+        <UneditableCell />
+        <EditableCell />
       </>
     );
 
@@ -122,12 +122,14 @@ export default function DataRow(props: {
 
   return (
     <>
-      <TableCell>
+      <UneditableCell>
         {((monthlyAmount / monthlyIncome) * 100).toFixed(0)}%
-      </TableCell>
-      <TableCell>${monthlyAmount.toFixed(0)}</TableCell>
-      <TableCell>{((yearlyAmount / yearlyIncome) * 100).toFixed(0)}%</TableCell>
-      <TableCell>${yearlyAmount.toFixed(0)}</TableCell>
+      </UneditableCell>
+      <EditableCell initialValue={monthlyAmount} />
+      <UneditableCell>
+        {((yearlyAmount / yearlyIncome) * 100).toFixed(0)}%
+      </UneditableCell>
+      <EditableCell initialValue={yearlyAmount} />
     </>
   );
 }

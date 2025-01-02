@@ -5,7 +5,11 @@ import app from "../../firebase/client";
 
 import { useEffect, useState } from "react";
 
-import DataRow, { calculateGross, TableCell, NullTableCell } from "./table";
+import DataRow, {
+  calculateGross,
+  UneditableCell,
+  NullTableCell,
+} from "./table";
 import EditableCell from "./EditableCell";
 
 import "../globals.css";
@@ -47,18 +51,18 @@ const fetchTaxBrackets = async (path: string) => {
   return docSnap.data() as DocumentData;
 };
 
-export default function Finance() {
-  const headers = [
-    "Monthly Em (%)",
-    "Monthly Em ($)",
-    "Yearly Em (%)",
-    "Yearly Em ($)",
-    "Monthly Z (%)",
-    "Monthly Z ($)",
-    "Yearly Z (%)",
-    "Yearly Z ($)",
-  ];
+const COLUMN_HEADERS = [
+  "Monthly Em (%)",
+  "Monthly Em ($)",
+  "Yearly Em (%)",
+  "Yearly Em ($)",
+  "Monthly Z (%)",
+  "Monthly Z ($)",
+  "Yearly Z (%)",
+  "Yearly Z ($)",
+];
 
+export default function Finance() {
   const [emilyBudgetPath, setEmilyBudgetPath] = useState<string[]>([]);
   const [brianBudgetPath, setBrianBudgetPath] = useState<string[]>([]);
   const [emilyBudget, setEmilyBudget] = useState<DocumentData>({});
@@ -108,7 +112,7 @@ export default function Finance() {
           <tr>
             <th></th>
             <th className={styles.border}>Category</th>
-            {headers.map((header, index) => (
+            {COLUMN_HEADERS.map((header, index) => (
               <th className={styles.border} key={`header-${index}`}>
                 {header}
               </th>
@@ -119,14 +123,16 @@ export default function Finance() {
           {[...postTax].map((category, index) => (
             <tr key={`post-tax-${index}`} className={styles.border}>
               {index === 0 && (
-                <TableCell
+                <UneditableCell
                   className={styles.bold}
                   tdProps={{ rowSpan: postTax.size }}
                 >
                   Post-Tax
-                </TableCell>
+                </UneditableCell>
               )}
-              <TableCell className={styles.bold}>{category}</TableCell>
+              <UneditableCell className={styles.bold}>
+                {category}
+              </UneditableCell>
               <DataRow
                 category={category}
                 person={emilyBudget}
@@ -142,26 +148,26 @@ export default function Finance() {
           {[...preTax].map((category, index) => (
             <tr key={`pre-tax-${index}`} className={styles.border}>
               {index === 0 && (
-                <TableCell
+                <UneditableCell
                   className={styles.bold}
                   tdProps={{ rowSpan: preTax.size + 1 }}
                 >
                   Pre-Tax
-                </TableCell>
+                </UneditableCell>
               )}
-              <TableCell className={styles.bold}>{category}</TableCell>
+              <UneditableCell className={styles.bold}>
+                {category}
+              </UneditableCell>
               <DataRow category={category} person={emilyBudget} isPreTax />
               <DataRow category={category} person={brianBudget} isPreTax />
             </tr>
           ))}
           <tr>
-            <TableCell className={styles.bold}>Gross</TableCell>
-            <TableCell>100%</TableCell>
-            <TableCell>
-              ${(calculateGross(emilyBudget) / 6).toFixed(0)}
-            </TableCell>
-            <TableCell>100%</TableCell>
-            <TableCell>${calculateGross(emilyBudget)}</TableCell>
+            <UneditableCell className={styles.bold}>Gross</UneditableCell>
+            <UneditableCell>100%</UneditableCell>
+            <EditableCell initialValue={calculateGross(emilyBudget) / 6} />
+            <UneditableCell>100%</UneditableCell>
+            <EditableCell initialValue={calculateGross(emilyBudget)} />
             <NullTableCell />
             <NullTableCell />
             <NullTableCell />
