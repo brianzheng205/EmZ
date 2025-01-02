@@ -1,6 +1,7 @@
 import { DocumentData } from "firebase/firestore";
 
 import "../globals.css";
+import { get } from "http";
 
 type RowData = {
   amount: number;
@@ -59,10 +60,31 @@ function removeTax(amount: number): number {
   return amount;
 }
 
-function TableCell(props: { children: React.ReactNode }) {
+function getMonthlyAmount(data: RowData): number {
+  return data.time === "month" ? data.amount : data.amount / 6;
+}
+
+function getYearlyAmount(data: RowData): number {
+  return data.time === "month" ? data.amount * 6 : data.amount;
+}
+
+export function TableCell(props: {
+  children: React.ReactNode;
+  className?: string;
+  tdProps?: React.TdHTMLAttributes<HTMLTableCellElement>;
+}) {
   return (
-    <td className="border-collapse border border-black">{props.children}</td>
+    <td
+      className={`border-collapse border border-black ${props.className || ""}`}
+      {...props.tdProps}
+    >
+      {props.children}
+    </td>
   );
+}
+
+export function NullTableCell() {
+  return <TableCell className="bg-accent">{null}</TableCell>;
 }
 
 export default function DataRow(props: {
@@ -77,36 +99,34 @@ export default function DataRow(props: {
   if (!data)
     return (
       <>
-        <TableCell>{NULL_VALUE}</TableCell>
-        <TableCell>{NULL_VALUE}</TableCell>
-        <TableCell>{NULL_VALUE}</TableCell>
-        <TableCell>{NULL_VALUE}</TableCell>
+        <NullTableCell />
+        <NullTableCell />
+        <NullTableCell />
+        <NullTableCell />
       </>
     );
 
-  const monthlyAmount = data.time === "month" ? data.amount : data.amount / 6;
-  const yearlyAmount = data.time === "month" ? data.amount * 6 : data.amount;
+  const monthlyAmount = getMonthlyAmount(data);
+  const yearlyAmount = getYearlyAmount(data);
 
-  let monthlyTakeHome: number;
-  let yearlyTakeHome: number;
+  let monthlyIncome: number;
+  let yearlyIncome: number;
 
   if (props.isPreTax) {
-    yearlyTakeHome = calculateGross(props.person);
-    monthlyTakeHome = yearlyTakeHome / 6;
+    yearlyIncome = calculateGross(props.person);
+    monthlyIncome = yearlyIncome / 6;
   } else {
-    monthlyTakeHome = calculateMonthlyTakeHome(props.person);
-    yearlyTakeHome = calculateYearlyTakeHome(props.person);
+    monthlyIncome = calculateMonthlyTakeHome(props.person);
+    yearlyIncome = calculateYearlyTakeHome(props.person);
   }
 
   return (
     <>
       <TableCell>
-        {((monthlyAmount / monthlyTakeHome) * 100).toFixed(0)}%
+        {((monthlyAmount / monthlyIncome) * 100).toFixed(0)}%
       </TableCell>
       <TableCell>${monthlyAmount.toFixed(0)}</TableCell>
-      <TableCell>
-        {((yearlyAmount / yearlyTakeHome) * 100).toFixed(0)}%
-      </TableCell>
+      <TableCell>{((yearlyAmount / yearlyIncome) * 100).toFixed(0)}%</TableCell>
       <TableCell>${yearlyAmount.toFixed(0)}</TableCell>
     </>
   );

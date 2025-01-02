@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
 import app from "../../firebase/client";
+
+import { useEffect, useState } from "react";
+
+import DataRow, { calculateGross, TableCell, NullTableCell } from "./table";
+import EditableCell from "./EditableCell";
+
+import "../globals.css";
+
+const styles = {
+  border: "border-collapse border border-black",
+  bold: "font-bold",
+};
 
 // TODO: Get rid of the math.max thing after 2025
 const fetchData = async () => {
@@ -36,10 +46,6 @@ const fetchTaxBrackets = async (path: string) => {
   const docSnap = await getDoc(docRef);
   return docSnap.data() as DocumentData;
 };
-
-import "../globals.css";
-import DataRow, { calculateGross } from "./table";
-import EditableCell from "./EditableCell";
 
 export default function Finance() {
   const headers = [
@@ -85,50 +91,39 @@ export default function Finance() {
     });
   }, [brianBudgetPath]);
 
-  const posttax = new Set([
+  const postTax = new Set([
     ...Object.keys(emilyBudget?.postTax || {}),
     ...Object.keys(brianBudget?.postTax || {}),
   ]);
 
-  const pretax = new Set([
+  const preTax = new Set([
     ...Object.keys(emilyBudget?.preTax || {}),
     ...Object.keys(brianBudget?.preTax || {}),
   ]);
 
   return (
     <div>
-      <table className="border-collapse border border-black">
+      <table className={styles.border}>
         <thead>
           <tr>
             <th></th>
-            <th className="border-collapse border border-black">Category</th>
+            <th className={styles.border}>Category</th>
             {headers.map((header, index) => (
-              <th
-                className="border-collapse border border-black"
-                key={`header-${index}`}
-              >
+              <th className={styles.border} key={`header-${index}`}>
                 {header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {[...posttax].map((category, index) => (
-            <tr
-              key={`post-tax-${index}`}
-              className="border-collapse border border-black"
-            >
+          {[...postTax].map((category, index) => (
+            <tr key={`post-tax-${index}`} className={styles.border}>
               {index === 0 && (
-                <td
-                  className="border-collapse border border-black"
-                  rowSpan={posttax.size}
-                >
+                <TableCell tdProps={{ rowSpan: postTax.size }}>
                   Post-Tax
-                </td>
+                </TableCell>
               )}
-              <td className="border-collapse border border-black">
-                {category}
-              </td>
+              <TableCell>{category}</TableCell>
               <DataRow
                 category={category}
                 person={emilyBudget}
@@ -141,36 +136,30 @@ export default function Finance() {
               />
             </tr>
           ))}
-          {[...pretax].map((category, index) => (
-            <tr
-              key={`pre-tax-${index}`}
-              className="border-collapse border border-black"
-            >
+          {[...preTax].map((category, index) => (
+            <tr key={`pre-tax-${index}`} className={styles.border}>
               {index === 0 && (
-                <td
-                  className="border-collapse border border-black"
-                  rowSpan={pretax.size + 1}
-                >
+                <TableCell tdProps={{ rowSpan: preTax.size + 1 }}>
                   Pre-Tax
-                </td>
+                </TableCell>
               )}
-              <td className="border-collapse border border-black">
-                {category}
-              </td>
+              <TableCell>{category}</TableCell>
               <DataRow category={category} person={emilyBudget} isPreTax />
               <DataRow category={category} person={brianBudget} isPreTax />
             </tr>
           ))}
           <tr>
-            <td className="border-collapse border border-black">Gross</td>{" "}
-            <td className="border-collapse border border-black">100%</td>
-            <td className="border-collapse border border-black">
+            <TableCell className={styles.bold}>Gross</TableCell>
+            <TableCell>100%</TableCell>
+            <TableCell>
               ${(calculateGross(emilyBudget) / 6).toFixed(0)}
-            </td>
-            <td className="border-collapse border border-black">100%</td>
-            <td className="border-collapse border border-black">
-              ${calculateGross(emilyBudget)}
-            </td>
+            </TableCell>
+            <TableCell>100%</TableCell>
+            <TableCell>${calculateGross(emilyBudget)}</TableCell>
+            <NullTableCell />
+            <NullTableCell />
+            <NullTableCell />
+            <NullTableCell />
           </tr>
         </tbody>
       </table>
