@@ -119,11 +119,14 @@ export default function Finance() {
           {[...postTax].map((category, index) => (
             <tr key={`post-tax-${index}`} className={styles.border}>
               {index === 0 && (
-                <TableCell tdProps={{ rowSpan: postTax.size }}>
+                <TableCell
+                  className={styles.bold}
+                  tdProps={{ rowSpan: postTax.size }}
+                >
                   Post-Tax
                 </TableCell>
               )}
-              <TableCell>{category}</TableCell>
+              <TableCell className={styles.bold}>{category}</TableCell>
               <DataRow
                 category={category}
                 person={emilyBudget}
@@ -139,11 +142,14 @@ export default function Finance() {
           {[...preTax].map((category, index) => (
             <tr key={`pre-tax-${index}`} className={styles.border}>
               {index === 0 && (
-                <TableCell tdProps={{ rowSpan: preTax.size + 1 }}>
+                <TableCell
+                  className={styles.bold}
+                  tdProps={{ rowSpan: preTax.size + 1 }}
+                >
                   Pre-Tax
                 </TableCell>
               )}
-              <TableCell>{category}</TableCell>
+              <TableCell className={styles.bold}>{category}</TableCell>
               <DataRow category={category} person={emilyBudget} isPreTax />
               <DataRow category={category} person={brianBudget} isPreTax />
             </tr>
