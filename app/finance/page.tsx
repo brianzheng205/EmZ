@@ -12,7 +12,7 @@ import DataRow, {
 } from "./table";
 import EditableCell from "./EditableCell";
 
-import { styles } from "./styles";
+import styles from "./styles";
 import "../globals.css";
 
 // TODO: Get rid of the math.max thing after 2025

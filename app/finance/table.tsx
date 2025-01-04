@@ -1,6 +1,6 @@
 import { DocumentData } from "firebase/firestore";
 import EditableCell from "./EditableCell";
-import { styles } from "./styles";
+import styles from "./styles";
 import "../globals.css";
 
 type RowData = {

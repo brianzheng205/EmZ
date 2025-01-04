@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { styles } from "./styles";
+
+import styles from "./styles";
 import "../globals.css";
 
 function formatValue(value?: number) {
@@ -7,11 +8,13 @@ function formatValue(value?: number) {
 }
 
 export default function EditableCell(props: { initialValue?: number }) {
-  const [value, setValue] = useState(formatValue(props.initialValue));
+  const [value, setValue] = useState<number>(formatValue(props.initialValue));
+  const [isEmpty, setIsEmpty] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setValue(formatValue(props.initialValue));
+    setIsEmpty(false);
   }, [props.initialValue]);
 
   return (
@@ -23,15 +26,31 @@ export default function EditableCell(props: { initialValue?: number }) {
         <input
           className="w-full h-full box-border bg-accent outline-none absolute inset-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           type="number"
-          value={value}
-          onChange={(e) => setValue(formatValue(+e.target.value))}
+          inputMode="numeric"
+          value={isEmpty ? "" : value}
+          onChange={(e) => {
+            if (e.target.value === "") {
+              setIsEmpty(true);
+              setValue(0);
+            } else {
+              setIsEmpty(false);
+              setValue(+e.target.value);
+            }
+          }}
           onBlur={() => setIsEditing(false)}
-          onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
+          onKeyDown={(e) => {
+            if (e.key === "." || e.key === ",") {
+              e.preventDefault();
+            }
+            if (e.key === "Enter") {
+              setIsEditing(false);
+            }
+          }}
           onWheel={(e) => e.target instanceof HTMLElement && e.target.blur()}
           autoFocus
         />
       ) : (
-        <div>${value.toFixed(0)}</div>
+        <div>{`$${value.toFixed(0)}`}</div>
       )}
     </td>
   );
