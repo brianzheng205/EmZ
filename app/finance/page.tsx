@@ -12,12 +12,8 @@ import DataRow, {
 } from "./table";
 import EditableCell from "./EditableCell";
 
+import styles from "./styles";
 import "../globals.css";
-
-const styles = {
-  border: "border-collapse border border-black",
-  bold: "font-bold",
-};
 
 // TODO: Get rid of the math.max thing after 2025
 const fetchData = async () => {
@@ -106,75 +102,92 @@ export default function Finance() {
   ]);
 
   return (
-    <div>
-      <table className={styles.border}>
-        <thead>
-          <tr>
-            <th></th>
-            <th className={styles.border}>Category</th>
-            {COLUMN_HEADERS.map((header, index) => (
-              <th className={styles.border} key={`header-${index}`}>
-                {header}
+    <div className="flex justify-center">
+      <div className={styles.tableWrapper}>
+        <table className={styles.border}>
+          <thead>
+            <tr className={styles.headerRow}>
+              <th className={styles.cell}></th>
+              <th
+                className={`${styles.border} ${styles.cell} ${styles.secondColumnEnd}`}
+              >
+                Category
               </th>
+              {COLUMN_HEADERS.map((header, index) => (
+                <th
+                  className={`${styles.border} ${styles.cell}`}
+                  key={`header-${index}`}
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[...postTax].map((category, index) => (
+              <tr key={`post-tax-${index}`} className={styles.border}>
+                {index === 0 && (
+                  <UneditableCell
+                    className={styles.bold}
+                    tdProps={{ rowSpan: postTax.size }}
+                  >
+                    Post-Tax
+                  </UneditableCell>
+                )}
+                <UneditableCell
+                  className={`${styles.bold} ${styles.secondColumnEnd}`}
+                >
+                  {category}
+                </UneditableCell>
+                <DataRow
+                  category={category}
+                  person={emilyBudget}
+                  isPreTax={false}
+                />
+                <DataRow
+                  category={category}
+                  person={brianBudget}
+                  isPreTax={false}
+                />
+              </tr>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {[...postTax].map((category, index) => (
-            <tr key={`post-tax-${index}`} className={styles.border}>
-              {index === 0 && (
+            {[...preTax].map((category, index) => (
+              <tr key={`pre-tax-${index}`} className={styles.border}>
+                {index === 0 && (
+                  <UneditableCell
+                    className={styles.bold}
+                    tdProps={{ rowSpan: preTax.size + 1 }}
+                  >
+                    Pre-Tax
+                  </UneditableCell>
+                )}
                 <UneditableCell
-                  className={styles.bold}
-                  tdProps={{ rowSpan: postTax.size }}
+                  className={`${styles.bold} ${styles.secondColumnEnd}`}
                 >
-                  Post-Tax
+                  {category}
                 </UneditableCell>
-              )}
-              <UneditableCell className={styles.bold}>
-                {category}
+                <DataRow category={category} person={emilyBudget} isPreTax />
+                <DataRow category={category} person={brianBudget} isPreTax />
+              </tr>
+            ))}
+            <tr>
+              <UneditableCell
+                className={`${styles.bold} ${styles.secondColumnEnd}`}
+              >
+                Gross
               </UneditableCell>
-              <DataRow
-                category={category}
-                person={emilyBudget}
-                isPreTax={false}
-              />
-              <DataRow
-                category={category}
-                person={brianBudget}
-                isPreTax={false}
-              />
+              <UneditableCell>100%</UneditableCell>
+              <EditableCell initialValue={calculateGross(emilyBudget) / 6} />
+              <UneditableCell>100%</UneditableCell>
+              <EditableCell initialValue={calculateGross(emilyBudget)} />
+              <NullTableCell />
+              <NullTableCell />
+              <NullTableCell />
+              <NullTableCell />
             </tr>
-          ))}
-          {[...preTax].map((category, index) => (
-            <tr key={`pre-tax-${index}`} className={styles.border}>
-              {index === 0 && (
-                <UneditableCell
-                  className={styles.bold}
-                  tdProps={{ rowSpan: preTax.size + 1 }}
-                >
-                  Pre-Tax
-                </UneditableCell>
-              )}
-              <UneditableCell className={styles.bold}>
-                {category}
-              </UneditableCell>
-              <DataRow category={category} person={emilyBudget} isPreTax />
-              <DataRow category={category} person={brianBudget} isPreTax />
-            </tr>
-          ))}
-          <tr>
-            <UneditableCell className={styles.bold}>Gross</UneditableCell>
-            <UneditableCell>100%</UneditableCell>
-            <EditableCell initialValue={calculateGross(emilyBudget) / 6} />
-            <UneditableCell>100%</UneditableCell>
-            <EditableCell initialValue={calculateGross(emilyBudget)} />
-            <NullTableCell />
-            <NullTableCell />
-            <NullTableCell />
-            <NullTableCell />
-          </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

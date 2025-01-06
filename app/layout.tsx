@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 import SideBar, { ToggleSideBar } from "./SideBar";
@@ -24,8 +25,15 @@ export default function RootLayout({
           />
           <Link
             href="/"
-            className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold"
+            className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold flex items-center gap-2"
           >
+            <Image
+              src="/favicon.ico"
+              alt="EmZ Logo"
+              width={24}
+              height={24}
+              className="w-6 h-6"
+            />
             <span>EmZ</span>
           </Link>
         </div>
