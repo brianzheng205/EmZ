@@ -7,6 +7,7 @@ import {
   FiChevronRight,
   FiDollarSign,
   FiHome,
+  FiCalendar,
 } from "react-icons/fi";
 
 import "./globals.css";
@@ -17,6 +18,11 @@ export const routes = [
     route: "/finance",
     label: "Finance",
     icon: <FiDollarSign />,
+  },
+  {
+    route: "/countdown",
+    label: "Countdown",
+    icon: <FiCalendar />,
   },
 ];
 
