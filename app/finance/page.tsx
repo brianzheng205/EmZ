@@ -4,6 +4,7 @@ import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
 import app from "../../firebase/client";
 
 import { useEffect, useState } from "react";
+import { updateDoc } from "firebase/firestore";
 
 import DataRow, {
   calculateGross,
@@ -19,14 +20,9 @@ const styles = {
   bold: "font-bold",
 };
 
-// TODO: Get rid of the math.max thing after 2025
 const fetchData = async () => {
   const db = getFirestore(app);
-  const docRef = doc(
-    db,
-    "activeBudgets",
-    Math.max(new Date().getFullYear(), 2025).toString()
-  );
+  const docRef = doc(db, "activeBudgets", new Date().getFullYear().toString());
   const docSnap = await getDoc(docRef);
   return docSnap.data() as DocumentData;
 };
@@ -83,17 +79,23 @@ export default function Finance() {
     });
   }, []);
 
-  useEffect(() => {
-    fetchBudgets(emilyBudgetPath?.join("/")).then((document) => {
-      setEmilyBudget(document);
+  const updateBudget = (path: string[], setBudget: (DocumentData) => void) => {
+    fetchBudgets(path?.join("/")).then((document) => {
+      setBudget(document);
     });
-  }, [emilyBudgetPath]);
+  };
 
-  useEffect(() => {
-    fetchBudgets(brianBudgetPath?.join("/")).then((document) => {
-      setBrianBudget(document);
-    });
-  }, [brianBudgetPath]);
+  const updateEmilyBudget = () => {
+    updateBudget(emilyBudgetPath, setEmilyBudget);
+  };
+
+  const updatedBrianBudget = () => {
+    updateBudget(brianBudgetPath, setBrianBudget);
+  };
+
+  useEffect(updateEmilyBudget, [emilyBudgetPath]);
+
+  useEffect(updatedBrianBudget, [brianBudgetPath]);
 
   const postTax = new Set([
     ...Object.keys(emilyBudget?.postTax || {}),
@@ -136,11 +138,15 @@ export default function Finance() {
               <DataRow
                 category={category}
                 person={emilyBudget}
+                updateFunction={updateEmilyBudget}
+                budgetPath={emilyBudgetPath}
                 isPreTax={false}
               />
               <DataRow
                 category={category}
                 person={brianBudget}
+                updateFunction={updatedBrianBudget}
+                budgetPath={brianBudgetPath}
                 isPreTax={false}
               />
             </tr>
@@ -158,16 +164,30 @@ export default function Finance() {
               <UneditableCell className={styles.bold}>
                 {category}
               </UneditableCell>
-              <DataRow category={category} person={emilyBudget} isPreTax />
-              <DataRow category={category} person={brianBudget} isPreTax />
+              <DataRow
+                category={category}
+                person={emilyBudget}
+                updateFunction={updateEmilyBudget}
+                budgetPath={emilyBudgetPath}
+                isPreTax
+              />
+              <DataRow
+                category={category}
+                person={brianBudget}
+                updateFunction={updatedBrianBudget}
+                budgetPath={brianBudgetPath}
+                isPreTax
+              />
             </tr>
           ))}
           <tr>
             <UneditableCell className={styles.bold}>Gross</UneditableCell>
             <UneditableCell>100%</UneditableCell>
-            <EditableCell initialValue={calculateGross(emilyBudget) / 6} />
+            <UneditableCell>
+              ${(calculateGross(emilyBudget) / 6).toFixed(0)}
+            </UneditableCell>
             <UneditableCell>100%</UneditableCell>
-            <EditableCell initialValue={calculateGross(emilyBudget)} />
+            <UneditableCell>${calculateGross(emilyBudget)}</UneditableCell>
             <NullTableCell />
             <NullTableCell />
             <NullTableCell />

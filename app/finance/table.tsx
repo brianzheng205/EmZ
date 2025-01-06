@@ -1,4 +1,5 @@
-import { DocumentData } from "firebase/firestore";
+import { DocumentData, doc, getFirestore, updateDoc } from "firebase/firestore";
+import app from "../../firebase/client";
 
 import EditableCell from "./EditableCell";
 
@@ -26,7 +27,7 @@ export function calculateGross(person: DocumentData): number {
 }
 
 function calculateMonthlyTakeHome(person: DocumentData) {
-  let takeHome = person?.preTax["Gross Base"]?.amount || 0;
+  let takeHome = person?.preTax?.["Gross Base"]?.amount || 0;
   takeHome -= removeDeductions(person);
   takeHome = removeTax(takeHome);
   return takeHome / 12;
@@ -90,6 +91,8 @@ export function NullTableCell() {
 export default function DataRow(props: {
   category: string;
   person: DocumentData;
+  updateFunction: () => void;
+  budgetPath: string[];
   isPreTax: boolean;
 }) {
   const data: RowData | undefined = props.isPreTax
@@ -100,9 +103,9 @@ export default function DataRow(props: {
     return (
       <>
         <UneditableCell />
-        <EditableCell />
+        <EditableCell updateFunction={updateBudgetMonthly} />
         <UneditableCell />
-        <EditableCell />
+        <EditableCell updateFunction={updateBudgetYearly} />
       </>
     );
 
@@ -120,16 +123,55 @@ export default function DataRow(props: {
     yearlyIncome = calculateYearlyTakeHome(props.person);
   }
 
+  function updateBudgetValue(amount: number, time: string) {
+    const db = getFirestore(app);
+
+    const path = props.budgetPath.join("/");
+
+    const docRef = doc(db, path);
+
+    if (props.isPreTax) {
+      updateDoc(docRef, {
+        [`preTax.${props.category}`]: {
+          amount: amount,
+          time: time,
+        },
+      });
+    } else {
+      updateDoc(docRef, {
+        [`postTax.${props.category}`]: {
+          amount: amount,
+          time: time,
+        },
+      });
+    }
+    props.updateFunction();
+  }
+
+  function updateBudgetMonthly(amount: number) {
+    updateBudgetValue(amount, "month");
+  }
+
+  function updateBudgetYearly(amount: number) {
+    updateBudgetValue(amount, "year");
+  }
+
   return (
     <>
       <UneditableCell>
         {((monthlyAmount / monthlyIncome) * 100).toFixed(0)}%
       </UneditableCell>
-      <EditableCell initialValue={monthlyAmount} />
+      <EditableCell
+        initialValue={monthlyAmount}
+        updateFunction={updateBudgetMonthly}
+      />
       <UneditableCell>
         {((yearlyAmount / yearlyIncome) * 100).toFixed(0)}%
       </UneditableCell>
-      <EditableCell initialValue={yearlyAmount} />
+      <EditableCell
+        initialValue={yearlyAmount}
+        updateFunction={updateBudgetYearly}
+      />
     </>
   );
 }

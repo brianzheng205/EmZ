@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { DocumentData } from "firebase/firestore";
 
 import "../globals.css";
 
@@ -6,7 +7,10 @@ function formatValue(value?: number) {
   return value !== undefined ? Number(value.toFixed(2)) : 0;
 }
 
-export default function EditableCell(props: { initialValue?: number }) {
+export default function EditableCell(props: {
+  initialValue?: number;
+  updateFunction: (amount: number) => void;
+}) {
   const [value, setValue] = useState(formatValue(props.initialValue));
   const [isEditing, setIsEditing] = useState(false);
 
@@ -26,7 +30,12 @@ export default function EditableCell(props: { initialValue?: number }) {
           value={value}
           onChange={(e) => setValue(+e.target.value)}
           onBlur={() => setIsEditing(false)}
-          onKeyDown={(e) => e.key === "Enter" && setIsEditing(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setIsEditing(false);
+              props.updateFunction(value);
+            }
+          }}
           autoFocus
         />
       ) : (
