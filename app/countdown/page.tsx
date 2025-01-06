@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   getFirestore,
   collection,
@@ -13,21 +12,16 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import app from "../../firebase/client";
+import { useState, useEffect } from "react";
+import AddCountdownForm from "./AddCountdownForm";
+import { CountdownEvent, AddEventFn } from "./types";
 
 import "../globals.css";
-
-type CountdownEvent = {
-  id: string;
-  date: Date;
-  description: string;
-};
 
 const db = getFirestore(app);
 
 export default function Countdown() {
   const [events, setEvents] = useState<CountdownEvent[]>([]);
-  const [newDate, setNewDate] = useState("");
-  const [newDescription, setNewDescription] = useState("");
 
   useEffect(() => {
     fetchEvents();
@@ -47,24 +41,17 @@ export default function Countdown() {
     setEvents(fetchedEvents);
   };
 
-  const addEvent = async () => {
-    try {
-      const date = new Date(newDate);
-      const timezoneOffset = date.getTimezoneOffset() * 60000;
-      const adjustedDate = new Date(date.getTime() + timezoneOffset);
-      console.log(date, timezoneOffset, adjustedDate);
+  const addEvent: AddEventFn = async (newDate, newDescription) => {
+    const date = new Date(newDate);
+    const timezoneOffset = date.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(date.getTime() + timezoneOffset);
 
-      await addDoc(collection(db, "countdowns"), {
-        date: Timestamp.fromDate(adjustedDate),
-        description: newDescription,
-      });
+    await addDoc(collection(db, "countdowns"), {
+      date: Timestamp.fromDate(adjustedDate),
+      description: newDescription,
+    });
 
-      setNewDate("");
-      setNewDescription("");
-      fetchEvents();
-    } catch (error) {
-      console.error("Error adding event:", error);
-    }
+    fetchEvents();
   };
 
   const deleteEvent = async (id: string) => {
@@ -89,34 +76,7 @@ export default function Countdown() {
   return (
     <div className="flex gap-8 p-4">
       <div className="w-1/2 space-y-4">
-        <div className="bg-accent rounded-md p-4 space-y-4">
-          <h2 className="text-xl font-bold mb-4">Add New Countdown</h2>
-          <div className="space-y-2">
-            <label className="block">Date:</label>
-            <input
-              type="date"
-              className="w-full p-2 rounded border border-primary"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block">Description:</label>
-            <input
-              type="text"
-              className="w-full p-2 rounded border border-primary"
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              placeholder="Enter event description"
-            />
-          </div>
-          <button
-            className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary"
-            onClick={addEvent}
-          >
-            Add Countdown
-          </button>
-        </div>
+        <AddCountdownForm onAdd={addEvent} />
       </div>
       <div className="w-1/2 space-y-4">
         <div className="flex flex-col gap-4 h-[750px] overflow-y-auto border border-primary rounded-md p-2">
