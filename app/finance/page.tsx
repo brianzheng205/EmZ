@@ -196,14 +196,16 @@ export default function Finance() {
               </UneditableCell>
               <UneditableCell>100%</UneditableCell>
               <UneditableCell>
-                ${(calculateGross(emilyBudget) / 6).toFixed(0)}
+                ${(calculateGross(emilyBudget) / 5).toFixed(0)}
               </UneditableCell>
               <UneditableCell>100%</UneditableCell>
               <UneditableCell>${calculateGross(emilyBudget)}</UneditableCell>
-              <NullTableCell />
-              <NullTableCell />
-              <NullTableCell />
-              <NullTableCell />
+              <UneditableCell>100%</UneditableCell>
+              <UneditableCell>
+                ${(calculateGross(brianBudget) / 5).toFixed(0)}
+              </UneditableCell>
+              <UneditableCell>100%</UneditableCell>
+              <UneditableCell>${calculateGross(brianBudget)}</UneditableCell>
             </tr>
           </tbody>
         </table>
