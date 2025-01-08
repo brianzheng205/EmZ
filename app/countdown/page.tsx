@@ -49,11 +49,31 @@ export default function Countdown() {
   const fetchEvents = async () => {
     const eventsRef = collection(db, "countdowns");
     const querySnapshot = await getDocs(eventsRef);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const fetchedEvents = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      descriptions: doc.data().descriptions || [],
-    }));
+    const fetchedEvents: CountdownEvent[] = [];
+    const deletePromises: Promise<void>[] = [];
+
+    querySnapshot.docs.forEach((doc) => {
+      const [month, day, year] = doc.id.split("-").map(Number);
+      const date = new Date(year, month - 1, day); // month is 0-based
+
+      if (date < today) {
+        // Delete past events
+        deletePromises.push(deleteDoc(doc.ref));
+      } else {
+        fetchedEvents.push({
+          id: doc.id,
+          descriptions: doc.data().descriptions || [],
+        });
+      }
+    });
+
+    // Wait for all deletions to complete
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
+    }
 
     // Sort events by date ID
     fetchedEvents.sort((a, b) => {
