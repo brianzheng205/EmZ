@@ -26,7 +26,9 @@ export default function EditCountdownForm({
 }: EditCountdownFormProps) {
   // Convert MM-DD-YYYY to YYYY-MM-DD for date input
   const [month, day, year] = dateId.split("-");
-  const formattedDate = isCustomId ? dateId : `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  const formattedDate = isCustomId
+    ? dateId
+    : `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 
   const [newId, setNewId] = useState(formattedDate);
   const [newDescription, setNewDescription] = useState(description);
@@ -55,7 +57,13 @@ export default function EditCountdownForm({
     }
 
     try {
-      await onEdit(dateId, description, newId, newDescription.trim(), isCustomInput);
+      await onEdit(
+        dateId,
+        description,
+        newId,
+        newDescription.trim(),
+        isCustomInput
+      );
       onCancel();
     } catch (error) {
       console.error("Error editing countdown:", error);
@@ -63,7 +71,7 @@ export default function EditCountdownForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="w-full space-y-4">
       <CountdownFormInputs
         id={newId}
         description={newDescription}
