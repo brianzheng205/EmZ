@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+
+import CountdownFormInputs from "./CountdownFormInputs";
+
 import { AddEventFn } from "./types";
-import { getAdjustedDate } from "./page";
+import { getAdjustedDate } from "../utils";
 
 interface AddCountdownFormProps {
   onAdd: AddEventFn;
@@ -33,7 +36,7 @@ export default function AddCountdownForm(props: AddCountdownFormProps) {
     }
 
     try {
-      await props.onAdd(newDate, newDescription);
+      await props.onAdd(newDate, newDescription.trim());
       setNewDate("");
       setNewDescription("");
     } catch (error) {
@@ -45,37 +48,13 @@ export default function AddCountdownForm(props: AddCountdownFormProps) {
     <div className="bg-accent rounded-md p-4 space-y-4">
       <h2 className="text-xl font-bold mb-4 text-center">Add New Countdown</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium mb-1">
-            Date
-          </label>
-          <input
-            type="date"
-            id="date"
-            value={newDate}
-            onChange={(e) => setNewDate(e.target.value)}
-            min={minDate}
-            className="w-full p-2 border rounded-md bg-background"
-            required
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium mb-1"
-          >
-            Description
-          </label>
-          <input
-            type="text"
-            id="description"
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
-            className="w-full p-2 border rounded-md bg-background"
-            placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
-            required
-          />
-        </div>
+        <CountdownFormInputs
+          date={newDate}
+          description={newDescription}
+          onDateChange={setNewDate}
+          onDescriptionChange={setNewDescription}
+          minDate={minDate}
+        />
         <button
           type="submit"
           className="w-full bg-primary text-white p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"

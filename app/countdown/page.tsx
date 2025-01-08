@@ -13,9 +13,15 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import app from "../../firebase/client";
+
 import { useState, useEffect } from "react";
+import { FaPencilAlt, FaTimes } from "react-icons/fa";
+
 import AddCountdownForm from "./AddCountdownForm";
-import { CountdownEvent, AddEventFn } from "./types";
+import EditCountdownForm from "./EditCountdownForm";
+
+import { CountdownEvent, AddEventFn, EditEventFn } from "./types";
+import { getAdjustedDate } from "../utils";
 
 import "../globals.css";
 
@@ -28,13 +34,12 @@ const getDateString = (date: Date) => {
   return `${month}-${day}-${year}`;
 };
 
-export const getAdjustedDate = (date: Date) => {
-  const timezoneOffset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() + timezoneOffset);
-};
-
 export default function Countdown() {
   const [events, setEvents] = useState<CountdownEvent[]>([]);
+  const [editingEvent, setEditingEvent] = useState<{
+    dateId: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -97,6 +102,51 @@ export default function Countdown() {
     } else {
       // Create new document for this date
       await setDoc(docRef, {
+        descriptions: [newDescription],
+      });
+    }
+
+    fetchEvents();
+  };
+
+  const editEvent: EditEventFn = async (
+    oldDateId,
+    oldDescription,
+    newDate,
+    newDescription
+  ) => {
+    // Remove from old date
+    const oldDocRef = doc(db, "countdowns", oldDateId);
+    const oldDocSnap = await getDoc(oldDocRef);
+
+    if (oldDocSnap.exists()) {
+      const descriptions = oldDocSnap.data().descriptions;
+      if (descriptions.length === 1) {
+        // If this was the only description, delete the document
+        await deleteDoc(oldDocRef);
+      } else {
+        // Remove the old description
+        await updateDoc(oldDocRef, {
+          descriptions: arrayRemove(oldDescription),
+        });
+      }
+    }
+
+    // Add to new date
+    const date = new Date(newDate);
+    const adjustedDate = getAdjustedDate(date);
+    const newDateId = getDateString(adjustedDate);
+    const newDocRef = doc(db, "countdowns", newDateId);
+
+    const newDocSnap = await getDoc(newDocRef);
+    if (newDocSnap.exists()) {
+      // Add description to existing date
+      await updateDoc(newDocRef, {
+        descriptions: arrayUnion(newDescription),
+      });
+    } else {
+      // Create new document for this date
+      await setDoc(newDocRef, {
         descriptions: [newDescription],
       });
     }
@@ -170,13 +220,35 @@ export default function Countdown() {
                     key={`${event.id}-${index}`}
                     className="flex justify-between items-start border-b border-primary/20 pb-3 last:border-0"
                   >
-                    <p>{description}</p>
-                    <button
-                      onClick={() => deleteEvent(event.id, description)}
-                      className="text-red-500 hover:text-red-700 ml-2"
-                    >
-                      ×
-                    </button>
+                    {editingEvent?.dateId === event.id &&
+                    editingEvent?.description === description ? (
+                      <EditCountdownForm
+                        dateId={event.id}
+                        description={description}
+                        onEdit={editEvent}
+                        onCancel={() => setEditingEvent(null)}
+                      />
+                    ) : (
+                      <>
+                        <p>{description}</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              setEditingEvent({ dateId: event.id, description })
+                            }
+                            className="text-primary hover:text-secondary"
+                          >
+                            <FaPencilAlt className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteEvent(event.id, description)}
+                            className="text-primary hover:text-secondary"
+                          >
+                            <FaTimes className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

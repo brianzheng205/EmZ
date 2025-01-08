@@ -4,3 +4,10 @@ export type CountdownEvent = {
 };
 
 export type AddEventFn = (date: string, description: string) => Promise<void>;
+
+export type EditEventFn = (
+  oldDateId: string,
+  oldDescription: string,
+  newDate: string,
+  newDescription: string
+) => Promise<void>;
