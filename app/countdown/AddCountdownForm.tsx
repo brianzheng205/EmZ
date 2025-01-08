@@ -3,48 +3,87 @@
 import { useState } from "react";
 import { AddEventFn } from "./types";
 
-export default function AddCountdownForm(props: { onAdd: AddEventFn }) {
+interface AddCountdownFormProps {
+  onAdd: AddEventFn;
+}
+
+export default function AddCountdownForm(props: AddCountdownFormProps) {
   const [newDate, setNewDate] = useState("");
   const [newDescription, setNewDescription] = useState("");
 
-  const handleSubmit = async () => {
+  // Get today's date in YYYY-MM-DD format for min attribute
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(
+    today.getMonth() + 1
+  ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDate || !newDescription.trim()) {
+      return;
+    }
+
+    // Additional check to prevent past dates
+    const selectedDate = new Date(newDate);
+    selectedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return;
+    }
+
     try {
       await props.onAdd(newDate, newDescription);
       setNewDate("");
       setNewDescription("");
     } catch (error) {
-      console.error("Error adding event:", error);
+      console.error("Error adding countdown:", error);
     }
   };
 
   return (
     <div className="bg-accent rounded-md p-4 space-y-4">
       <h2 className="text-xl font-bold mb-4 text-center">Add New Countdown</h2>
-      <div className="space-y-2">
-        <label className="block">Date:</label>
-        <input
-          type="date"
-          className="w-full p-2 rounded border border-primary"
-          value={newDate}
-          onChange={(e) => setNewDate(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <label className="block">Description:</label>
-        <input
-          type="text"
-          className="w-full p-2 rounded border border-primary"
-          value={newDescription}
-          onChange={(e) => setNewDescription(e.target.value)}
-          placeholder='e.g. 4-year "ILY" anniversary. ❤️'
-        />
-      </div>
-      <button
-        className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary"
-        onClick={handleSubmit}
-      >
-        Add Countdown
-      </button>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="date" className="block text-sm font-medium mb-1">
+            Date
+          </label>
+          <input
+            type="date"
+            id="date"
+            value={newDate}
+            onChange={(e) => setNewDate(e.target.value)}
+            min={minDate}
+            className="w-full p-2 border rounded-md bg-background"
+            required
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium mb-1"
+          >
+            Description
+          </label>
+          <input
+            type="text"
+            id="description"
+            value={newDescription}
+            onChange={(e) => setNewDescription(e.target.value)}
+            className="w-full p-2 border rounded-md bg-background"
+            placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-primary text-white p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!newDate || !newDescription.trim()}
+        >
+          Add Countdown
+        </button>
+      </form>
     </div>
   );
 }

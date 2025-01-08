@@ -6,9 +6,6 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  query,
-  orderBy,
-  Timestamp,
   setDoc,
   getDoc,
   updateDoc,
@@ -50,13 +47,13 @@ export default function Countdown() {
     // Sort events by date ID
     fetchedEvents.sort((a, b) => {
       // Try to parse both IDs as dates (MM-DD-YYYY)
-      const [monthA, dayA, yearA] = a.id.split('-').map(Number);
-      const [monthB, dayB, yearB] = b.id.split('-').map(Number);
-      
+      const [monthA, dayA, yearA] = a.id.split("-").map(Number);
+      const [monthB, dayB, yearB] = b.id.split("-").map(Number);
+
       // Check if both IDs are valid dates
       const isDateA = !isNaN(monthA) && !isNaN(dayA) && !isNaN(yearA);
       const isDateB = !isNaN(monthB) && !isNaN(dayB) && !isNaN(yearB);
-      
+
       // If both are dates, compare them
       if (isDateA && isDateB) {
         // Compare years first
@@ -66,11 +63,11 @@ export default function Countdown() {
         // Then days
         return dayA - dayB;
       }
-      
+
       // If only one is a date, put the non-date at the end
       if (isDateA) return -1;
       if (isDateB) return 1;
-      
+
       // If neither is a date, maintain their relative order
       return a.id.localeCompare(b.id);
     });
@@ -130,17 +127,17 @@ export default function Countdown() {
 
   const formatCountdown = (dateId: string) => {
     // Parse the date from ID (MM-DD-YYYY)
-    const [month, day, year] = dateId.split('-').map(Number);
+    const [month, day, year] = dateId.split("-").map(Number);
     const date = new Date(year, month - 1, day); // month is 0-based
-    
+
     // Get today's date at midnight for comparison
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Calculate days difference
     const diffTime = date.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return "TODAY";
     if (diffDays < 0) return "PAST";
     return `D-${diffDays}`;
@@ -156,7 +153,9 @@ export default function Countdown() {
           {events.map((event) => (
             <div key={event.id} className="bg-accent rounded-2xl p-4">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{formatCountdown(event.id)}</h2>
+                <h2 className="text-xl font-bold">
+                  {formatCountdown(event.id)}
+                </h2>
                 <span className="text-sm text-gray-500">
                   {event.id.replace(/-/g, "/")}
                 </span>
