@@ -15,7 +15,7 @@ import {
 import app from "../../firebase/client";
 
 import { useState, useEffect } from "react";
-import { FaPencilAlt, FaTimes } from "react-icons/fa";
+import { FaPencilAlt, FaTimes, FaCopy } from "react-icons/fa";
 
 import AddCountdownForm from "./AddCountdownForm";
 import EditCountdownForm from "./EditCountdownForm";
@@ -40,6 +40,7 @@ export default function Countdown() {
     dateId: string;
     description: string;
   } | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -197,6 +198,28 @@ export default function Countdown() {
     return `D-${diffDays}`;
   };
 
+  const formatMarkdown = (events: CountdownEvent[]) => {
+    return events
+      .map((event) => {
+        const countdown = formatCountdown(event.id);
+        return `# **${countdown}**\n${event.descriptions
+          .map((desc) => `- ${desc}`)
+          .join("\n")}`;
+      })
+      .join("\n");
+  };
+
+  const copyToClipboard = async () => {
+    const markdown = formatMarkdown(events);
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   return (
     <div className="flex gap-8 p-4">
       <div className="w-1/2 space-y-4">
@@ -255,6 +278,13 @@ export default function Countdown() {
             </div>
           ))}
         </div>
+        <button
+          onClick={copyToClipboard}
+          className="w-full flex items-center justify-center gap-2 bg-primary text-white p-2 rounded-md hover:bg-secondary transition-colors"
+        >
+          <FaCopy className="h-4 w-4" />
+          {copySuccess ? "Copied!" : "Copy as Markdown"}
+        </button>
       </div>
     </div>
   );
