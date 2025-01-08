@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Combobox,
   ComboboxInput,
-  ComboboxButton,
   ComboboxOptions,
   ComboboxOption,
 } from "@headlessui/react";
@@ -31,6 +30,7 @@ export default function CountdownFormInputs({
   const [isCustomInput, setIsCustomInput] = useState(isCustomId);
   const [customInput, setCustomInput] = useState(isCustomId ? id : "");
   const [query, setQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false); // Track focus state
 
   const filteredCustomIds =
     query === ""
@@ -130,45 +130,38 @@ export default function CountdownFormInputs({
                         onIdChange(e.target.value.trim(), true);
                       }
                     }}
-                    onFocus={() => setQuery("")}
+                    onFocus={() => setIsFocused(true)} // Set focus state to true
+                    onBlur={() => setIsFocused(false)} // Set focus state to false
                     required
                   />
-                  <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer">
-                    <svg
-                      className="h-5 w-5 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
+                  {isFocused && ( // Only show options when focused
+                    <ComboboxOptions
+                      static
+                      className="absolute z-10 w-full mt-1 overflow-auto bg-background rounded-md border max-h-60"
                     >
-                      <path
-                        d="M7 7l3-3 3 3m0 6l-3 3-3-3"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </ComboboxButton>
-                  <ComboboxOptions className="absolute z-10 w-full mt-1 overflow-auto bg-background rounded-md border max-h-60">
-                    {filteredCustomIds.length === 0 && query !== "" ? (
-                      <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
-                        Nothing found. Press Enter to create "{query}".
-                      </div>
-                    ) : (
-                      filteredCustomIds.map((customId) => (
-                        <ComboboxOption
-                          key={customId}
-                          value={customId}
-                          className={({ active }) =>
-                            `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                              active ? "bg-primary text-white" : "text-gray-900"
-                            }`
-                          }
-                        >
-                          {customId}
-                        </ComboboxOption>
-                      ))
-                    )}
-                  </ComboboxOptions>
+                      {filteredCustomIds.length === 0 && query !== "" ? (
+                        <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+                          Nothing found. Press Enter to create "{query}".
+                        </div>
+                      ) : (
+                        filteredCustomIds.map((customId) => (
+                          <ComboboxOption
+                            key={customId}
+                            value={customId}
+                            className={({ active }) =>
+                              `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
+                                active
+                                  ? "bg-primary text-white"
+                                  : "text-gray-900"
+                              }`
+                            }
+                          >
+                            {customId}
+                          </ComboboxOption>
+                        ))
+                      )}
+                    </ComboboxOptions>
+                  )}
                 </div>
               </Combobox>
             </div>
