@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Combobox,
   ComboboxInput,
@@ -50,6 +50,13 @@ export default function CountdownFormInputs({
       onIdChange("", true);
     }
   };
+
+  useEffect(() => {
+    if (id === "") {
+      setCustomInput("");
+      setQuery("");
+    }
+  }, [id]);
 
   return (
     <>
