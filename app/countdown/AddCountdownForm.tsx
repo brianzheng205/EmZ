@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AddEventFn } from "./types";
+import { getAdjustedDate } from "./page";
 
 interface AddCountdownFormProps {
   onAdd: AddEventFn;
@@ -24,8 +25,7 @@ export default function AddCountdownForm(props: AddCountdownFormProps) {
     }
 
     // Additional check to prevent past dates
-    const selectedDate = new Date(newDate);
-    selectedDate.setHours(0, 0, 0, 0);
+    const selectedDate = getAdjustedDate(new Date(newDate));
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate < today) {

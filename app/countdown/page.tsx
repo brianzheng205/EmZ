@@ -28,6 +28,11 @@ const getDateString = (date: Date) => {
   return `${month}-${day}-${year}`;
 };
 
+export const getAdjustedDate = (date: Date) => {
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() + timezoneOffset);
+};
+
 export default function Countdown() {
   const [events, setEvents] = useState<CountdownEvent[]>([]);
 
@@ -77,8 +82,7 @@ export default function Countdown() {
 
   const addEvent: AddEventFn = async (newDate, newDescription) => {
     const date = new Date(newDate);
-    const timezoneOffset = date.getTimezoneOffset() * 60000;
-    const adjustedDate = new Date(date.getTime() + timezoneOffset);
+    const adjustedDate = getAdjustedDate(date);
     const dateId = getDateString(adjustedDate);
     const docRef = doc(db, "countdowns", dateId);
 
