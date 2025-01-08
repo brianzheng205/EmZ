@@ -9,11 +9,13 @@ import { getAdjustedDate } from "../utils";
 
 interface AddCountdownFormProps {
   onAdd: AddEventFn;
+  existingCustomIds: string[];
 }
 
-export default function AddCountdownForm(props: AddCountdownFormProps) {
-  const [newDate, setNewDate] = useState("");
+export default function AddCountdownForm({ onAdd, existingCustomIds }: AddCountdownFormProps) {
+  const [newId, setNewId] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [isCustomId, setIsCustomId] = useState(false);
 
   // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date();
@@ -23,22 +25,25 @@ export default function AddCountdownForm(props: AddCountdownFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDate || !newDescription.trim()) {
+    if (!newId || !newDescription.trim()) {
       return;
     }
 
-    // Additional check to prevent past dates
-    const selectedDate = getAdjustedDate(new Date(newDate));
-    today.setHours(0, 0, 0, 0);
+    if (!isCustomId) {
+      // Additional check to prevent past dates
+      const selectedDate = getAdjustedDate(new Date(newId));
+      today.setHours(0, 0, 0, 0);
 
-    if (selectedDate < today) {
-      return;
+      if (selectedDate < today) {
+        return;
+      }
     }
 
     try {
-      await props.onAdd(newDate, newDescription.trim());
-      setNewDate("");
+      await onAdd(newId, newDescription.trim(), isCustomId);
+      setNewId("");
       setNewDescription("");
+      setIsCustomId(false);
     } catch (error) {
       console.error("Error adding countdown:", error);
     }
@@ -49,16 +54,21 @@ export default function AddCountdownForm(props: AddCountdownFormProps) {
       <h2 className="text-xl font-bold mb-4 text-center">Add New Countdown</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <CountdownFormInputs
-          date={newDate}
+          id={newId}
           description={newDescription}
-          onDateChange={setNewDate}
+          onIdChange={(id, isCustom) => {
+            setNewId(id);
+            setIsCustomId(isCustom);
+          }}
           onDescriptionChange={setNewDescription}
           minDate={minDate}
+          existingCustomIds={existingCustomIds}
+          isCustomId={isCustomId}
         />
         <button
           type="submit"
           className="w-full bg-primary text-white p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!newDate || !newDescription.trim()}
+          disabled={!newId || !newDescription.trim()}
         >
           Add Countdown
         </button>

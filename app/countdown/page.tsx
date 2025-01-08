@@ -56,18 +56,26 @@ export default function Countdown() {
     const deletePromises: Promise<void>[] = [];
 
     querySnapshot.docs.forEach((doc) => {
-      const [month, day, year] = doc.id.split("-").map(Number);
-      const date = new Date(year, month - 1, day); // month is 0-based
+      const data = doc.data();
+      const isCustomId = data.isCustomId;
 
-      if (date < today) {
-        // Delete past events
-        deletePromises.push(deleteDoc(doc.ref));
-      } else {
-        fetchedEvents.push({
-          id: doc.id,
-          descriptions: doc.data().descriptions || [],
-        });
+      if (!isCustomId) {
+        // Handle date-based countdowns
+        const [month, day, year] = doc.id.split("-").map(Number);
+        const date = new Date(year, month - 1, day); // month is 0-based
+
+        if (date < today) {
+          // Delete past events
+          deletePromises.push(deleteDoc(doc.ref));
+          return;
+        }
       }
+
+      fetchedEvents.push({
+        id: doc.id,
+        descriptions: data.descriptions || [],
+        isCustomId: data.isCustomId,
+      });
     });
 
     // Wait for all deletions to complete
@@ -75,55 +83,53 @@ export default function Countdown() {
       await Promise.all(deletePromises);
     }
 
-    // Sort events by date ID
+    // Sort events: custom IDs first, then dates
     fetchedEvents.sort((a, b) => {
-      // Try to parse both IDs as dates (MM-DD-YYYY)
+      // Custom IDs go last
+      if (a.isCustomId && !b.isCustomId) return 1;
+      if (!a.isCustomId && b.isCustomId) return -1;
+
+      // If both are custom IDs, sort alphabetically
+      if (a.isCustomId && b.isCustomId) {
+        return a.id.localeCompare(b.id);
+      }
+
+      // If both are dates, sort chronologically
       const [monthA, dayA, yearA] = a.id.split("-").map(Number);
       const [monthB, dayB, yearB] = b.id.split("-").map(Number);
 
-      // Check if both IDs are valid dates
-      const isDateA = !isNaN(monthA) && !isNaN(dayA) && !isNaN(yearA);
-      const isDateB = !isNaN(monthB) && !isNaN(dayB) && !isNaN(yearB);
-
-      // If both are dates, compare them
-      if (isDateA && isDateB) {
-        // Compare years first
-        if (yearA !== yearB) return yearA - yearB;
-        // Then months
-        if (monthA !== monthB) return monthA - monthB;
-        // Then days
-        return dayA - dayB;
-      }
-
-      // If only one is a date, put the non-date at the end
-      if (isDateA) return -1;
-      if (isDateB) return 1;
-
-      // If neither is a date, maintain their relative order
-      return a.id.localeCompare(b.id);
+      // Compare years first
+      if (yearA !== yearB) return yearA - yearB;
+      // Then months
+      if (monthA !== monthB) return monthA - monthB;
+      // Then days
+      return dayA - dayB;
     });
 
     setEvents(fetchedEvents);
   };
 
-  const addEvent: AddEventFn = async (newDate, newDescription) => {
-    const date = new Date(newDate);
-    const adjustedDate = getAdjustedDate(date);
-    const dateId = getDateString(adjustedDate);
-    const docRef = doc(db, "countdowns", dateId);
+  const addEvent: AddEventFn = async (id, description, isCustomId = false) => {
+    if (!isCustomId) {
+      const date = new Date(id);
+      const adjustedDate = getAdjustedDate(date);
+      id = getDateString(adjustedDate);
+    }
 
-    // Check if document exists
+    const docRef = doc(db, "countdowns", id);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      // Add description to existing date
+      // Add description to existing date/id
       await updateDoc(docRef, {
-        descriptions: arrayUnion(newDescription),
+        descriptions: arrayUnion(description),
+        isCustomId,
       });
     } else {
-      // Create new document for this date
+      // Create new document
       await setDoc(docRef, {
-        descriptions: [newDescription],
+        descriptions: [description],
+        isCustomId,
       });
     }
 
@@ -131,13 +137,14 @@ export default function Countdown() {
   };
 
   const editEvent: EditEventFn = async (
-    oldDateId,
+    oldId,
     oldDescription,
-    newDate,
-    newDescription
+    newId,
+    newDescription,
+    isCustomId = false
   ) => {
-    // Remove from old date
-    const oldDocRef = doc(db, "countdowns", oldDateId);
+    // Remove from old ID
+    const oldDocRef = doc(db, "countdowns", oldId);
     const oldDocSnap = await getDoc(oldDocRef);
 
     if (oldDocSnap.exists()) {
@@ -153,22 +160,28 @@ export default function Countdown() {
       }
     }
 
-    // Add to new date
-    const date = new Date(newDate);
-    const adjustedDate = getAdjustedDate(date);
-    const newDateId = getDateString(adjustedDate);
-    const newDocRef = doc(db, "countdowns", newDateId);
+    // Format new ID if it's a date
+    if (!isCustomId) {
+      const date = new Date(newId);
+      const adjustedDate = getAdjustedDate(date);
+      newId = getDateString(adjustedDate);
+    }
 
+    // Add to new ID
+    const newDocRef = doc(db, "countdowns", newId);
     const newDocSnap = await getDoc(newDocRef);
+
     if (newDocSnap.exists()) {
-      // Add description to existing date
+      // Add description to existing date/id
       await updateDoc(newDocRef, {
         descriptions: arrayUnion(newDescription),
+        isCustomId,
       });
     } else {
-      // Create new document for this date
+      // Create new document
       await setDoc(newDocRef, {
         descriptions: [newDescription],
+        isCustomId,
       });
     }
 
@@ -200,9 +213,11 @@ export default function Countdown() {
     }
   };
 
-  const formatCountdown = (dateId: string) => {
+  const formatCountdown = (id: string, isCustomId?: boolean) => {
+    if (isCustomId) return id;
+
     // Parse the date from ID (MM-DD-YYYY)
-    const [month, day, year] = dateId.split("-").map(Number);
+    const [month, day, year] = id.split("-").map(Number);
     const date = new Date(year, month - 1, day); // month is 0-based
 
     // Get today's date at midnight for comparison
@@ -218,10 +233,14 @@ export default function Countdown() {
     return `D-${diffDays}`;
   };
 
+  const getExistingCustomIds = () => {
+    return events.filter((event) => event.isCustomId).map((event) => event.id);
+  };
+
   const formatMarkdown = (events: CountdownEvent[]) => {
     return events
       .map((event) => {
-        const countdown = formatCountdown(event.id);
+        const countdown = formatCountdown(event.id, event.isCustomId);
         return `# **${countdown}**\n${event.descriptions
           .map((desc) => `- ${desc}`)
           .join("\n")}`;
@@ -243,7 +262,10 @@ export default function Countdown() {
   return (
     <div className="flex gap-8 p-4">
       <div className="w-1/2 space-y-4">
-        <AddCountdownForm onAdd={addEvent} />
+        <AddCountdownForm
+          onAdd={addEvent}
+          existingCustomIds={getExistingCustomIds()}
+        />
       </div>
       <div className="w-1/2 space-y-4">
         <div className="flex flex-col gap-4 h-[750px] overflow-y-auto border border-primary rounded-md p-2">
@@ -251,10 +273,10 @@ export default function Countdown() {
             <div key={event.id} className="bg-accent rounded-2xl p-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">
-                  {formatCountdown(event.id)}
+                  {formatCountdown(event.id, event.isCustomId)}
                 </h2>
                 <span className="text-sm text-gray-500">
-                  {event.id.replace(/-/g, "/")}
+                  {event.isCustomId ? event.id : event.id.replace(/-/g, "/")}
                 </span>
               </div>
               <div className="space-y-3">
@@ -270,6 +292,8 @@ export default function Countdown() {
                         description={description}
                         onEdit={editEvent}
                         onCancel={() => setEditingEvent(null)}
+                        existingCustomIds={getExistingCustomIds()}
+                        isCustomId={event.isCustomId}
                       />
                     ) : (
                       <>

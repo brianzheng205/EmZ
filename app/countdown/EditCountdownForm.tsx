@@ -12,6 +12,8 @@ interface EditCountdownFormProps {
   description: string;
   onEdit: EditEventFn;
   onCancel: () => void;
+  existingCustomIds: string[];
+  isCustomId?: boolean;
 }
 
 export default function EditCountdownForm({
@@ -19,16 +21,16 @@ export default function EditCountdownForm({
   description,
   onEdit,
   onCancel,
+  existingCustomIds,
+  isCustomId = false,
 }: EditCountdownFormProps) {
   // Convert MM-DD-YYYY to YYYY-MM-DD for date input
   const [month, day, year] = dateId.split("-");
-  const formattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
-    2,
-    "0"
-  )}`;
+  const formattedDate = isCustomId ? dateId : `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 
-  const [newDate, setNewDate] = useState(formattedDate);
+  const [newId, setNewId] = useState(formattedDate);
   const [newDescription, setNewDescription] = useState(description);
+  const [isCustomInput, setIsCustomInput] = useState(isCustomId);
 
   // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date();
@@ -38,20 +40,22 @@ export default function EditCountdownForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDate || !newDescription.trim()) {
+    if (!newId || !newDescription.trim()) {
       return;
     }
 
-    // Additional check to prevent past dates
-    const selectedDate = getAdjustedDate(new Date(newDate));
-    today.setHours(0, 0, 0, 0);
+    if (!isCustomInput) {
+      // Additional check to prevent past dates
+      const selectedDate = getAdjustedDate(new Date(newId));
+      today.setHours(0, 0, 0, 0);
 
-    if (selectedDate < today) {
-      return;
+      if (selectedDate < today) {
+        return;
+      }
     }
 
     try {
-      await onEdit(dateId, description, newDate, newDescription.trim());
+      await onEdit(dateId, description, newId, newDescription.trim(), isCustomInput);
       onCancel();
     } catch (error) {
       console.error("Error editing countdown:", error);
@@ -61,17 +65,22 @@ export default function EditCountdownForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <CountdownFormInputs
-        date={newDate}
+        id={newId}
         description={newDescription}
-        onDateChange={setNewDate}
+        onIdChange={(id, isCustom) => {
+          setNewId(id);
+          setIsCustomInput(isCustom);
+        }}
         onDescriptionChange={setNewDescription}
         minDate={minDate}
+        existingCustomIds={existingCustomIds}
+        isCustomId={isCustomInput}
       />
       <div className="flex gap-2">
         <button
           type="submit"
           className="flex-1 bg-primary text-white p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!newDate || !newDescription.trim()}
+          disabled={!newId || !newDescription.trim()}
         >
           Save
         </button>

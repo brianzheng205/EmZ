@@ -1,13 +1,19 @@
 export type CountdownEvent = {
-  id: string; // date string like "1-6-2024"
+  id: string; // date string like "1-6-2024" or custom text
   descriptions: string[];
+  isCustomId?: boolean;
 };
 
-export type AddEventFn = (date: string, description: string) => Promise<void>;
+export type AddEventFn = (
+  id: string,
+  description: string,
+  isCustomId?: boolean
+) => Promise<void>;
 
 export type EditEventFn = (
-  oldDateId: string,
+  oldId: string,
   oldDescription: string,
-  newDate: string,
-  newDescription: string
+  newId: string,
+  newDescription: string,
+  isCustomId?: boolean
 ) => Promise<void>;
