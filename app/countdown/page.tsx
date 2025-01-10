@@ -15,7 +15,7 @@ import {
 import app from "../../firebase/client";
 
 import { useState, useEffect } from "react";
-import { FaPencilAlt, FaTimes, FaCopy } from "react-icons/fa";
+import { FaPencilAlt, FaTrash, FaCopy } from "react-icons/fa";
 
 import AddCountdownForm from "./AddCountdownForm";
 import EditCountdownForm from "./EditCountdownForm";
@@ -261,16 +261,16 @@ export default function Countdown() {
 
   return (
     <div className="flex gap-8 p-4">
-      <div className="w-1/2 space-y-4">
+      <section className="w-1/2 space-y-4">
         <AddCountdownForm
           onAdd={addEvent}
           existingCustomIds={getExistingCustomIds()}
         />
-      </div>
-      <div className="w-1/2 space-y-4">
+      </section>
+      <section className="w-1/2 space-y-4">
         <div className="flex flex-col gap-4 h-[750px] overflow-y-auto border border-primary rounded-md p-2">
           {events.map((event) => (
-            <div key={event.id} className="bg-accent rounded-2xl p-4">
+            <article key={event.id} className="bg-accent rounded-2xl p-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">
                   {formatCountdown(event.id, event.isCustomId)}
@@ -311,7 +311,7 @@ export default function Countdown() {
                             onClick={() => deleteEvent(event.id, description)}
                             className="text-primary hover:text-secondary"
                           >
-                            <FaTimes className="h-5 w-5" />
+                            <FaTrash className="h-4 w-4" />
                           </button>
                         </div>
                       </>
@@ -319,7 +319,7 @@ export default function Countdown() {
                   </div>
                 ))}
               </div>
-            </div>
+            </article>
           ))}
         </div>
         <button
@@ -329,7 +329,7 @@ export default function Countdown() {
           <FaCopy className="h-4 w-4" />
           {copySuccess ? "Copied!" : "Copy as Markdown"}
         </button>
-      </div>
+      </section>
     </div>
   );
 }
