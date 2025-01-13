@@ -4,14 +4,8 @@ import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
 import app from "../../firebase/client";
 
 import { useEffect, useState } from "react";
-import { updateDoc } from "firebase/firestore";
 
-import DataRow, {
-  calculateGross,
-  UneditableCell,
-  NullTableCell,
-} from "./table";
-import EditableCell from "./EditableCell";
+import DataRow, { calculateGross, UneditableCell } from "./table";
 
 import styles from "./styles";
 import "../globals.css";
@@ -127,19 +121,31 @@ export default function Finance() {
           </thead>
           <tbody>
             {[...postTax].map((category, index) => (
-              <tr key={`post-tax-${index}`} className={styles.border}>
+              <tr
+                key={`post-tax-${index}`}
+                className={`${styles.border} group`}
+              >
                 {index === 0 && (
                   <UneditableCell
-                    className={styles.bold}
+                    className={`${styles.bold} relative`}
                     tdProps={{ rowSpan: postTax.size }}
                   >
-                    Post-Tax
+                    <span>Post-Tax</span>
+                    <div className={styles.addRowContainer}>
+                      <button className={styles.addRowButton}>+</button>
+                    </div>
+                    <div className={styles.deleteRowContainer}>
+                      <button className={styles.deleteRowButton}>x</button>
+                    </div>
                   </UneditableCell>
                 )}
                 <UneditableCell
-                  className={`${styles.bold} ${styles.secondColumnEnd}`}
+                  className={`${styles.bold} ${styles.secondColumnEnd} relative`}
                 >
-                  {category}
+                  <span>{category}</span>
+                  <div className={styles.deleteRowContainer}>
+                    <button className={styles.deleteRowButton}>x</button>
+                  </div>
                 </UneditableCell>
                 <DataRow
                   category={category}
@@ -158,19 +164,28 @@ export default function Finance() {
               </tr>
             ))}
             {[...preTax].map((category, index) => (
-              <tr key={`pre-tax-${index}`} className={styles.border}>
+              <tr key={`pre-tax-${index}`} className={`${styles.border} group`}>
                 {index === 0 && (
                   <UneditableCell
-                    className={styles.bold}
+                    className={`relative ${styles.bold}`}
                     tdProps={{ rowSpan: preTax.size + 1 }}
                   >
                     Pre-Tax
+                    <div className={styles.addRowContainer}>
+                      <button className={styles.addRowButton}>+</button>
+                    </div>
+                    <div className={styles.deleteRowContainer}>
+                      <button className={styles.deleteRowButton}>x</button>
+                    </div>
                   </UneditableCell>
                 )}
                 <UneditableCell
-                  className={`${styles.bold} ${styles.secondColumnEnd}`}
+                  className={`${styles.bold} ${styles.secondColumnEnd} relative`}
                 >
-                  {category}
+                  <span>{category}</span>
+                  <div className={styles.deleteRowContainer}>
+                    <button className={styles.deleteRowButton}>x</button>
+                  </div>
                 </UneditableCell>
                 <DataRow
                   category={category}
@@ -206,6 +221,11 @@ export default function Finance() {
               </UneditableCell>
               <UneditableCell>100%</UneditableCell>
               <UneditableCell>${calculateGross(brianBudget)}</UneditableCell>
+            </tr>
+            <tr>
+              <td className={`${styles.border} ${styles.bold} ${styles.cell}`}>
+                <button className={`text-muted`}>+</button>
+              </td>
             </tr>
           </tbody>
         </table>
