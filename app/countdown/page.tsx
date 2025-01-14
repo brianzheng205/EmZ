@@ -15,10 +15,10 @@ import {
 import app from "../../firebase/client";
 
 import { useState, useEffect } from "react";
-import { FaPencilAlt, FaTrash, FaCopy } from "react-icons/fa";
+import { FaCopy } from "react-icons/fa";
 
-import AddCountdownForm from "./AddCountdownForm";
-import EditCountdownForm from "./EditCountdownForm";
+import AddCountdownForm from "./components/forms/AddCountdownForm";
+import CountdownEventCard from "./components/CountdownEventCard";
 
 import { CountdownEvent, AddEventFn, EditEventFn } from "./types";
 import { getAdjustedDate } from "../utils";
@@ -248,56 +248,16 @@ export default function Countdown() {
       <section className="w-1/2 space-y-4">
         <div className="flex flex-col gap-4 h-[750px] overflow-y-auto border border-primary rounded-md p-2">
           {events.map((event) => (
-            <article key={event.id} className="bg-accent rounded-2xl p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">
-                  {formatCountdown(event.id, event.isCustomId)}
-                </h2>
-                <span className="text-sm text-gray-500">
-                  {event.isCustomId ? event.id : event.id.replace(/-/g, "/")}
-                </span>
-              </div>
-              <div className="space-y-3">
-                {event.descriptions.map((description, index) => (
-                  <div
-                    key={`${event.id}-${index}`}
-                    className="flex justify-between items-start border-b border-primary/20 pb-3 last:border-0"
-                  >
-                    {editingEvent?.dateId === event.id &&
-                    editingEvent?.description === description ? (
-                      <EditCountdownForm
-                        dateId={event.id}
-                        description={description}
-                        onEdit={editEvent}
-                        onCancel={() => setEditingEvent(null)}
-                        existingCustomIds={getExistingCustomIds()}
-                        isCustomId={event.isCustomId}
-                      />
-                    ) : (
-                      <>
-                        <p>{description}</p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() =>
-                              setEditingEvent({ dateId: event.id, description })
-                            }
-                            className="text-primary hover:text-secondary"
-                          >
-                            <FaPencilAlt className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteEvent(event.id, description)}
-                            className="text-primary hover:text-secondary"
-                          >
-                            <FaTrash className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </article>
+            <CountdownEventCard
+              key={event.id}
+              event={event}
+              editingEvent={editingEvent}
+              setEditingEvent={setEditingEvent}
+              formatCountdown={formatCountdown}
+              editEvent={editEvent}
+              deleteEvent={deleteEvent}
+              getExistingCustomIds={getExistingCustomIds}
+            />
           ))}
         </div>
         <button

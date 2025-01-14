@@ -4,15 +4,18 @@ import { useState } from "react";
 
 import CountdownFormInputs from "./CountdownFormInputs";
 
-import { AddEventFn } from "./types";
-import { getAdjustedDate } from "../utils";
+import { AddEventFn } from "../../types";
+import { getAdjustedDate } from "../../../utils";
 
 interface AddCountdownFormProps {
   onAdd: AddEventFn;
   existingCustomIds: string[];
 }
 
-export default function AddCountdownForm({ onAdd, existingCustomIds }: AddCountdownFormProps) {
+export default function AddCountdownForm({
+  onAdd,
+  existingCustomIds,
+}: AddCountdownFormProps) {
   const [newId, setNewId] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [isCustomId, setIsCustomId] = useState(false);

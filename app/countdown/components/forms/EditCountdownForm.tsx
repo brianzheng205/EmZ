@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import CountdownFormInputs from "./CountdownFormInputs";
 
-import { EditEventFn } from "./types";
-import { getAdjustedDate } from "../utils";
+import { EditEventFn } from "../../types";
+import { getAdjustedDate } from "../../../utils";
 
 interface EditCountdownFormProps {
   dateId: string;
@@ -86,18 +86,18 @@ export default function EditCountdownForm({
       />
       <div className="flex gap-2">
         <button
-          type="submit"
-          className="flex-1 bg-primary text-white p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!newId || !newDescription.trim()}
-        >
-          Save
-        </button>
-        <button
           type="button"
           onClick={onCancel}
           className="flex-1 bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          className="flex-1 bg-primary text-white p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!newId || !newDescription.trim()}
+        >
+          Save
         </button>
       </div>
     </form>
