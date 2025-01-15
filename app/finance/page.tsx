@@ -1,6 +1,12 @@
 "use client";
 
-import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  DocumentData,
+  deleteField,
+} from "firebase/firestore";
 import app from "../../firebase/client";
 
 import { useEffect, useState } from "react";
@@ -87,11 +93,15 @@ export default function Finance() {
 
   useEffect(updatedBrianBudget, [brianBudgetPath]);
 
-  const postTax = new Set([
-    ...Object.keys(emilyBudget?.postTax || {}),
-    ...Object.keys(brianBudget?.postTax || {}),
-  ]);
+  useEffect(() => {
+    const newPostTax = new Set([
+      ...Object.keys(emilyBudget?.postTax || {}),
+      ...Object.keys(brianBudget?.postTax || {}),
+    ]);
+    setPostTax(newPostTax);
+  }, [emilyBudget, brianBudget]);
 
+  const [postTax, setPostTax] = useState<Set<string>>({});
   const preTax = new Set([
     ...Object.keys(emilyBudget?.preTax || {}),
     ...Object.keys(brianBudget?.preTax || {}),
@@ -120,49 +130,67 @@ export default function Finance() {
             </tr>
           </thead>
           <tbody>
-            {[...postTax].map((category, index) => (
-              <tr
-                key={`post-tax-${index}`}
-                className={`${styles.border} group`}
-              >
-                {index === 0 && (
+            {postTax.size > 0 &&
+              [...postTax].sort().map((category, index) => (
+                <tr
+                  key={`post-tax-${index}`}
+                  className={`${styles.border} group`}
+                >
+                  {index === 0 && (
+                    <UneditableCell
+                      className={`${styles.bold} relative`}
+                      tdProps={{
+                        rowSpan: postTax.size,
+                      }}
+                    >
+                      <span>Post-Tax</span>
+                      <div className={styles.addRowContainer}>
+                        <button
+                          className={styles.addRowButton}
+                          onClick={() => {
+                            let categoryName = "New Category";
+                            let i = 0;
+                            while (postTax.has(categoryName)) {
+                              i++;
+                              categoryName = `New Category ${i}`;
+                            }
+                            const newPostTax = new Set(postTax);
+                            newPostTax.add(categoryName);
+                            setPostTax(newPostTax);
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className={styles.deleteRowContainer}>
+                        <button className={styles.deleteRowButton}>x</button>
+                      </div>
+                    </UneditableCell>
+                  )}
                   <UneditableCell
-                    className={`${styles.bold} relative`}
-                    tdProps={{ rowSpan: postTax.size }}
+                    className={`${styles.bold} ${styles.secondColumnEnd} relative`}
                   >
-                    <span>Post-Tax</span>
-                    <div className={styles.addRowContainer}>
-                      <button className={styles.addRowButton}>+</button>
-                    </div>
+                    <span>{category}</span>
                     <div className={styles.deleteRowContainer}>
                       <button className={styles.deleteRowButton}>x</button>
                     </div>
                   </UneditableCell>
-                )}
-                <UneditableCell
-                  className={`${styles.bold} ${styles.secondColumnEnd} relative`}
-                >
-                  <span>{category}</span>
-                  <div className={styles.deleteRowContainer}>
-                    <button className={styles.deleteRowButton}>x</button>
-                  </div>
-                </UneditableCell>
-                <DataRow
-                  category={category}
-                  person={emilyBudget}
-                  updateFunction={updateEmilyBudget}
-                  budgetPath={emilyBudgetPath}
-                  isPreTax={false}
-                />
-                <DataRow
-                  category={category}
-                  person={brianBudget}
-                  updateFunction={updatedBrianBudget}
-                  budgetPath={brianBudgetPath}
-                  isPreTax={false}
-                />
-              </tr>
-            ))}
+                  <DataRow
+                    category={category}
+                    person={emilyBudget}
+                    updateFunction={updateEmilyBudget}
+                    budgetPath={emilyBudgetPath}
+                    isPreTax={false}
+                  />
+                  <DataRow
+                    category={category}
+                    person={brianBudget}
+                    updateFunction={updatedBrianBudget}
+                    budgetPath={brianBudgetPath}
+                    isPreTax={false}
+                  />
+                </tr>
+              ))}
             {[...preTax].map((category, index) => (
               <tr key={`pre-tax-${index}`} className={`${styles.border} group`}>
                 {index === 0 && (
