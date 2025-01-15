@@ -4,6 +4,7 @@ import {
   getFirestore,
   doc,
   getDoc,
+  updateDoc,
   DocumentData,
   deleteField,
 } from "firebase/firestore";
@@ -85,13 +86,13 @@ export default function Finance() {
     updateBudget(emilyBudgetPath, setEmilyBudget);
   };
 
-  const updatedBrianBudget = () => {
+  const updateBrianBudget = () => {
     updateBudget(brianBudgetPath, setBrianBudget);
   };
 
   useEffect(updateEmilyBudget, [emilyBudgetPath]);
 
-  useEffect(updatedBrianBudget, [brianBudgetPath]);
+  useEffect(updateBrianBudget, [brianBudgetPath]);
 
   useEffect(() => {
     const newPostTax = new Set([
@@ -106,6 +107,27 @@ export default function Finance() {
     ...Object.keys(emilyBudget?.preTax || {}),
     ...Object.keys(brianBudget?.preTax || {}),
   ]);
+
+  const handleDeleteCategory = async (category: string) => {
+    const db = getFirestore(app);
+    const brianRef = doc(db, brianBudgetPath.join("/"));
+    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+    console.log("here");
+    if (brianBudget?.postTax?.[category]) {
+      updateDoc(brianRef, {
+        [`postTax.${category}`]: deleteField(),
+      });
+    }
+
+    if (emilyBudget?.postTax?.[category]) {
+      updateDoc(emilyRef, {
+        [`postTax.${category}`]: deleteField(),
+      });
+    }
+
+    updateEmilyBudget();
+    updateBrianBudget();
+  };
 
   return (
     <div className="flex justify-center">
@@ -163,7 +185,12 @@ export default function Finance() {
                         </button>
                       </div>
                       <div className={styles.deleteRowContainer}>
-                        <button className={styles.deleteRowButton}>x</button>
+                        <button
+                          className={styles.deleteRowButton}
+                          onClick={() => {}}
+                        >
+                          x
+                        </button>
                       </div>
                     </UneditableCell>
                   )}
@@ -172,7 +199,12 @@ export default function Finance() {
                   >
                     <span>{category}</span>
                     <div className={styles.deleteRowContainer}>
-                      <button className={styles.deleteRowButton}>x</button>
+                      <button
+                        className={styles.deleteRowButton}
+                        onClick={() => handleDeleteCategory(category)}
+                      >
+                        x
+                      </button>
                     </div>
                   </UneditableCell>
                   <DataRow
@@ -185,7 +217,7 @@ export default function Finance() {
                   <DataRow
                     category={category}
                     person={brianBudget}
-                    updateFunction={updatedBrianBudget}
+                    updateFunction={updateBrianBudget}
                     budgetPath={brianBudgetPath}
                     isPreTax={false}
                   />
@@ -225,7 +257,7 @@ export default function Finance() {
                 <DataRow
                   category={category}
                   person={brianBudget}
-                  updateFunction={updatedBrianBudget}
+                  updateFunction={updateBrianBudget}
                   budgetPath={brianBudgetPath}
                   isPreTax
                 />

@@ -125,7 +125,7 @@ export default function DataRow(props: {
     yearlyIncome = calculateYearlyTakeHome(props.person);
   }
 
-  function updateBudgetValue(amount: number, time: string) {
+  async function updateBudgetValue(amount: number, time: string) {
     const db = getFirestore(app);
 
     const path = props.budgetPath.join("/");
@@ -133,14 +133,14 @@ export default function DataRow(props: {
     const docRef = doc(db, path);
 
     if (props.isPreTax) {
-      updateDoc(docRef, {
+      await updateDoc(docRef, {
         [`preTax.${props.category}`]: {
           amount: amount,
           time: time,
         },
       });
     } else {
-      updateDoc(docRef, {
+      await updateDoc(docRef, {
         [`postTax.${props.category}`]: {
           amount: amount,
           time: time,
