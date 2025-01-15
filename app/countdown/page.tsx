@@ -1,157 +1,273 @@
 "use client";
 
-import { useState } from "react";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  deleteDoc,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+} from "firebase/firestore";
+import app from "../../firebase/client";
+
+import { useState, useEffect } from "react";
+import { FaCopy } from "react-icons/fa";
+
+import AddCountdownForm from "./components/forms/AddCountdownForm";
+import CountdownEventCard from "./components/CountdownEventCard";
+
+import { CountdownEvent, AddEventFn, EditEventFn } from "./types";
+import { getAdjustedDate } from "../utils";
 
 import "../globals.css";
 
-type CountdownDays = "TODAY" | "∞" | number;
+const db = getFirestore(app);
 
-type CountdownItem = {
-  days: CountdownDays;
-  events: string[];
+const getDateString = (date: Date) => {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
 };
 
-function parseCountdowns(text: string): CountdownItem[] {
-  const lines = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-  const countdowns: CountdownItem[] = [];
-  let currentDays: CountdownDays | null = null;
-  let currentEvents: string[] = [];
-
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      if (currentDays !== null && currentEvents.length > 0) {
-        countdowns.push({ days: currentDays, events: [...currentEvents] });
-        currentEvents = [];
-      }
-
-      const daysMatch = line.match(/TODAY|D-(\d+|♾️|∞)/);
-      if (daysMatch) {
-        if (daysMatch[0] === "TODAY") {
-          currentDays = "TODAY";
-        } else if (daysMatch[1] === "♾️" || daysMatch[1] === "∞") {
-          currentDays = "∞";
-        } else {
-          currentDays = parseInt(daysMatch[1]);
-        }
-      }
-    } else if (line.startsWith("-") && currentDays !== null) {
-      const event = line.substring(1).trim();
-      if (event) {
-        currentEvents.push(event);
-      }
-    }
-  }
-
-  if (currentDays !== null && currentEvents.length > 0) {
-    countdowns.push({ days: currentDays, events: [...currentEvents] });
-  }
-
-  return countdowns.sort((a, b) => {
-    if (a.days === "∞") return 1;
-    if (b.days === "∞") return -1;
-    if (a.days === "TODAY") return -1;
-    if (b.days === "TODAY") return 1;
-    if (typeof a.days === "number" && typeof b.days === "number") {
-      return a.days - b.days;
-    }
-    return 0;
-  });
-}
-
-function updateCountdowns(countdowns: CountdownItem[]): CountdownItem[] {
-  return countdowns
-    .map((item) => {
-      if (item.days === "∞") return item;
-      if (item.days === "TODAY") return null;
-      if (item.days === 1) {
-        return { days: "TODAY", events: item.events };
-      }
-      if (typeof item.days === "number") {
-        return { days: item.days - 1, events: item.events };
-      }
-      return item;
-    })
-    .filter((item): item is CountdownItem => item !== null)
-    .sort((a, b) => {
-      if (a.days === "∞") return 1;
-      if (b.days === "∞") return -1;
-      if (a.days === "TODAY") return -1;
-      if (b.days === "TODAY") return 1;
-      if (typeof a.days === "number" && typeof b.days === "number") {
-        return a.days - b.days;
-      }
-      return 0;
-    });
-}
-
-function formatCountdowns(countdowns: CountdownItem[]): string {
-  return countdowns
-    .map((item) => {
-      const header =
-        item.days === "∞"
-          ? "# **D-∞**"
-          : item.days === "TODAY"
-          ? "# **TODAY**"
-          : `# **D-${item.days}**`;
-      const events = item.events.map((event) => `- ${event}`).join("\n");
-      return `${header}\n${events}`;
-    })
-    .join("\n");
-}
-
 export default function Countdown() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState<CountdownItem[]>([]);
+  const [events, setEvents] = useState<CountdownEvent[]>([]);
+  const [editingEvent, setEditingEvent] = useState<{
+    dateId: string;
+    description: string;
+  } | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
-  const copyToClipboard = () => {
-    const formattedText = formatCountdowns(output);
-    navigator.clipboard.writeText(formattedText);
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    const eventsRef = collection(db, "countdowns");
+    const querySnapshot = await getDocs(eventsRef);
+
+    const fetchedEvents: CountdownEvent[] = [];
+
+    querySnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      fetchedEvents.push({
+        id: doc.id,
+        descriptions: data.descriptions || [],
+        isCustomId: data.isCustomId,
+      });
+    });
+
+    // Sort events: custom IDs first, then dates
+    fetchedEvents.sort((a, b) => {
+      // Custom IDs go last
+      if (a.isCustomId && !b.isCustomId) return 1;
+      if (!a.isCustomId && b.isCustomId) return -1;
+
+      // If both are custom IDs, sort alphabetically
+      if (a.isCustomId && b.isCustomId) {
+        return a.id.localeCompare(b.id);
+      }
+
+      // If both are dates, sort chronologically
+      const [monthA, dayA, yearA] = a.id.split("-").map(Number);
+      const [monthB, dayB, yearB] = b.id.split("-").map(Number);
+
+      // Compare years first
+      if (yearA !== yearB) return yearA - yearB;
+      // Then months
+      if (monthA !== monthB) return monthA - monthB;
+      // Then days
+      return dayA - dayB;
+    });
+
+    setEvents(fetchedEvents);
+  };
+
+  const addEvent: AddEventFn = async (id, description, isCustomId = false) => {
+    if (!isCustomId) {
+      const date = new Date(id);
+      const adjustedDate = getAdjustedDate(date);
+      id = getDateString(adjustedDate);
+    }
+
+    const docRef = doc(db, "countdowns", id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      // Add description to existing date/id
+      await updateDoc(docRef, {
+        descriptions: arrayUnion(description),
+        isCustomId,
+      });
+    } else {
+      // Create new document
+      await setDoc(docRef, {
+        descriptions: [description],
+        isCustomId,
+      });
+    }
+
+    fetchEvents();
+  };
+
+  const editEvent: EditEventFn = async (
+    oldId,
+    oldDescription,
+    newId,
+    newDescription,
+    isCustomId = false
+  ) => {
+    // Remove from old ID
+    const oldDocRef = doc(db, "countdowns", oldId);
+    const oldDocSnap = await getDoc(oldDocRef);
+
+    if (oldDocSnap.exists()) {
+      const descriptions = oldDocSnap.data().descriptions;
+      if (descriptions.length === 1) {
+        // If this was the only description, delete the document
+        await deleteDoc(oldDocRef);
+      } else {
+        // Remove the old description
+        await updateDoc(oldDocRef, {
+          descriptions: arrayRemove(oldDescription),
+        });
+      }
+    }
+
+    // Format new ID if it's a date
+    if (!isCustomId) {
+      const date = new Date(newId);
+      const adjustedDate = getAdjustedDate(date);
+      newId = getDateString(adjustedDate);
+    }
+
+    // Add to new ID
+    const newDocRef = doc(db, "countdowns", newId);
+    const newDocSnap = await getDoc(newDocRef);
+
+    if (newDocSnap.exists()) {
+      // Add description to existing date/id
+      await updateDoc(newDocRef, {
+        descriptions: arrayUnion(newDescription),
+        isCustomId,
+      });
+    } else {
+      // Create new document
+      await setDoc(newDocRef, {
+        descriptions: [newDescription],
+        isCustomId,
+      });
+    }
+
+    fetchEvents();
+  };
+
+  const deleteEvent = async (dateId: string, description: string) => {
+    try {
+      const docRef = doc(db, "countdowns", dateId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const currentDescriptions = docSnap.data().descriptions;
+
+        if (currentDescriptions.length === 1) {
+          // If this is the last description, delete the whole document
+          await deleteDoc(docRef);
+        } else {
+          // Remove just this description
+          await updateDoc(docRef, {
+            descriptions: arrayRemove(description),
+          });
+        }
+
+        fetchEvents();
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
+
+  const formatCountdown = (id: string, isCustomId?: boolean) => {
+    if (isCustomId) return id;
+
+    // Parse the date from ID (MM-DD-YYYY)
+    const [month, day, year] = id.split("-").map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-based
+
+    // Get today's date at midnight for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Calculate days difference
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "TODAY";
+    if (diffDays < 0) return "PAST";
+    return `D-${diffDays}`;
+  };
+
+  const getExistingCustomIds = () => {
+    return events.filter((event) => event.isCustomId).map((event) => event.id);
+  };
+
+  const formatMarkdown = (events: CountdownEvent[]) => {
+    return events
+      .map((event) => {
+        const countdown = formatCountdown(event.id, event.isCustomId);
+        return `# **${countdown}**\n${event.descriptions
+          .map((desc) => `- ${desc}`)
+          .join("\n")}`;
+      })
+      .join("\n");
+  };
+
+  const copyToClipboard = async () => {
+    const markdown = formatMarkdown(events);
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   return (
     <div className="flex gap-8 p-4">
-      <div className="w-1/2 space-y-4">
-        <textarea
-          className="w-full p-4 text-xl border border-primary rounded-md font-mono h-[750px] bg-accent"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+      <section className="w-1/2 space-y-4">
+        <AddCountdownForm
+          onAdd={addEvent}
+          existingCustomIds={getExistingCustomIds()}
         />
-        <button
-          className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary"
-          onClick={() => setOutput(updateCountdowns(parseCountdowns(input)))}
-        >
-          Next Day
-        </button>
-      </div>
-      <div className="w-1/2 space-y-4">
+      </section>
+      <section className="w-1/2 space-y-4">
         <div className="flex flex-col gap-4 h-[750px] overflow-y-auto border border-primary rounded-md p-2">
-          {output.map((item, index) => (
-            <div key={index} className="bg-accent rounded-2xl p-4">
-              <h2 className="text-xl font-bold mb-2">
-                {item.days === "∞"
-                  ? "D-∞"
-                  : item.days === "TODAY"
-                  ? "TODAY"
-                  : `D-${item.days}`}
-              </h2>
-              <ul className="list-disc list-inside space-y-1">
-                {item.events.map((event, eventIndex) => (
-                  <li key={eventIndex}>{event}</li>
-                ))}
-              </ul>
-            </div>
+          {events.map((event) => (
+            <CountdownEventCard
+              key={event.id}
+              event={event}
+              editingEvent={editingEvent}
+              setEditingEvent={setEditingEvent}
+              formatCountdown={formatCountdown}
+              editEvent={editEvent}
+              deleteEvent={deleteEvent}
+              getExistingCustomIds={getExistingCustomIds}
+            />
           ))}
         </div>
         <button
-          className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-secondary"
           onClick={copyToClipboard}
+          className="w-full flex items-center justify-center gap-2 bg-primary text-white p-2 rounded-md hover:bg-secondary transition-colors"
         >
-          Copy Updated Countdowns
+          <FaCopy className="h-4 w-4" />
+          {copySuccess ? "Copied!" : "Copy as Markdown"}
         </button>
-      </div>
+      </section>
     </div>
   );
 }
