@@ -1,6 +1,13 @@
 "use client";
 
-import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  DocumentData,
+  deleteField,
+} from "firebase/firestore";
 import app from "../../firebase/client";
 
 import { useEffect, useState } from "react";
@@ -79,24 +86,111 @@ export default function Finance() {
     updateBudget(emilyBudgetPath, setEmilyBudget);
   };
 
-  const updatedBrianBudget = () => {
+  const updateBrianBudget = () => {
     updateBudget(brianBudgetPath, setBrianBudget);
   };
 
   useEffect(updateEmilyBudget, [emilyBudgetPath]);
 
-  useEffect(updatedBrianBudget, [brianBudgetPath]);
+  useEffect(updateBrianBudget, [brianBudgetPath]);
 
-  const postTax = new Set([
-    ...Object.keys(emilyBudget?.postTax || {}),
-    ...Object.keys(brianBudget?.postTax || {}),
-  ]);
+  useEffect(() => {
+    let newSections = {};
+    const sects = new Set([
+      ...Object.keys(emilyBudget || {}),
+      ...Object.keys(brianBudget || {}),
+    ]);
+    [...sects].forEach((section) => {
+      newSections[section] = {
+        categories: new Set([
+          ...Object.keys(emilyBudget?.[section]?.categories || {}),
+          ...Object.keys(brianBudget?.[section]?.categories || {}),
+        ]),
+        isPreTax:
+          emilyBudget?.[section]?.isPreTax ||
+          brianBudget?.[section]?.isPreTax ||
+          false,
+      };
+    });
 
-  const preTax = new Set([
-    ...Object.keys(emilyBudget?.preTax || {}),
-    ...Object.keys(brianBudget?.preTax || {}),
-  ]);
+    setSections(newSections);
+  }, [emilyBudget, brianBudget]);
 
+  interface Section {
+    categories: Set<string>;
+    isPreTax: boolean;
+  }
+
+  const [sections, setSections] = useState<{ [key: string]: Section }>({});
+
+  const generateUniqueCategory = (base: string, list: Set<string>) => {
+    let name = base;
+    let i = 0;
+    while (list.has(name)) {
+      i++;
+      name = `${base} ${i}`;
+    }
+    return name;
+  };
+
+  const generateUniqueSection = (
+    base: string,
+    list: { [key: string]: Section }
+  ) => {
+    let name = base;
+    let i = 0;
+    while (list[name]) {
+      i++;
+      name = `${base} ${i}`;
+    }
+    return name;
+  };
+
+  const handleDeleteCategory = async (section: string, category: string) => {
+    const db = getFirestore(app);
+    const brianRef = doc(db, brianBudgetPath.join("/"));
+    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+    if (brianBudget?.[section]?.categories[category]) {
+      updateDoc(brianRef, {
+        [`${section}.categories.${category}`]: deleteField(),
+      });
+    }
+
+    if (emilyBudget?.[section]?.categories[category]) {
+      updateDoc(emilyRef, {
+        [`${section}.categories.${category}`]: deleteField(),
+      });
+    }
+
+    updateEmilyBudget();
+    updateBrianBudget();
+  };
+
+  const handleDeleteSection = async (section: string) => {
+    const db = getFirestore(app);
+    const brianRef = doc(db, brianBudgetPath.join("/"));
+    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+    if (brianBudget?.[section]) {
+      updateDoc(brianRef, {
+        [section]: deleteField(),
+      });
+    }
+
+    if (emilyBudget?.[section]) {
+      updateDoc(emilyRef, {
+        [section]: deleteField(),
+      });
+    }
+
+    updateEmilyBudget();
+    updateBrianBudget();
+  };
+
+  const handleTaxPropertyUpdate = (section: string) => {
+    const newSections = { ...sections };
+    newSections[section].isPreTax = !newSections[section].isPreTax;
+    setSections(newSections);
+  };
   return (
     <div className="flex justify-center">
       <div className={styles.tableWrapper}>
@@ -120,89 +214,91 @@ export default function Finance() {
             </tr>
           </thead>
           <tbody>
-            {[...postTax].map((category, index) => (
-              <tr
-                key={`post-tax-${index}`}
-                className={`${styles.border} group`}
-              >
-                {index === 0 && (
-                  <UneditableCell
-                    className={`${styles.bold} relative`}
-                    tdProps={{ rowSpan: postTax.size }}
-                  >
-                    <span>Post-Tax</span>
-                    <div className={styles.addRowContainer}>
-                      <button className={styles.addRowButton}>+</button>
-                    </div>
-                    <div className={styles.deleteRowContainer}>
-                      <button className={styles.deleteRowButton}>x</button>
-                    </div>
-                  </UneditableCell>
-                )}
-                <UneditableCell
-                  className={`${styles.bold} ${styles.secondColumnEnd} relative`}
-                >
-                  <span>{category}</span>
-                  <div className={styles.deleteRowContainer}>
-                    <button className={styles.deleteRowButton}>x</button>
-                  </div>
-                </UneditableCell>
-                <DataRow
-                  category={category}
-                  person={emilyBudget}
-                  updateFunction={updateEmilyBudget}
-                  budgetPath={emilyBudgetPath}
-                  isPreTax={false}
-                />
-                <DataRow
-                  category={category}
-                  person={brianBudget}
-                  updateFunction={updatedBrianBudget}
-                  budgetPath={brianBudgetPath}
-                  isPreTax={false}
-                />
-              </tr>
-            ))}
-            {[...preTax].map((category, index) => (
-              <tr key={`pre-tax-${index}`} className={`${styles.border} group`}>
-                {index === 0 && (
-                  <UneditableCell
-                    className={`relative ${styles.bold}`}
-                    tdProps={{ rowSpan: preTax.size + 1 }}
-                  >
-                    Pre-Tax
-                    <div className={styles.addRowContainer}>
-                      <button className={styles.addRowButton}>+</button>
-                    </div>
-                    <div className={styles.deleteRowContainer}>
-                      <button className={styles.deleteRowButton}>x</button>
-                    </div>
-                  </UneditableCell>
-                )}
-                <UneditableCell
-                  className={`${styles.bold} ${styles.secondColumnEnd} relative`}
-                >
-                  <span>{category}</span>
-                  <div className={styles.deleteRowContainer}>
-                    <button className={styles.deleteRowButton}>x</button>
-                  </div>
-                </UneditableCell>
-                <DataRow
-                  category={category}
-                  person={emilyBudget}
-                  updateFunction={updateEmilyBudget}
-                  budgetPath={emilyBudgetPath}
-                  isPreTax
-                />
-                <DataRow
-                  category={category}
-                  person={brianBudget}
-                  updateFunction={updatedBrianBudget}
-                  budgetPath={brianBudgetPath}
-                  isPreTax
-                />
-              </tr>
-            ))}
+            {Object.keys(sections)
+              .sort()
+              .map((section, i) =>
+                [...sections[section].categories]
+                  .sort()
+                  .map((category, index) => (
+                    <tr key={index} className={`${styles.border} group`}>
+                      {index === 0 && (
+                        <UneditableCell
+                          className={`${styles.bold} relative`}
+                          tdProps={{
+                            rowSpan:
+                              i === Object.keys(sections).length - 1
+                                ? sections[section].categories.size + 1
+                                : sections[section].categories.size,
+                          }}
+                        >
+                          <div>{section}</div>
+                          <div onClick={() => handleTaxPropertyUpdate(section)}>
+                            {sections[section].isPreTax
+                              ? "(Pre-Tax)"
+                              : "(Post-Tax)"}
+                          </div>
+                          <div className={styles.addRowContainer}>
+                            <button
+                              className={styles.addRowButton}
+                              onClick={() => {
+                                const categoryName = generateUniqueCategory(
+                                  "New Category",
+                                  sections[section].categories
+                                );
+                                const newSections = { ...sections };
+                                newSections[section].categories.add(
+                                  categoryName
+                                );
+                                setSections(newSections);
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className={styles.deleteRowContainer}>
+                            <button
+                              className={styles.deleteRowButton}
+                              onClick={() => handleDeleteSection(section)}
+                            >
+                              x
+                            </button>
+                          </div>
+                        </UneditableCell>
+                      )}
+                      <UneditableCell
+                        className={`${styles.bold} ${styles.secondColumnEnd} relative`}
+                      >
+                        <span>{category}</span>
+                        <div className={styles.deleteRowContainer}>
+                          <button
+                            className={styles.deleteRowButton}
+                            onClick={() =>
+                              handleDeleteCategory(section, category)
+                            }
+                          >
+                            x
+                          </button>
+                        </div>
+                      </UneditableCell>
+                      <DataRow
+                        section={section}
+                        category={category}
+                        person={emilyBudget}
+                        updateFunction={updateEmilyBudget}
+                        budgetPath={emilyBudgetPath}
+                        isPreTax={sections[section].isPreTax}
+                      />
+                      <DataRow
+                        section={section}
+                        category={category}
+                        person={brianBudget}
+                        updateFunction={updateBrianBudget}
+                        budgetPath={brianBudgetPath}
+                        isPreTax={sections[section].isPreTax}
+                      />
+                    </tr>
+                  ))
+              )}
             <tr>
               <UneditableCell
                 className={`${styles.bold} ${styles.secondColumnEnd}`}
@@ -224,7 +320,25 @@ export default function Finance() {
             </tr>
             <tr>
               <td className={`${styles.border} ${styles.bold} ${styles.cell}`}>
-                <button className={`text-muted`}>+</button>
+                <button
+                  className={`text-muted`}
+                  onClick={() => {
+                    const newSectionName = generateUniqueSection(
+                      "New Section",
+                      sections
+                    );
+                    const newSections = {
+                      ...sections,
+                      [newSectionName]: {
+                        categories: new Set<string>(["New Category"]),
+                        isPreTax: false,
+                      },
+                    };
+                    setSections(newSections);
+                  }}
+                >
+                  +
+                </button>
               </td>
             </tr>
           </tbody>

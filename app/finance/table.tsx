@@ -91,16 +91,17 @@ export function NullTableCell() {
 }
 
 export default function DataRow(props: {
+  section: string;
   category: string;
   person: DocumentData;
   updateFunction: () => void;
   budgetPath: string[];
   isPreTax: boolean;
 }) {
-  const data: RowData | undefined = props.isPreTax
-    ? props.person?.preTax?.[props.category]
-    : props.person?.postTax?.[props.category];
+  const data: RowData | undefined =
+    props.person?.[props.section]?.categories?.[props.category];
 
+  console.log(data);
   if (!data)
     return (
       <>
@@ -125,28 +126,21 @@ export default function DataRow(props: {
     yearlyIncome = calculateYearlyTakeHome(props.person);
   }
 
-  function updateBudgetValue(amount: number, time: string) {
+  async function updateBudgetValue(amount: number, time: string) {
     const db = getFirestore(app);
 
     const path = props.budgetPath.join("/");
 
     const docRef = doc(db, path);
 
-    if (props.isPreTax) {
-      updateDoc(docRef, {
-        [`preTax.${props.category}`]: {
-          amount: amount,
-          time: time,
-        },
-      });
-    } else {
-      updateDoc(docRef, {
-        [`postTax.${props.category}`]: {
-          amount: amount,
-          time: time,
-        },
-      });
-    }
+    await updateDoc(docRef, {
+      [`${props.section}.categories.${props.category}`]: {
+        amount: amount,
+        time: time,
+      },
+      [`${props.section}.isPreTax`]: props.isPreTax,
+    });
+
     props.updateFunction();
   }
 
