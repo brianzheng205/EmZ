@@ -91,16 +91,17 @@ export function NullTableCell() {
 }
 
 export default function DataRow(props: {
+  section: string;
   category: string;
   person: DocumentData;
   updateFunction: () => void;
   budgetPath: string[];
   isPreTax: boolean;
 }) {
-  const data: RowData | undefined = props.isPreTax
-    ? props.person?.preTax?.[props.category]
-    : props.person?.postTax?.[props.category];
+  const data: RowData | undefined =
+    props.person?.[props.section]?.categories?.[props.category];
 
+  console.log(data);
   if (!data)
     return (
       <>
@@ -132,21 +133,14 @@ export default function DataRow(props: {
 
     const docRef = doc(db, path);
 
-    if (props.isPreTax) {
-      await updateDoc(docRef, {
-        [`preTax.${props.category}`]: {
-          amount: amount,
-          time: time,
-        },
-      });
-    } else {
-      await updateDoc(docRef, {
-        [`postTax.${props.category}`]: {
-          amount: amount,
-          time: time,
-        },
-      });
-    }
+    await updateDoc(docRef, {
+      [`${props.section}.categories.${props.category}`]: {
+        amount: amount,
+        time: time,
+      },
+      [`${props.section}.isPreTax`]: props.isPreTax,
+    });
+
     props.updateFunction();
   }
 
