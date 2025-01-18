@@ -30,9 +30,11 @@ export default function RootLayout({
           </Link>
         </div>
 
-        <div className="flex flex-grow">
+        <div className="flex flex-grow h-[calc(100vh-64px)]">
           <SideBar isOpen={isSideBarOpen} />
-          <div className="flex flex-col flex-grow p-4">{children}</div>
+          <div className="flex flex-col flex-grow overflow-y-auto p-8">
+            {children}
+          </div>
         </div>
       </body>
     </html>

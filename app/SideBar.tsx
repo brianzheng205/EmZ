@@ -24,6 +24,11 @@ export const routes = [
     label: "Countdown",
     icon: <FiCalendar />,
   },
+  {
+    route: "/specialOccasions",
+    label: "Special Occasions",
+    icon: <FiCalendar />,
+  },
 ];
 
 const styles = {
