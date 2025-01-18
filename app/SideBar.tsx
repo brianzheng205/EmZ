@@ -9,10 +9,11 @@ import {
   FiHome,
   FiCalendar,
 } from "react-icons/fi";
+import { Route } from "./components/RoutePage";
 
 import "./globals.css";
 
-export const routes = [
+export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },
   {
     route: "/finance",
@@ -50,7 +51,11 @@ function RouterContainer(props: { route: string; children: React.ReactNode }) {
   );
 }
 
-function Route(props: { route: string; label: string; icon: React.ReactNode }) {
+function SideBarRoute(props: {
+  route: string;
+  label: string;
+  icon: React.ReactNode;
+}) {
   return (
     <RouterContainer route={props.route}>
       <div>{props.icon}</div>
@@ -69,9 +74,9 @@ export default function SideBar(props: { isOpen: boolean }) {
       }`}
     >
       <ul className="flex flex-col gap-2 p-4">
-        {routes.map(({ route, label, icon }) => (
+        {ROUTES.map(({ route, label, icon }) => (
           <li key={route}>
-            <Route route={route} label={label} icon={icon} />
+            <SideBarRoute route={route} label={label} icon={icon} />
           </li>
         ))}
       </ul>

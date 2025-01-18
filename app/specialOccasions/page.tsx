@@ -1,14 +1,19 @@
-import Link from "next/link";
+"use client";
+
+import RoutePage from "../components/RoutePage";
+import { FiCalendar } from "react-icons/fi";
+import { Route } from "../components/RoutePage";
+
+const SPECIAL_OCCASION_ROUTES: Route[] = [
+  {
+    route: "/specialOccasions/2024",
+    label: "2024",
+    icon: <FiCalendar />,
+  },
+];
 
 export default function Home() {
   return (
-    <div>
-      <h1>Special Occasions</h1>
-      <div>
-        <Link href="/specialOccasions/anniversary">
-          <p>Anniversaries</p>
-        </Link>
-      </div>
-    </div>
+    <RoutePage title="Special Occasions" routes={SPECIAL_OCCASION_ROUTES} />
   );
 }
