@@ -4,7 +4,7 @@ import RoutePage from "../components/RoutePage";
 import { FiCalendar } from "react-icons/fi";
 import { Route } from "../components/RoutePage";
 
-const SPECIAL_OCCASION_ROUTES: Route[] = [
+const ROUTES: Route[] = [
   {
     route: "/specialOccasions/2024",
     label: "2024",
@@ -13,7 +13,5 @@ const SPECIAL_OCCASION_ROUTES: Route[] = [
 ];
 
 export default function Home() {
-  return (
-    <RoutePage title="Special Occasions" routes={SPECIAL_OCCASION_ROUTES} />
-  );
+  return <RoutePage title="Special Occasions" routes={ROUTES} />;
 }

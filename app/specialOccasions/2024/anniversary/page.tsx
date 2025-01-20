@@ -9,14 +9,17 @@ export default function Anniversary2024() {
         autoPlay
         loop
         playsInline
-        className="fixed top-0 left-0 w-full h-full object-cover -z-10"
+        className="fixed bottom-0 left-0 w-full h-[calc(100vh-64px)] object-cover -z-10"
       >
-        <source src="/YourName.mp4" type="video/mp4" />
+        <source
+          src="/specialOccasions/2024/anniversary/YourName.mp4"
+          type="video/mp4"
+        />
         Your browser does not support the video tag.
       </video>
 
       <div className="flex flex-col gap-[100vh] text-white">
-        <div className="flex flex-col justify-center items-center h-[calc(100vh-208px)]">
+        <div className="flex flex-col justify-center items-center h-[calc(100vh-128px)]">
           <h1 className="text-[15rem] text-center font-bold [text-shadow:-2px_-2px_0_#000,2px_-2px_0_#000,-2px_2px_0_#000,2px_2px_0_#000]">
             2024 Anniversary
           </h1>
@@ -58,7 +61,7 @@ export default function Anniversary2024() {
         </div>
         <div className="flex flex-col justify-center items-center h-[calc(100vh-64px)]">
           <img
-            src="/sleepy.png"
+            src="/specialOccasions/2024/anniversary/sleepy.png"
             className="max-w-[90%] cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-90"
           />
         </div>
