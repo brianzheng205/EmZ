@@ -18,7 +18,7 @@ const styles = {
     "h-full px-5 py-2.5 text-xl text-white font-bold rounded bg-primary hover:bg-secondary cursor-pointer",
 };
 
-export default function Page() {
+export default function Valentines() {
   const [currentPrompt, setCurrentPrompt] = useState<PromptId>("question");
   const [topPosition, setTopPosition] = useState(0);
   const [leftPosition, setLeftPosition] = useState(0);

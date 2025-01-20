@@ -2,9 +2,9 @@ const styles = {
   text: "text-3xl font-bold [text-shadow:-1px_-1px_0_#000,1px_-1px_0_#000,-1px_1px_0_#000,1px_1px_0_#000]",
 };
 
-export default function Anniversary2024() {
+export default function Anniversary() {
   return (
-    <div className="relative">
+    <div>
       <video
         autoPlay
         loop

@@ -18,7 +18,7 @@ export default function RoutePage(props: RoutePageProps) {
   return (
     <div className="flex flex-col items-center gap-16 w-full">
       <h1 className="text-8xl">{props.title}</h1>
-      <div className="grid grid-cols-2 gap-4 justify-items-stretch w-full">
+      <div className="grid grid-cols-3 gap-4 justify-items-stretch w-full">
         {props.routes.map(({ label, route, icon }) => (
           <Link
             key={route}
