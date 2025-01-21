@@ -15,7 +15,7 @@ const maxPositionChange = 200;
 
 const styles = {
   button:
-    "h-full px-5 py-2.5 text-xl text-white font-bold rounded bg-primary hover:bg-secondary cursor-pointer",
+    "h-full px-5 py-2.5 text-xl text-white font-bold rounded cursor-pointer",
 };
 
 export default function Valentines() {
@@ -91,7 +91,10 @@ export default function Valentines() {
       <p className="m-5 text-4xl font-bold">{prompts[currentPrompt].text}</p>
       <div className="flex gap-2">
         {onVictoryScreen ? (
-          <button onClick={restartClick} className={`${styles.button} w-32`}>
+          <button
+            onClick={restartClick}
+            className={`${styles.button} w-32 bg-primary hover:bg-secondary`}
+          >
             Restart
           </button>
         ) : (
@@ -112,7 +115,7 @@ export default function Valentines() {
             </button>
             <button
               onClick={() => changePrompt("Yes")}
-              className={`${styles.button} w-20`}
+              className={`${styles.button} w-20 bg-primary hover:bg-secondary`}
             >
               Yes
             </button>

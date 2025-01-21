@@ -1,12 +1,12 @@
 import RoutePage from "../../components/RoutePage";
-import { FiHeart } from "react-icons/fi";
+import { BsCake2 } from "react-icons/bs";
 import { Route } from "../../components/RoutePage";
 
 const ROUTES: Route[] = [
   {
     route: "/specialOccasions/2025/EmBirthday",
     label: "Birthday",
-    icon: <FiHeart />,
+    icon: <BsCake2 />,
   },
 ];
 

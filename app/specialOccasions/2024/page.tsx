@@ -1,5 +1,6 @@
 import RoutePage from "../../components/RoutePage";
 import { FiHeart } from "react-icons/fi";
+import { IoRose } from "react-icons/io5";
 import { Route } from "../../components/RoutePage";
 
 const ROUTES: Route[] = [
@@ -11,10 +12,10 @@ const ROUTES: Route[] = [
   {
     route: "/specialOccasions/2024/valentines",
     label: "Valentines",
-    icon: <FiHeart />,
+    icon: <IoRose />,
   },
 ];
 
-export default function SpeicialOccasions2024() {
+export default function SpecialOccasions2024() {
   return <RoutePage title="2024" routes={ROUTES} />;
 }
