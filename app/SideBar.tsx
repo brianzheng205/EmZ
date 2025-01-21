@@ -2,26 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  FiChevronLeft,
-  FiChevronRight,
-  FiDollarSign,
-  FiHome,
-  FiCalendar,
-} from "react-icons/fi";
+import { FiHome, FiCalendar } from "react-icons/fi";
+import { MdOutlineTimer } from "react-icons/md";
+import { HiOutlineBanknotes } from "react-icons/hi2";
+import { Route } from "./components/RoutePage";
 
 import "./globals.css";
 
-export const routes = [
+export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },
   {
     route: "/finance",
     label: "Finance",
-    icon: <FiDollarSign />,
+    icon: <HiOutlineBanknotes />,
   },
   {
     route: "/countdown",
     label: "Countdown",
+    icon: <MdOutlineTimer />,
+  },
+  {
+    route: "/specialOccasions",
+    label: "Special Occasions",
     icon: <FiCalendar />,
   },
 ];
@@ -45,11 +47,15 @@ function RouterContainer(props: { route: string; children: React.ReactNode }) {
   );
 }
 
-function Route(props: { route: string; label: string; icon: React.ReactNode }) {
+function SideBarRoute(props: {
+  route: string;
+  label: string;
+  icon: React.ReactNode;
+}) {
   return (
     <RouterContainer route={props.route}>
       <div>{props.icon}</div>
-      <span>{props.label}</span>
+      <span className="whitespace-nowrap">{props.label}</span>
     </RouterContainer>
   );
 }
@@ -59,32 +65,17 @@ export default function SideBar(props: { isOpen: boolean }) {
     <div
       className={`h-full bg-primary text-white transition-all duration-500 overflow-hidden ${
         props.isOpen
-          ? "min-w-[200px] max-w-[200px] opacity-100"
+          ? "min-w-[230px] max-w-[230px] opacity-100"
           : "min-w-0 max-w-0 opacity-30"
       }`}
     >
       <ul className="flex flex-col gap-2 p-4">
-        {routes.map(({ route, label, icon }) => (
+        {ROUTES.map(({ route, label, icon }) => (
           <li key={route}>
-            <Route route={route} label={label} icon={icon} />
+            <SideBarRoute route={route} label={label} icon={icon} />
           </li>
         ))}
       </ul>
     </div>
-  );
-}
-
-export function ToggleSideBar(props: { isOpen: boolean; onClick: () => void }) {
-  return (
-    <button
-      className="w-12 h-12 rounded-md bg-primary hover:bg-secondary text-white"
-      onClick={props.onClick}
-    >
-      {props.isOpen ? (
-        <FiChevronLeft className="mx-auto" />
-      ) : (
-        <FiChevronRight className="mx-auto" />
-      )}
-    </button>
   );
 }
