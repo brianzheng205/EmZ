@@ -238,7 +238,7 @@ export default function Countdown() {
   };
 
   return (
-    <div className="flex gap-8 p-4">
+    <div className="flex w-full gap-8 p-4">
       <section className="w-1/2 space-y-4">
         <AddCountdownForm
           onAdd={addEvent}
