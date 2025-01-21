@@ -44,8 +44,8 @@ export default function EmBirthday() {
           background video (that is hopefully playing correctly) and the
           terrible Digimon reference, I got you a Digivice! But you might be
           wondering, how can I possibly fight anyone with my Digimon if I'm the
-          only one with a Digivce. Surprise twist: I got one for me too!! I hope
-          you like it and will battle me many more times in the future.
+          only one with a Digivice. Surprise twist: I got one for me too!! I
+          hope you like it and will battle me many more times in the future.
         </ShadowedText>
         <ShadowedText>Love,</ShadowedText>
         <ShadowedText>BZ</ShadowedText>
