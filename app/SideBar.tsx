@@ -65,7 +65,7 @@ export default function SideBar(props: { isOpen: boolean }) {
     <div
       className={`h-full bg-primary text-white transition-all duration-500 overflow-hidden ${
         props.isOpen
-          ? "min-w-[200px] max-w-[400px] opacity-100"
+          ? "min-w-[230px] max-w-[230px] opacity-100"
           : "min-w-0 max-w-0 opacity-30"
       }`}
     >

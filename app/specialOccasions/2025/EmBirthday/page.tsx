@@ -1,7 +1,22 @@
+"use client";
+
+import { motion } from "framer-motion";
+
+import { useState } from "react";
+
 import VideoPage from "../../../components/VideoPage";
 import ShadowedText from "../../../components/ShadowedText";
 
 export default function EmBirthday() {
+  const [clickCount, setClickCount] = useState(0);
+  const [shake, setShake] = useState(false);
+
+  const handleEggClick = () => {
+    setClickCount((prev) => prev + 1);
+    setShake(true);
+    setTimeout(() => setShake(false), 500); // Reset shake after animation
+  };
+
   return (
     <VideoPage videoSrc="/videos/DigimonOpening.mp4" title="21st Birthday">
       <div className="flex flex-col gap-8 mb-28">
@@ -34,6 +49,43 @@ export default function EmBirthday() {
         </ShadowedText>
         <ShadowedText>Love,</ShadowedText>
         <ShadowedText>BZ</ShadowedText>
+      </div>
+
+      <div className="flex flex-col items-center gap-4 mb-64">
+        <ShadowedText>
+          {clickCount >= 20
+            ? "Your Botamon has hatched! 🎉"
+            : "Click the egg to hatch it!"}
+        </ShadowedText>
+
+        {clickCount < 20 ? (
+          <>
+            <div className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${(clickCount / 20) * 100}%` }}
+              />
+            </div>
+            <motion.div
+              animate={{ rotate: shake ? [-5, 5, -5, 5, 0] : 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <img
+                src="/images/botamon-egg.png"
+                alt="Botamon Egg"
+                className="w-64 h-64 cursor-pointer"
+                onClick={handleEggClick}
+              />
+            </motion.div>
+          </>
+        ) : (
+          <img
+            src="/images/botamon.png"
+            alt="Botamon"
+            className="w-64 h-64 cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-90"
+            onClick={handleEggClick}
+          />
+        )}
       </div>
     </VideoPage>
   );

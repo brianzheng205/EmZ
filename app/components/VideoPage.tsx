@@ -6,7 +6,11 @@ interface VideoPageProps {
   children?: ReactNode;
 }
 
-export default function VideoPage({ videoSrc, title, children }: VideoPageProps) {
+export default function VideoPage({
+  videoSrc,
+  title,
+  children,
+}: VideoPageProps) {
   return (
     <div className="relative">
       <video
