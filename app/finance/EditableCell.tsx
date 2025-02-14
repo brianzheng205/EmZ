@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { DocumentData } from "firebase/firestore";
 
-import styles from "./styles";
 import "../globals.css";
+import styles from "./styles";
 
 function formatValue(value?: number) {
   return value !== undefined ? Number(value.toFixed(0)) : 0;

@@ -10,36 +10,21 @@ import {
 } from "firebase/firestore";
 import app from "../../firebase/client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import DataRow, { calculateGross, UneditableCell } from "./table";
 
-import styles from "./styles";
 import "../globals.css";
+import styles from "./styles";
+
+interface Section {
+  categories: Set<string>;
+  isPreTax: boolean;
+}
 
 const fetchData = async () => {
   const db = getFirestore(app);
   const docRef = doc(db, "activeBudgets", new Date().getFullYear().toString());
-  const docSnap = await getDoc(docRef);
-  return docSnap.data() as DocumentData;
-};
-
-const fetchBudgets = async (path: string) => {
-  if (path === undefined || path.length === 0) {
-    return {};
-  }
-  const db = getFirestore(app);
-  const docRef = doc(db, path);
-  const docSnap = await getDoc(docRef);
-  return docSnap.data() as DocumentData;
-};
-
-const fetchTaxBrackets = async (path: string) => {
-  if (path === undefined || path.length === 0) {
-    return {};
-  }
-  const db = getFirestore(app);
-  const docRef = doc(db, path);
   const docSnap = await getDoc(docRef);
   return docSnap.data() as DocumentData;
 };
@@ -60,6 +45,19 @@ export default function Finance() {
   const [brianBudgetPath, setBrianBudgetPath] = useState<string[]>([]);
   const [emilyBudget, setEmilyBudget] = useState<DocumentData>({});
   const [brianBudget, setBrianBudget] = useState<DocumentData>({});
+  const [sections, setSections] = useState<{ [key: string]: Section }>({});
+
+  const db = useMemo(() => getFirestore(app), []);
+  const brianRef = useMemo(
+    () =>
+      brianBudgetPath.length > 0 ? doc(db, brianBudgetPath.join("/")) : null,
+    [db, brianBudgetPath]
+  );
+  const emilyRef = useMemo(
+    () =>
+      emilyBudgetPath.length > 0 ? doc(db, emilyBudgetPath.join("/")) : null,
+    [db, emilyBudgetPath]
+  );
 
   useEffect(() => {
     fetchData().then((document) => {
@@ -76,10 +74,13 @@ export default function Finance() {
     });
   }, []);
 
-  const updateBudget = (path: string[], setBudget: (DocumentData) => void) => {
-    fetchBudgets(path?.join("/")).then((document) => {
-      setBudget(document);
-    });
+  const updateBudget = (
+    path: string[],
+    setBudget: React.Dispatch<React.SetStateAction<DocumentData>>
+  ) => {
+    if (path.length === 0) return;
+    const docRef = doc(db, path.join("/"));
+    getDoc(docRef).then((docSnap) => setBudget(docSnap.data() as DocumentData));
   };
 
   const updateEmilyBudget = () => {
@@ -95,12 +96,13 @@ export default function Finance() {
   useEffect(updateBrianBudget, [brianBudgetPath]);
 
   useEffect(() => {
-    let newSections = {};
+    const newSections = {};
     const sects = new Set([
       ...Object.keys(emilyBudget || {}),
       ...Object.keys(brianBudget || {}),
     ]);
-    [...sects].forEach((section) => {
+
+    sects.forEach((section) => {
       newSections[section] = {
         categories: new Set([
           ...Object.keys(emilyBudget?.[section]?.categories || {}),
@@ -115,13 +117,6 @@ export default function Finance() {
 
     setSections(newSections);
   }, [emilyBudget, brianBudget]);
-
-  interface Section {
-    categories: Set<string>;
-    isPreTax: boolean;
-  }
-
-  const [sections, setSections] = useState<{ [key: string]: Section }>({});
 
   const generateUniqueCategory = (base: string, list: Set<string>) => {
     let name = base;
@@ -147,9 +142,8 @@ export default function Finance() {
   };
 
   const handleDeleteCategory = async (section: string, category: string) => {
-    const db = getFirestore(app);
-    const brianRef = doc(db, brianBudgetPath.join("/"));
-    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+    if (!brianRef || !emilyRef) return;
+
     if (brianBudget?.[section]?.categories[category]) {
       updateDoc(brianRef, {
         [`${section}.categories.${category}`]: deleteField(),
@@ -167,9 +161,8 @@ export default function Finance() {
   };
 
   const handleDeleteSection = async (section: string) => {
-    const db = getFirestore(app);
-    const brianRef = doc(db, brianBudgetPath.join("/"));
-    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+    if (!brianRef || !emilyRef) return;
+
     if (brianBudget?.[section]) {
       updateDoc(brianRef, {
         [section]: deleteField(),
@@ -191,6 +184,7 @@ export default function Finance() {
     newSections[section].isPreTax = !newSections[section].isPreTax;
     setSections(newSections);
   };
+
   return (
     <div className="flex justify-center">
       <div className={styles.tableWrapper}>
