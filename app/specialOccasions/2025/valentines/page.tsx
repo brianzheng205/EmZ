@@ -1,12 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
+
 import { motion, AnimatePresence } from "framer-motion";
 
 import { pictures } from "./data";
+
+const INTERVAL_DURATION = 5000;
 
 interface PictureDisplayProps {
   currentPicIndex: number;
@@ -48,11 +53,9 @@ function PictureInfo({ currentPicIndex }: PictureInfoProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="mb-8 flex flex-col"
+      className="flex flex-col"
     >
-      <h1 className="text-4xl font-bold mb-2">
-        {pictures[currentPicIndex].title}
-      </h1>
+      <h1 className="text-4xl font-bold">{pictures[currentPicIndex].title}</h1>
       <p className="text-gray-400">{pictures[currentPicIndex].description}</p>
     </motion.div>
   );
@@ -106,7 +109,7 @@ function ProgressSlider({ currentPicIndex, onChange }: ProgressSliderProps) {
   const progress = (currentPicIndex / (pictures.length - 1)) * 100;
 
   return (
-    <div className="mt-8 relative flex items-center group">
+    <div className="relative flex items-center group">
       <input
         type="range"
         min="0"
@@ -125,22 +128,141 @@ function ProgressSlider({ currentPicIndex, onChange }: ProgressSliderProps) {
   );
 }
 
+interface ProgressIndicatorProps {
+  isPlaying: boolean;
+  onComplete: () => void;
+  progressId: number;
+}
+
+function ProgressIndicator({
+  isPlaying,
+  onComplete,
+  progressId,
+}: ProgressIndicatorProps) {
+  return (
+    <motion.div
+      key={progressId}
+      initial={{ scaleX: 0 }}
+      animate={isPlaying ? { scaleX: 1 } : { scaleX: 0 }}
+      transition={
+        isPlaying
+          ? { duration: INTERVAL_DURATION / 1000, ease: "linear" }
+          : { duration: 0 }
+      }
+      onAnimationComplete={() => {
+        if (isPlaying) onComplete();
+      }}
+      className="h-1 bg-green-500"
+    />
+  );
+}
+
+interface AudioPlayerProps {
+  isPlaying: boolean;
+}
+
+function AudioPlayer({ isPlaying }: AudioPlayerProps) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [volume, setVolume] = useState(0.2);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVolumeHovered, setIsVolumeHovered] = useState(false);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+  };
+
+  return (
+    <div className="fixed bottom-8 right-8 z-50">
+      <div
+        className="relative flex items-center gap-2"
+        onMouseEnter={() => setIsVolumeHovered(true)}
+        onMouseLeave={() => setIsVolumeHovered(false)}
+      >
+        <AnimatePresence>
+          {isVolumeHovered && (
+            <motion.div
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              className="overflow-hidden"
+            >
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-24 h-1 appearance-none bg-gray-800 rounded-full outline-none cursor-pointer mr-2
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
+                  [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md 
+                  hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
+                style={{
+                  background: `linear-gradient(to right, #22c55e ${
+                    volume * 100
+                  }%, #1f2937 ${volume * 100}%)`,
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <button
+          onClick={toggleMute}
+          className="text-2xl text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+        >
+          {isMuted || volume === 0 ? <HiSpeakerXMark /> : <HiSpeakerWave />}
+        </button>
+      </div>
+      <audio ref={audioRef} loop>
+        <source src="/audio/until-i-found-you.mp3" type="audio/mpeg" />
+      </audio>
+    </div>
+  );
+}
+
 export default function Valentines2025() {
   const [currentPicIndex, setCurrentPicIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [progressKey, setProgressKey] = useState(0);
 
   const handleNextPicture = () => {
     setCurrentPicIndex((prev) => (prev + 1) % pictures.length);
+    setProgressKey((prev) => prev + 1);
   };
 
   const handlePreviousPicture = () => {
     setCurrentPicIndex(
       (prev) => (prev - 1 + pictures.length) % pictures.length
     );
+    setProgressKey((prev) => prev + 1);
   };
 
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
+    setProgressKey((prev) => prev + 1);
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,22 +270,20 @@ export default function Valentines2025() {
       (parseInt(e.target.value) / 100) * (pictures.length - 1)
     );
     setCurrentPicIndex(newIndex);
+    setProgressKey((prev) => prev + 1);
   };
 
-  // Auto-advance when playing
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const interval = setInterval(() => {
-      handleNextPicture();
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isPlaying]);
-
   return (
-    <div className="flex flex-col h-full w-full p-8 bg-gray-900 text-white">
-      <PictureDisplay currentPicIndex={currentPicIndex} />
+    <div className="flex flex-col h-full w-full gap-6 p-8 bg-gray-900 text-white">
+      <AudioPlayer isPlaying={isPlaying} />
+      <div>
+        <PictureDisplay currentPicIndex={currentPicIndex} />
+        <ProgressIndicator
+          isPlaying={isPlaying}
+          onComplete={handleNextPicture}
+          progressId={progressKey}
+        />
+      </div>
       <PictureInfo currentPicIndex={currentPicIndex} />
       <Controls
         onPrevious={handlePreviousPicture}
