@@ -274,7 +274,7 @@ export default function Valentines2025() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full gap-6 p-8 bg-gray-900 text-white overflow-y-auto">
+    <div className="flex flex-col h-full w-full gap-6 px-8 py-4 bg-gray-900 text-white overflow-y-auto">
       <div>
         <PictureDisplay currentPicIndex={currentPicIndex} />
         <ProgressIndicator
