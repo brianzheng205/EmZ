@@ -14,20 +14,20 @@ const BONUS_TAKE_HOME = 0.78;
 
 export function calculateGross(person: DocumentData): number {
   let gross = 0;
-  if (person?.preTax?.["Gross Base"]) {
-    gross += person.preTax["Gross Base"].amount;
+  if (person?.Gross?.categories["Gross Base"]) {
+    gross += person.Gross.categories["Gross Base"].amount;
   }
-  if (person?.preTax?.["Gross Stipend"]) {
-    gross += person.preTax["Gross Stipend"].amount;
+  if (person?.Gross?.categories["Gross Stipend"]) {
+    gross += person.Gross.categories["Gross Stipend"].amount;
   }
-  if (person?.preTax?.["Gross Bonus"]) {
-    gross += person.preTax["Gross Bonus"].amount;
+  if (person?.Gross?.categories["Gross Bonus"]) {
+    gross += person.Gross.categories["Gross Bonus"].amount;
   }
   return gross;
 }
 
 function calculateMonthlyTakeHome(person: DocumentData) {
-  let takeHome = person?.preTax?.["Gross Base"]?.amount || 0;
+  let takeHome = person?.Gross?.categories["Gross Base"]?.amount || 0;
   takeHome -= removeDeductions(person);
   takeHome = removeTax(takeHome);
   return takeHome / 12;
@@ -37,16 +37,16 @@ function calculateMonthlyTakeHome(person: DocumentData) {
 function calculateYearlyTakeHome(person: DocumentData) {
   let takeHome = 0;
 
-  if (person?.preTax?.["Gross Base"])
-    takeHome += person.preTax["Gross Base"].amount;
-  if (person?.preTax?.["Gross Stipend"])
-    takeHome += person.preTax["Gross Stipend"].amount;
+  if (person?.Gross?.categories["Gross Base"])
+    takeHome += person.Gross.categories["Gross Base"].amount;
+  if (person?.Gross?.categories["Gross Stipend"])
+    takeHome += person.Gross.categories["Gross Stipend"].amount;
 
   takeHome -= removeDeductions(person);
   takeHome = removeTax(takeHome);
 
-  if (person?.preTax?.["Gross Bonus"])
-    takeHome += person.preTax["Gross Bonus"].amount * BONUS_TAKE_HOME;
+  if (person?.Gross?.categories["Gross Bonus"])
+    takeHome += person.Gross.categories["Gross Bonus"].amount * BONUS_TAKE_HOME;
 
   return takeHome;
 }
@@ -101,7 +101,6 @@ export default function DataRow(props: {
   const data: RowData | undefined =
     props.person?.[props.section]?.categories?.[props.category];
 
-  console.log(data);
   if (!data)
     return (
       <>
