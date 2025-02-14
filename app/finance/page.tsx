@@ -16,7 +16,12 @@ import DataRow, { calculateGross, UneditableCell } from "./table";
 
 import styles from "./styles";
 import "../globals.css";
+import { EditableTextCell } from "./EditableCell";
 
+interface Section {
+  categories: Set<string>;
+  isPreTax: boolean;
+}
 const fetchData = async () => {
   const db = getFirestore(app);
   const docRef = doc(db, "activeBudgets", new Date().getFullYear().toString());
@@ -116,11 +121,6 @@ export default function Finance() {
     setSections(newSections);
   }, [emilyBudget, brianBudget]);
 
-  interface Section {
-    categories: Set<string>;
-    isPreTax: boolean;
-  }
-
   const [sections, setSections] = useState<{ [key: string]: Section }>({});
 
   const generateUniqueCategory = (base: string, list: Set<string>) => {
@@ -151,15 +151,27 @@ export default function Finance() {
     const brianRef = doc(db, brianBudgetPath.join("/"));
     const emilyRef = doc(db, emilyBudgetPath.join("/"));
     if (brianBudget?.[section]?.categories[category]) {
-      updateDoc(brianRef, {
-        [`${section}.categories.${category}`]: deleteField(),
-      });
+      if (Object.keys(brianBudget[section].categories).length === 1) {
+        updateDoc(brianRef, {
+          [section]: deleteField(),
+        });
+      } else {
+        updateDoc(brianRef, {
+          [`${section}.categories.${category}`]: deleteField(),
+        });
+      }
     }
 
     if (emilyBudget?.[section]?.categories[category]) {
-      updateDoc(emilyRef, {
-        [`${section}.categories.${category}`]: deleteField(),
-      });
+      if (Object.keys(emilyBudget[section].categories).length === 1) {
+        updateDoc(emilyRef, {
+          [section]: deleteField(),
+        });
+      } else {
+        updateDoc(emilyRef, {
+          [`${section}.categories.${category}`]: deleteField(),
+        });
+      }
     }
 
     updateEmilyBudget();
@@ -187,10 +199,27 @@ export default function Finance() {
   };
 
   const handleTaxPropertyUpdate = (section: string) => {
-    const newSections = { ...sections };
-    newSections[section].isPreTax = !newSections[section].isPreTax;
-    setSections(newSections);
+    const db = getFirestore(app);
+    const brianRef = doc(db, brianBudgetPath.join("/"));
+    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+
+    const updatedValue = !sections[section].isPreTax;
+    if (brianBudget?.[section]) {
+      updateDoc(brianRef, {
+        [`${section}.isPreTax`]: updatedValue,
+      });
+    }
+
+    if (emilyBudget?.[section]) {
+      updateDoc(emilyRef, {
+        [`${section}.isPreTax`]: updatedValue,
+      });
+    }
+
+    updateEmilyBudget();
+    updateBrianBudget();
   };
+
   return (
     <div className="flex justify-center">
       <div className={styles.tableWrapper}>
@@ -215,23 +244,56 @@ export default function Finance() {
           </thead>
           <tbody>
             {Object.keys(sections)
-              .sort()
+              .sort((a, b) => {
+                if (sections[a].isPreTax == sections[b].isPreTax) {
+                  return a.localeCompare(b);
+                } else if (sections[a].isPreTax) {
+                  return 1;
+                } else {
+                  return -1;
+                }
+              })
               .map((section, i) =>
                 [...sections[section].categories]
                   .sort()
                   .map((category, index) => (
                     <tr key={index} className={`${styles.border} group`}>
                       {index === 0 && (
-                        <UneditableCell
-                          className={`${styles.bold} relative`}
+                        <EditableTextCell
+                          initialValue={section}
+                          updateFunction={(oldSection, newSection) => {
+                            if (oldSection === newSection) {
+                              return;
+                            }
+
+                            const db = getFirestore(app);
+                            const brianRef = doc(db, brianBudgetPath.join("/"));
+                            const emilyRef = doc(db, emilyBudgetPath.join("/"));
+                            if (brianBudget?.[oldSection]) {
+                              updateDoc(brianRef, {
+                                [newSection]: brianBudget[oldSection],
+                                [oldSection]: deleteField(),
+                              });
+                            }
+
+                            if (emilyBudget?.[oldSection]) {
+                              updateDoc(emilyRef, {
+                                [newSection]: emilyBudget[oldSection],
+                                [oldSection]: deleteField(),
+                              });
+                            }
+
+                            updateEmilyBudget();
+                            updateBrianBudget();
+                          }}
                           tdProps={{
+                            className: `${styles.bold} relative`,
                             rowSpan:
                               i === Object.keys(sections).length - 1
                                 ? sections[section].categories.size + 1
                                 : sections[section].categories.size,
                           }}
                         >
-                          <div>{section}</div>
                           <div onClick={() => handleTaxPropertyUpdate(section)}>
                             {sections[section].isPreTax
                               ? "(Pre-Tax)"
@@ -245,11 +307,37 @@ export default function Finance() {
                                   "New Category",
                                   sections[section].categories
                                 );
-                                const newSections = { ...sections };
-                                newSections[section].categories.add(
-                                  categoryName
+
+                                const db = getFirestore(app);
+                                const brianRef = doc(
+                                  db,
+                                  brianBudgetPath.join("/")
                                 );
-                                setSections(newSections);
+                                const emilyRef = doc(
+                                  db,
+                                  emilyBudgetPath.join("/")
+                                );
+
+                                if (brianBudget?.[section]) {
+                                  updateDoc(brianRef, {
+                                    [`${section}.categories.${categoryName}`]: {
+                                      amount: 0,
+                                      time: "month",
+                                    },
+                                  });
+                                }
+
+                                if (emilyBudget?.[section]) {
+                                  updateDoc(emilyRef, {
+                                    [`${section}.categories.${categoryName}`]: {
+                                      amount: 0,
+                                      time: "month",
+                                    },
+                                  });
+                                }
+
+                                updateEmilyBudget();
+                                updateBrianBudget();
                               }}
                             >
                               +
@@ -263,12 +351,44 @@ export default function Finance() {
                               x
                             </button>
                           </div>
-                        </UneditableCell>
+                        </EditableTextCell>
                       )}
-                      <UneditableCell
-                        className={`${styles.bold} ${styles.secondColumnEnd} relative`}
+                      <EditableTextCell
+                        tdProps={{
+                          className: `${styles.bold} ${styles.secondColumnEnd} relative`,
+                        }}
+                        initialValue={category}
+                        updateFunction={(oldCategory, newCategory) => {
+                          if (oldCategory === newCategory) {
+                            return;
+                          }
+
+                          const db = getFirestore(app);
+                          const brianRef = doc(db, brianBudgetPath.join("/"));
+                          const emilyRef = doc(db, emilyBudgetPath.join("/"));
+
+                          if (brianBudget?.[section]?.categories[oldCategory]) {
+                            updateDoc(brianRef, {
+                              [`${section}.categories.${newCategory}`]:
+                                brianBudget[section].categories[oldCategory],
+                              [`${section}.categories.${oldCategory}`]:
+                                deleteField(),
+                            });
+                          }
+
+                          if (emilyBudget?.[section]?.categories[oldCategory]) {
+                            updateDoc(emilyRef, {
+                              [`${section}.categories.${newCategory}`]:
+                                emilyBudget[section].categories[oldCategory],
+                              [`${section}.categories.${oldCategory}`]:
+                                deleteField(),
+                            });
+                          }
+
+                          updateEmilyBudget();
+                          updateBrianBudget();
+                        }}
                       >
-                        <span>{category}</span>
                         <div className={styles.deleteRowContainer}>
                           <button
                             className={styles.deleteRowButton}
@@ -279,7 +399,7 @@ export default function Finance() {
                             x
                           </button>
                         </div>
-                      </UneditableCell>
+                      </EditableTextCell>
                       <DataRow
                         section={section}
                         category={category}
@@ -327,14 +447,35 @@ export default function Finance() {
                       "New Section",
                       sections
                     );
-                    const newSections = {
-                      ...sections,
-                      [newSectionName]: {
-                        categories: new Set<string>(["New Category"]),
-                        isPreTax: false,
-                      },
-                    };
-                    setSections(newSections);
+
+                    const db = getFirestore(app);
+                    const brianRef = doc(db, brianBudgetPath.join("/"));
+                    const emilyRef = doc(db, emilyBudgetPath.join("/"));
+
+                    if (brianBudget) {
+                      updateDoc(brianRef, {
+                        [newSectionName]: {
+                          categories: {
+                            "New Category": { amount: 0, time: "month" },
+                          },
+                          isPreTax: false,
+                        },
+                      });
+                    }
+
+                    if (emilyBudget) {
+                      updateDoc(emilyRef, {
+                        [newSectionName]: {
+                          categories: {
+                            "New Category": { amount: 0, time: "month" },
+                          },
+                          isPreTax: false,
+                        },
+                      });
+                    }
+
+                    updateEmilyBudget();
+                    updateBrianBudget();
                   }}
                 >
                   +

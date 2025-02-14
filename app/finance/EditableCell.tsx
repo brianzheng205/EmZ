@@ -28,6 +28,7 @@ export default function EditableCell(props: {
     >
       {isEditing ? (
         <input
+          id="editable-cell"
           className="w-full h-full box-border bg-accent outline-none absolute inset-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           type="number"
           inputMode="numeric"
@@ -41,7 +42,10 @@ export default function EditableCell(props: {
               setValue(+e.target.value);
             }
           }}
-          onBlur={() => setIsEditing(false)}
+          onBlur={() => {
+            setIsEditing(false);
+            props.updateFunction(value);
+          }}
           onKeyDown={(e) => {
             if (e.key === "." || e.key === ",") {
               e.preventDefault();
@@ -57,6 +61,58 @@ export default function EditableCell(props: {
       ) : (
         <div>{`$${value.toFixed(0)}`}</div>
       )}
+    </td>
+  );
+}
+
+export function EditableTextCell(props: {
+  initialValue?: string;
+  updateFunction: any;
+  children?: React.ReactNode;
+  tdProps?: React.TdHTMLAttributes<HTMLTableCellElement>;
+}) {
+  const [value, setValue] = useState<string>(props.initialValue || "");
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setValue(props.initialValue || "");
+  }, [props.initialValue]);
+  return (
+    <td
+      {...props.tdProps}
+      className={`${
+        styles.cell
+      } border-collapse border border-black bg-accent cursor-pointer relative ${
+        props.tdProps?.className || ""
+      }`}
+      onDoubleClick={() => setIsEditing(true)}
+    >
+      {isEditing ? (
+        <input
+          id="editable-text-cell"
+          className="w-full h-full box-border bg-accent outline-none absolute inset-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          type="text"
+          onChange={(e) => {
+            setValue(e.target.value);
+          }}
+          value={value}
+          onBlur={() => {
+            setIsEditing(false);
+            props.updateFunction(props.initialValue, value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setIsEditing(false);
+              props.updateFunction(props.initialValue, value);
+            }
+          }}
+          onWheel={(e) => e.target instanceof HTMLElement && e.target.blur()}
+          autoFocus
+        />
+      ) : (
+        <div>{value}</div>
+      )}
+      {props.children}
     </td>
   );
 }
