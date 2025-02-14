@@ -22,7 +22,7 @@ export default function EmBirthday() {
       <div className="flex flex-col gap-8 mb-28">
         <ShadowedText>Dear bao bei,</ShadowedText>
         <ShadowedText>
-          🎂Happy 21st Birthday 🎂!!! It's time to get wasted 🍻!!! I just
+          🎂 Happy 21st Birthday 🎂!!! It's time to get wasted 🍻!!! I just
           realized it's ur 21st birthday and it's also the 21st 🤯. Hopefully
           Wagyu House will be open and an Uber will take us there so that we can
           get wasted!!!!! and eat A5 Wagyu ig. Now people are gonna look at u
@@ -44,8 +44,8 @@ export default function EmBirthday() {
           background video (that is hopefully playing correctly) and the
           terrible Digimon reference, I got you a Digivice! But you might be
           wondering, how can I possibly fight anyone with my Digimon if I'm the
-          only one with a Digivce. Surprise twist: I got one for me too!! I hope
-          you like it and will battle me many more times in the future.
+          only one with a Digivice. Surprise twist: I got one for me too!! I
+          hope you like it and will battle me many more times in the future.
         </ShadowedText>
         <ShadowedText>Love,</ShadowedText>
         <ShadowedText>BZ</ShadowedText>
