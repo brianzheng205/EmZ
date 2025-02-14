@@ -53,7 +53,7 @@ function PictureInfo({ currentPicIndex }: PictureInfoProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
-      className="flex flex-col"
+      className="flex flex-col gap-2"
     >
       <h1 className="text-4xl font-bold">{pictures[currentPicIndex].title}</h1>
       <p className="text-gray-400">{pictures[currentPicIndex].description}</p>
@@ -195,9 +195,9 @@ function AudioPlayer({ isPlaying }: AudioPlayerProps) {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-50">
+    <>
       <div
-        className="relative flex items-center gap-2"
+        className="flex items-center justify-end gap-2"
         onMouseEnter={() => setIsVolumeHovered(true)}
         onMouseLeave={() => setIsVolumeHovered(false)}
       >
@@ -239,7 +239,7 @@ function AudioPlayer({ isPlaying }: AudioPlayerProps) {
       <audio ref={audioRef} loop>
         <source src="/audio/until-i-found-you.mp3" type="audio/mpeg" />
       </audio>
-    </div>
+    </>
   );
 }
 
@@ -275,12 +275,12 @@ export default function Valentines2025() {
 
   return (
     <div className="flex flex-col h-full w-full gap-6 p-8 bg-gray-900 text-white">
-      <AudioPlayer isPlaying={isPlaying} />
       <div>
         <PictureDisplay currentPicIndex={currentPicIndex} />
         <ProgressIndicator
           isPlaying={isPlaying}
           onComplete={handleNextPicture}
+          key={progressKey}
           progressId={progressKey}
         />
       </div>
@@ -291,10 +291,13 @@ export default function Valentines2025() {
         onPlayPause={togglePlayback}
         isPlaying={isPlaying}
       />
-      <ProgressSlider
-        currentPicIndex={currentPicIndex}
-        onChange={handleSliderChange}
-      />
+      <div className="flex flex-col gap-4">
+        <ProgressSlider
+          currentPicIndex={currentPicIndex}
+          onChange={handleSliderChange}
+        />
+        <AudioPlayer isPlaying={isPlaying} />
+      </div>
     </div>
   );
 }
