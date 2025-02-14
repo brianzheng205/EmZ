@@ -123,8 +123,6 @@ export default function Finance() {
     setSections(newSections);
   }, [emilyBudget, brianBudget]);
 
-  const [sections, setSections] = useState<{ [key: string]: Section }>({});
-
   const generateUniqueCategory = (base: string, list: Set<string>) => {
     let name = base;
     let i = 0;
