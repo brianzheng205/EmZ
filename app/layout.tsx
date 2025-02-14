@@ -11,7 +11,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isSideBarOpen, setIsSideBarOpen] = useState(true);
+  const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   return (
     <html lang="en">
@@ -22,7 +22,7 @@ export default function RootLayout({
         />
         <div className="flex flex-grow h-[calc(100vh-64px)]">
           <SideBar isOpen={isSideBarOpen} />
-          <div className="flex flex-col items-center flex-grow overflow-y-auto p-8">
+          <div className="flex flex-col items-center flex-grow overflow-y-auto">
             {children}
           </div>
         </div>
