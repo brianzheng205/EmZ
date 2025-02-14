@@ -16,7 +16,7 @@ interface RoutePageProps {
 
 export default function RoutePage({ title, routes }: RoutePageProps) {
   return (
-    <div className="flex flex-col items-center gap-16 w-full">
+    <div className="flex flex-col items-center gap-16 w-full p-8">
       <h1 className="text-8xl">{title}</h1>
       <div className="grid grid-cols-3 gap-4 justify-items-stretch w-full">
         {routes.map(({ label, route, icon }) => (
