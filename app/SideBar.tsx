@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { FiHome, FiCalendar } from "react-icons/fi";
 import { MdOutlineTimer } from "react-icons/md";
 import { HiOutlineBanknotes } from "react-icons/hi2";
+import { FaRandom } from "react-icons/fa";
+
 import { Route } from "./components/RoutePage";
 
 import "./globals.css";
@@ -12,14 +15,19 @@ import "./globals.css";
 export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },
   {
-    route: "/finance",
-    label: "Finance",
-    icon: <HiOutlineBanknotes />,
-  },
-  {
     route: "/countdown",
     label: "Countdown",
     icon: <MdOutlineTimer />,
+  },
+  {
+    route: "/decisions",
+    label: "Decisions",
+    icon: <FaRandom />,
+  },
+  {
+    route: "/finance",
+    label: "Finance",
+    icon: <HiOutlineBanknotes />,
   },
   {
     route: "/specialOccasions",
