@@ -45,7 +45,6 @@ export default function SideBar(props: { isOpen: boolean }) {
   return (
     <Stack
       sx={{
-        height: "100%",
         bgcolor: "primary.main",
         color: "white",
         transition: "all 500ms",

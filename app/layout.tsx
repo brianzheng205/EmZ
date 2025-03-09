@@ -6,6 +6,8 @@ import Header from "./Header";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 
 import "./globals.css";
 
@@ -19,11 +21,22 @@ const theme = createTheme({
     },
     background: {
       default: "#ECCFC3",
-      paper: "#ECCFC3",
+      paper: "#ECBBA5",
     },
   },
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          "&:hover": {
+            backgroundColor: "#e69b7a",
+          },
+        },
+      },
+    },
   },
 });
 
@@ -44,17 +57,21 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="flex flex-col w-full h-screen bg-background">
+      <body>
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <Header
             isSideBarOpen={isSideBarOpen}
             setIsSideBarOpen={setIsSideBarOpen}
           />
-          <div className="flex flex-grow h-[calc(100vh-64px)]">
+          <Stack
+            direction="row"
+            spacing={0}
+            sx={{ height: "calc(100vh - 64px)" }}
+          >
             <SideBar isOpen={isSideBarOpen} />
-            <div className="flex-grow">{props.children}</div>
-          </div>
+            <Box flex={1}>{props.children}</Box>
+          </Stack>
         </ThemeProvider>
       </body>
     </html>
