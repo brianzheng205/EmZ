@@ -59,7 +59,6 @@ export default function SideBar(props: { isOpen: boolean }) {
         {ROUTES.map(({ route, label, icon }) => (
           <Link key={route} href={route} passHref>
             <ListItem
-              component="a"
               sx={{
                 bgcolor: pathname === route ? "secondary.main" : "transparent",
                 borderRadius: BORDER_RADIUS,
