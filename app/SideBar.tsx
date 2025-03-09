@@ -37,6 +37,8 @@ export const ROUTES: Route[] = [
   },
 ];
 
+const BORDER_RADIUS = "16px";
+
 export default function SideBar(props: { isOpen: boolean }) {
   const pathname = usePathname();
 
@@ -60,10 +62,14 @@ export default function SideBar(props: { isOpen: boolean }) {
               component="a"
               sx={{
                 bgcolor: pathname === route ? "secondary.main" : "transparent",
+                borderRadius: BORDER_RADIUS,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
               disablePadding
             >
-              <ListItemButton>
+              <ListItemButton sx={{ borderRadius: BORDER_RADIUS }}>
                 <ListItemIcon sx={{ minWidth: 24, color: "white" }}>
                   {icon}
                 </ListItemIcon>

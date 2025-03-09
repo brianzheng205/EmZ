@@ -6,7 +6,6 @@ import Header from "./Header";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import Grid from "@mui/material/Grid2";
 
 import "./globals.css";
 
@@ -15,10 +14,13 @@ const theme = createTheme({
     primary: {
       main: "#904C77",
     },
-    // secondary: {
-    //   main: "#f44336",
-    //   contrastText: "#000",
-    // },
+    secondary: {
+      main: "#E49AB0",
+    },
+    background: {
+      default: "#ECCFC3",
+      paper: "#ECCFC3",
+    },
   },
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
