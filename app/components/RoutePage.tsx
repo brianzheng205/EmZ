@@ -1,7 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { ReactNode } from "react";
+
+import Card from "@mui/material/Card";
+import Grid from "@mui/material/Grid2";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
+import Stack from "@mui/material/Stack";
 
 export interface Route {
   label: string;
@@ -9,27 +14,29 @@ export interface Route {
   icon: ReactNode;
 }
 
-interface RoutePageProps {
-  title: string;
-  routes: Route[];
-}
-
-export default function RoutePage({ title, routes }: RoutePageProps) {
+export default function RoutePage(props: { title: string; routes: Route[] }) {
   return (
-    <div className="flex flex-col items-center gap-16 w-full p-8">
-      <h1 className="text-8xl">{title}</h1>
-      <div className="grid grid-cols-3 gap-4 justify-items-stretch w-full">
-        {routes.map(({ label, route, icon }) => (
-          <Link
-            key={route}
-            href={route}
-            className="flex flex-col items-center justify-center gap-2 w-full p-8 rounded-3xl bg-primary hover:bg-secondary text-white"
-          >
-            <div className="flex items-center text-9xl">{icon}</div>
-            <span className="text-2xl">{label}</span>
-          </Link>
+    <Stack spacing={4} px={4} py={2}>
+      <Typography variant="h1" align="center">
+        {props.title}
+      </Typography>
+      <Grid container columns={3} spacing={2}>
+        {props.routes.map(({ label, route, icon }) => (
+          <Grid key={route} size={1}>
+            <Link
+              href={route}
+              // className="flex items-center justify-center p-8 rounded-3xl bg-primary hover:bg-secondary text-white"
+            >
+              <Card>
+                <div className="flex items-center">{icon}</div>
+                <Typography variant="h6" align="center">
+                  {label}
+                </Typography>
+              </Card>
+            </Link>
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Stack>
   );
 }
