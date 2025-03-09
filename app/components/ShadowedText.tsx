@@ -1,13 +1,18 @@
 import { ReactNode } from "react";
+import Typography from "@mui/material/Typography";
 
-interface ShadowedTextProps {
-  children: ReactNode;
-}
-
-export default function ShadowedText({ children }: ShadowedTextProps) {
+export default function ShadowedText(props: { children: ReactNode }) {
   return (
-    <p className="text-3xl font-bold [text-shadow:-1px_-1px_0_#000,1px_-1px_0_#000,-1px_1px_0_#000,1px_1px_0_#000]">
-      {children}
-    </p>
+    <Typography
+      variant="h4"
+      component="p"
+      sx={{
+        fontWeight: "bold",
+        textShadow:
+          "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000",
+      }}
+    >
+      {props.children}
+    </Typography>
   );
 }
