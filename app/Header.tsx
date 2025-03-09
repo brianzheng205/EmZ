@@ -1,35 +1,34 @@
-"use client";
-
 import Link from "next/link";
+
 import { usePathname, useRouter } from "next/navigation";
-import { FiChevronLeft } from "react-icons/fi";
+
 import { IoArrowBackOutline } from "react-icons/io5";
 import {
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarLeftExpand,
 } from "react-icons/tb";
 
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+
 function ToggleSideBarButton(props: { isOpen: boolean; onClick: () => void }) {
   return (
-    <button
-      className="w-12 h-12 rounded-md bg-primary hover:bg-secondary text-white"
-      onClick={props.onClick}
-    >
+    <IconButton color="inherit" onClick={props.onClick}>
       {props.isOpen ? (
-        <TbLayoutSidebarLeftCollapseFilled className="mx-auto text-2xl" />
+        <TbLayoutSidebarLeftCollapseFilled />
       ) : (
-        <TbLayoutSidebarLeftExpand className="mx-auto text-2xl" />
+        <TbLayoutSidebarLeftExpand />
       )}
-    </button>
+    </IconButton>
   );
 }
 
-export default function Header({
-  isSideBarOpen,
-  setIsSideBarOpen,
-}: {
+export default function Header(props: {
   isSideBarOpen: boolean;
-  setIsSideBarOpen: (value: boolean) => void;
+  setIsSideBarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -45,27 +44,36 @@ export default function Header({
   };
 
   return (
-    <div className="relative flex items-center h-16 bg-primary p-4 text-white">
-      <div className="flex items-center gap-2">
-        <ToggleSideBarButton
-          isOpen={isSideBarOpen}
-          onClick={() => setIsSideBarOpen(!isSideBarOpen)}
-        />
-        {showBackButton && (
-          <button
-            onClick={handleBack}
-            className="w-12 h-12 rounded-md bg-primary hover:bg-secondary text-white"
-          >
-            <IoArrowBackOutline className="mx-auto" />
-          </button>
-        )}
-      </div>
-      <Link
-        href="/"
-        className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold"
-      >
-        <span>EmZ</span>
-      </Link>
-    </div>
+    <AppBar position="static">
+      <Toolbar>
+        <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+          <ToggleSideBarButton
+            isOpen={props.isSideBarOpen}
+            onClick={() => props.setIsSideBarOpen((prev) => !prev)}
+          />
+          {showBackButton && (
+            <IconButton color="inherit" onClick={handleBack}>
+              <IoArrowBackOutline />
+            </IconButton>
+          )}
+        </Box>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            flexGrow: 1,
+            textAlign: "center",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
+            EmZ
+          </Link>
+        </Typography>
+        <Box sx={{ flexGrow: 1 }} />
+      </Toolbar>
+    </AppBar>
   );
 }

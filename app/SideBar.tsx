@@ -2,9 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { FiHome, FiCalendar } from "react-icons/fi";
 import { MdOutlineTimer } from "react-icons/md";
 import { HiOutlineBanknotes } from "react-icons/hi2";
+
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+
 import { Route } from "./components/RoutePage";
 
 import "./globals.css";
@@ -28,54 +37,42 @@ export const ROUTES: Route[] = [
   },
 ];
 
-const styles = {
-  routerContainer:
-    "block w-full min-h-10 px-4 py-2 rounded-md hover:bg-secondary flex items-center gap-2",
-};
-
-function RouterContainer(props: { route: string; children: React.ReactNode }) {
+export default function SideBar(props: { isOpen: boolean }) {
   const pathname = usePathname();
 
-  return pathname === props.route ? (
-    <div className={`${styles.routerContainer} bg-secondary`}>
-      {props.children}
-    </div>
-  ) : (
-    <Link href={props.route} className={styles.routerContainer}>
-      {props.children}
-    </Link>
-  );
-}
-
-function SideBarRoute(props: {
-  route: string;
-  label: string;
-  icon: React.ReactNode;
-}) {
   return (
-    <RouterContainer route={props.route}>
-      <div>{props.icon}</div>
-      <span className="whitespace-nowrap">{props.label}</span>
-    </RouterContainer>
-  );
-}
-
-export default function SideBar(props: { isOpen: boolean }) {
-  return (
-    <div
-      className={`h-full bg-primary text-white transition-all duration-500 overflow-hidden ${
-        props.isOpen
-          ? "min-w-[230px] max-w-[230px] opacity-100"
-          : "min-w-0 max-w-0 opacity-30"
-      }`}
+    <Stack
+      sx={{
+        height: "100%",
+        bgcolor: "primary.main",
+        color: "white",
+        transition: "all 500ms",
+        overflow: "hidden",
+        minWidth: props.isOpen ? 230 : 0,
+        maxWidth: props.isOpen ? 230 : 0,
+        opacity: props.isOpen ? 1 : 0.3,
+      }}
     >
-      <ul className="flex flex-col gap-2 p-4">
+      <List sx={{ p: 2 }}>
         {ROUTES.map(({ route, label, icon }) => (
-          <li key={route}>
-            <SideBarRoute route={route} label={label} icon={icon} />
-          </li>
+          <Link key={route} href={route} passHref>
+            <ListItem
+              component="a"
+              sx={{
+                bgcolor: pathname === route ? "secondary.main" : "transparent",
+              }}
+              disablePadding
+            >
+              <ListItemButton>
+                <ListItemIcon sx={{ minWidth: 24, color: "white" }}>
+                  {icon}
+                </ListItemIcon>
+                <ListItemText primary={label} />
+              </ListItemButton>
+            </ListItem>
+          </Link>
         ))}
-      </ul>
-    </div>
+      </List>
+    </Stack>
   );
 }

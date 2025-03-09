@@ -6,34 +6,26 @@ import Header from "./Header";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import Grid from "@mui/material/Grid2";
 
 import "./globals.css";
 
 const theme = createTheme({
   palette: {
     primary: {
-      light: "#757ce8",
-      main: "#3f50b5",
-      dark: "#002884",
-      contrastText: "#fff",
+      main: "#904C77",
     },
-    secondary: {
-      light: "#ff7961",
-      main: "#f44336",
-      dark: "#ba000d",
-      contrastText: "#000",
-    },
+    // secondary: {
+    //   main: "#f44336",
+    //   contrastText: "#000",
+    // },
   },
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
   },
 });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout(props: { children: React.ReactNode }) {
   const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   return (
@@ -59,7 +51,7 @@ export default function RootLayout({
           />
           <div className="flex flex-grow h-[calc(100vh-64px)]">
             <SideBar isOpen={isSideBarOpen} />
-            <div className="flex-grow">{children}</div>
+            <div className="flex-grow">{props.children}</div>
           </div>
         </ThemeProvider>
       </body>
