@@ -38,7 +38,13 @@ export default function PasswordPage() {
 
   return (
     <Container maxWidth="sm">
-      <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        mt={4}
+      >
         <Typography variant="h4" component="h1" gutterBottom>
           Enter Password
         </Typography>
