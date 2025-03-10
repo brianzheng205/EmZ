@@ -35,9 +35,7 @@ export default function ZBirthday() {
   ]);
   const [gamblingWon, setGamblingWon] = useState(false);
   const characterHeight = 100;
-  console.log(overlayTextIndex);
-  console.log(overlayText.length);
-  console.log(overlayText);
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (!keyPressed) {
@@ -271,6 +269,7 @@ export default function ZBirthday() {
                       setOverlayTextIndex((prev) => prev + 1);
                       setGambling(true);
                       setGamblingChoicesVisible(true);
+                      setGamblingChoiceHover([false, false]);
                     }
                     setPresents((prev) => {
                       const newPresents = Array(prev.length - 1).fill(false);
@@ -423,6 +422,18 @@ export default function ZBirthday() {
             e.preventDefault();
             setHover(false);
             setOverlayTextIndex(0);
+
+            setPresents([false, false, false]);
+            setOverlayText([
+              "Happy birthday, Brian!",
+              "I've prepared 3 special gifts for this special day!",
+              "Choose wisely!",
+            ]);
+            setGambling(false);
+            setGamblingChoicesVisible(false);
+            setArrowLocation(-1);
+            setGamblingWon(false);
+            setGamblingChoiceHover([false, false]);
           }
         }}
       >
