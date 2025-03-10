@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@stardew-valley-font {
+  font-family: "Stardew_Valley";
+  src: url("/fonts/Stardew_Valley.ttf") format("ttf");
+}
