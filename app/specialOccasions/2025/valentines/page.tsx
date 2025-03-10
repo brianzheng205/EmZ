@@ -3,165 +3,162 @@
 import Image from "next/image";
 
 import { useState, useRef, useEffect } from "react";
+
 import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 
-import { motion, AnimatePresence } from "framer-motion";
-
 import { pictures } from "./data";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Slider,
+  Fade,
+  LinearProgress,
+} from "@mui/material";
+import Stack from "@mui/material/Stack";
 
 const INTERVAL_DURATION = 5000;
 
-interface PictureDisplayProps {
-  currentPicIndex: number;
+function PictureDisplay(props: { currentPicIndex: number }) {
+  return (
+    <Fade in={true} key={props.currentPicIndex} timeout={600}>
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          height: "60vh",
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: 3,
+          display: "flex",
+        }}
+      >
+        <Image
+          src={pictures[props.currentPicIndex].src}
+          alt={pictures[props.currentPicIndex].title}
+          fill
+          style={{ objectFit: "contain" }}
+          priority
+        />
+      </Box>
+    </Fade>
+  );
 }
 
-function PictureDisplay({ currentPicIndex }: PictureDisplayProps) {
+function PictureInfo(props: { currentPicIndex: number }) {
   return (
-    <div className="relative w-full h-[60vh] mb-8 rounded-lg overflow-hidden shadow-2xl flex">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentPicIndex}
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -50 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="relative w-full h-full"
+    <Fade in={true} key={props.currentPicIndex} timeout={600}>
+      <Stack sx={{ gap: 1, width: "100%" }}>
+        <Typography
+          variant="h1"
+          component="h1"
+          sx={{ fontSize: "2rem", fontWeight: "bold" }}
         >
-          <Image
-            src={pictures[currentPicIndex].src}
-            alt={pictures[currentPicIndex].title}
-            fill
-            className="object-contain"
-            priority
-          />
-        </motion.div>
-      </AnimatePresence>
-    </div>
+          {pictures[props.currentPicIndex].title}
+        </Typography>
+        <Typography variant="body1" sx={{ color: "gray" }}>
+          {pictures[props.currentPicIndex].description}
+        </Typography>
+      </Stack>
+    </Fade>
   );
 }
 
-interface PictureInfoProps {
-  currentPicIndex: number;
-}
-
-function PictureInfo({ currentPicIndex }: PictureInfoProps) {
-  return (
-    <motion.div
-      key={currentPicIndex + "-info"}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
-      className="flex flex-col gap-2"
-    >
-      <h1 className="text-4xl font-bold">{pictures[currentPicIndex].title}</h1>
-      <p className="text-gray-400">{pictures[currentPicIndex].description}</p>
-    </motion.div>
-  );
-}
-
-interface ControlsProps {
+function Controls(props: {
   onPrevious: () => void;
   onNext: () => void;
   onPlayPause: () => void;
   isPlaying: boolean;
-}
-
-function Controls({
-  onPrevious,
-  onNext,
-  onPlayPause,
-  isPlaying,
-}: ControlsProps) {
+}) {
   return (
-    <div className="flex items-center justify-center gap-6">
-      <button
-        onClick={onPrevious}
-        className="text-3xl text-gray-400 hover:text-white transition-colors"
-      >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 2,
+      }}
+    >
+      <IconButton onClick={props.onPrevious} sx={{ fontSize: 38 }}>
         <IoIosArrowBack />
-      </button>
-
-      <button
-        onClick={onPlayPause}
-        className="text-5xl text-green-500 hover:text-green-400 transition-colors"
-      >
-        {isPlaying ? <IoPauseCircle /> : <IoPlayCircle />}
-      </button>
-
-      <button
-        onClick={onNext}
-        className="text-3xl text-gray-400 hover:text-white transition-colors"
-      >
+      </IconButton>
+      <IconButton onClick={props.onPlayPause} sx={{ fontSize: 38 }}>
+        {props.isPlaying ? <IoPauseCircle /> : <IoPlayCircle />}
+      </IconButton>
+      <IconButton onClick={props.onNext} sx={{ fontSize: 38 }}>
         <IoIosArrowForward />
-      </button>
-    </div>
+      </IconButton>
+    </Box>
   );
 }
 
-interface ProgressSliderProps {
-  currentPicIndex: number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-function ProgressSlider({ currentPicIndex, onChange }: ProgressSliderProps) {
-  const progress = (currentPicIndex / (pictures.length - 1)) * 100;
-
-  return (
-    <div className="relative flex items-center group">
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={progress}
-        onChange={onChange}
-        className="w-full h-1 appearance-none bg-gray-800 rounded-full outline-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
-        style={{
-          background: `linear-gradient(to right, #22c55e ${progress}%, #1f2937 ${progress}%)`,
-        }}
-      />
-      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm text-gray-400">
-        {currentPicIndex + 1} / {pictures.length}
-      </div>
-    </div>
-  );
-}
-
-interface ProgressIndicatorProps {
+function AutoPlayIndicator(props: {
   isPlaying: boolean;
   onComplete: () => void;
   progressId: number;
-}
+}) {
+  const [progress, setProgress] = useState(0);
 
-function ProgressIndicator({
-  isPlaying,
-  onComplete,
-  progressId,
-}: ProgressIndicatorProps) {
+  useEffect(() => {
+    if (!props.isPlaying) return;
+
+    const timer = setInterval(() => {
+      setProgress((oldProgress) => {
+        if (oldProgress >= 100) {
+          clearInterval(timer);
+          setTimeout(() => {
+            props.onComplete();
+            setProgress(0);
+          }, 120);
+          return 100;
+        }
+
+        return Math.min(oldProgress + 10, 100);
+      });
+    }, 300);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [props.isPlaying, props.onComplete]);
+
   return (
-    <motion.div
-      key={progressId}
-      initial={{ scaleX: 0 }}
-      animate={isPlaying ? { scaleX: 1 } : { scaleX: 0 }}
-      transition={
-        isPlaying
-          ? { duration: INTERVAL_DURATION / 1000, ease: "linear" }
-          : { duration: 0 }
-      }
-      onAnimationComplete={() => {
-        if (isPlaying) onComplete();
-      }}
-      className="h-1 bg-green-500"
-    />
+    <Box sx={{ width: "100%" }}>
+      <LinearProgress variant="determinate" value={progress} />
+    </Box>
   );
 }
 
-interface AudioPlayerProps {
-  isPlaying: boolean;
+function ProgressSlider(props: {
+  currentPicIndex: number;
+  onChange: (
+    event: Event,
+    value: number | number[],
+    activeThumb: number
+  ) => void;
+}) {
+  const progress = (props.currentPicIndex / (pictures.length - 1)) * 100;
+
+  return (
+    <Stack sx={{ width: "100%" }}>
+      <Slider value={progress} onChange={props.onChange} />
+      <Box sx={{ width: "100%", textAlign: "center" }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "gray",
+          }}
+        >
+          {props.currentPicIndex + 1} / {pictures.length}
+        </Typography>
+      </Box>
+    </Stack>
+  );
 }
 
-function AudioPlayer({ isPlaying }: AudioPlayerProps) {
+function AudioPlayer(props: { isPlaying: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const [volume, setVolume] = useState(0.2);
@@ -170,13 +167,13 @@ function AudioPlayer({ isPlaying }: AudioPlayerProps) {
 
   useEffect(() => {
     if (audioRef.current) {
-      if (isPlaying) {
+      if (props.isPlaying) {
         audioRef.current.play();
       } else {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying]);
+  }, [props.isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -184,8 +181,12 @@ function AudioPlayer({ isPlaying }: AudioPlayerProps) {
     }
   }, [volume, isMuted]);
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
+  const handleVolumeChange = (
+    event: Event,
+    value: number | number[],
+    activeThumb: number
+  ) => {
+    const newVolume = value as number;
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
   };
@@ -196,46 +197,36 @@ function AudioPlayer({ isPlaying }: AudioPlayerProps) {
 
   return (
     <>
-      <div
-        className="flex items-center justify-end gap-2"
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 1,
+          width: "100%",
+        }}
         onMouseEnter={() => setIsVolumeHovered(true)}
         onMouseLeave={() => setIsVolumeHovered(false)}
       >
-        <AnimatePresence>
-          {isVolumeHovered && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              className="overflow-hidden"
-            >
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={handleVolumeChange}
-                className="w-24 h-1 appearance-none bg-gray-800 rounded-full outline-none cursor-pointer mr-2
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 
-                  [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md 
-                  hover:[&::-webkit-slider-thumb]:scale-125 transition-all"
-                style={{
-                  background: `linear-gradient(to right, #22c55e ${
-                    volume * 100
-                  }%, #1f2937 ${volume * 100}%)`,
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <button
-          onClick={toggleMute}
-          className="text-2xl text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
-        >
+        <Fade in={isVolumeHovered} timeout={300}>
+          <Box sx={{ overflow: "hidden" }}>
+            <Slider
+              value={volume}
+              onChange={handleVolumeChange}
+              min={0}
+              max={1}
+              step={0.01}
+              sx={{
+                width: 96,
+                height: 8,
+              }}
+            />
+          </Box>
+        </Fade>
+        <IconButton onClick={toggleMute} sx={{ color: "gray" }}>
           {isMuted || volume === 0 ? <HiSpeakerXMark /> : <HiSpeakerWave />}
-        </button>
-      </div>
+        </IconButton>
+      </Stack>
       <audio ref={audioRef} loop>
         <source src="/audio/until-i-found-you.mp3" type="audio/mpeg" />
       </audio>
@@ -265,25 +256,38 @@ export default function Valentines2025() {
     setProgressKey((prev) => prev + 1);
   };
 
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSliderChange = (
+    event: Event,
+    value: number | number[],
+    activeThumb: number
+  ) => {
     const newIndex = Math.round(
-      (parseInt(e.target.value) / 100) * (pictures.length - 1)
+      ((value as number) / 100) * (pictures.length - 1)
     );
     setCurrentPicIndex(newIndex);
     setProgressKey((prev) => prev + 1);
   };
 
   return (
-    <div className="flex flex-col h-full w-full gap-6 px-8 py-4 bg-gray-900 text-white overflow-y-auto">
-      <div>
+    <Stack
+      sx={{
+        gap: 1,
+        px: 4,
+        py: 1,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Stack sx={{ gap: 2, width: "100%" }}>
         <PictureDisplay currentPicIndex={currentPicIndex} />
-        <ProgressIndicator
+        <AutoPlayIndicator
           isPlaying={isPlaying}
           onComplete={handleNextPicture}
           key={progressKey}
           progressId={progressKey}
         />
-      </div>
+      </Stack>
       <PictureInfo currentPicIndex={currentPicIndex} />
       <Controls
         onPrevious={handlePreviousPicture}
@@ -291,13 +295,11 @@ export default function Valentines2025() {
         onPlayPause={togglePlayback}
         isPlaying={isPlaying}
       />
-      <div className="flex flex-col gap-4">
-        <ProgressSlider
-          currentPicIndex={currentPicIndex}
-          onChange={handleSliderChange}
-        />
-        <AudioPlayer isPlaying={isPlaying} />
-      </div>
-    </div>
+      <ProgressSlider
+        currentPicIndex={currentPicIndex}
+        onChange={handleSliderChange}
+      />
+      <AudioPlayer isPlaying={isPlaying} />
+    </Stack>
   );
 }

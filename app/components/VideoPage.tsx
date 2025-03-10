@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 
 import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 export default function VideoPage(props: {
@@ -29,14 +30,7 @@ export default function VideoPage(props: {
         Your browser does not support the video tag.
       </Box>
 
-      <Box
-        display="flex"
-        flexDirection="column"
-        gap="100vh"
-        color="white"
-        mx={4}
-        flex={1}
-      >
+      <Stack gap="100vh" color="white" mx={4} flex={1}>
         <Box
           display="flex"
           flexDirection="column"
@@ -58,7 +52,7 @@ export default function VideoPage(props: {
           </Typography>
         </Box>
         {props.children}
-      </Box>
+      </Stack>
     </Box>
   );
 }

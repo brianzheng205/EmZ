@@ -51,9 +51,20 @@ export default function Anniversary() {
         alignItems="center"
         height="calc(100vh - 64px)"
       >
-        <img
+        <Box
+          component="img"
           src="/specialOccasions/2024/anniversary/sleepy.png"
-          className="max-w-[90%] cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-90"
+          sx={{
+            maxWidth: "90%",
+            cursor: "pointer",
+            transition: "all 0.3s ease-in-out",
+            "&:hover": {
+              transform: "scale(1.1)",
+            },
+            "&:active": {
+              transform: "scale(0.9)",
+            },
+          }}
         />
       </Box>
     </VideoPage>
