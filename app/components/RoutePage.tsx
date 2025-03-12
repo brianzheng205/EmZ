@@ -17,7 +17,7 @@ export interface Route {
 
 export default function RoutePage(props: { title: string; routes: Route[] }) {
   return (
-    <Stack spacing={4} px={4} py={2}>
+    <Stack spacing={4} sx={{ px: 4, py: 2, width: "100%" }}>
       <Typography variant="h1" align="center">
         {props.title}
       </Typography>
@@ -31,6 +31,9 @@ export default function RoutePage(props: { title: string; routes: Route[] }) {
                   display: "flex",
                   flexDirection: "column",
                   borderRadius: 8,
+                  "&:hover": {
+                    bgcolor: "#e69b7a",
+                  },
                 }}
               >
                 <CardContent

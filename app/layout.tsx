@@ -27,17 +27,6 @@ const theme = createTheme({
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
   },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          "&:hover": {
-            backgroundColor: "#e69b7a",
-          },
-        },
-      },
-    },
-  },
 });
 
 export default function RootLayout(props: { children: React.ReactNode }) {
@@ -70,7 +59,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
             sx={{ height: "calc(100vh - 64px)" }}
           >
             <SideBar isOpen={isSideBarOpen} />
-            <Box flex={1}>{props.children}</Box>
+            <Box sx={{ flex: 1, overflowY: "scroll" }}>{props.children}</Box>
           </Stack>
         </ThemeProvider>
       </body>

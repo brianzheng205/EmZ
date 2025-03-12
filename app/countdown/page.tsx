@@ -1,45 +1,49 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
-  getFirestore,
+  Button,
+  Container,
+  Stack,
+  IconButton,
+  Snackbar,
+  Box,
+  Grid2 as Grid,
+} from "@mui/material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CountdownEventCard from "./components/CountdownEventCard";
+import CountdownForm from "./components/forms/CountdownForm";
+import { CountdownEvent, AddEventFn, EditEventFn } from "./types";
+import { getFirestore } from "firebase/firestore";
+import app from "../../firebase/client";
+import {
   collection,
   getDocs,
-  deleteDoc,
   doc,
-  setDoc,
   getDoc,
+  setDoc,
   updateDoc,
+  deleteDoc,
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import app from "../../firebase/client";
-
-import { useState, useEffect } from "react";
-import { FaCopy } from "react-icons/fa";
-
-import AddCountdownForm from "./components/forms/AddCountdownForm";
-import CountdownEventCard from "./components/CountdownEventCard";
-
-import { CountdownEvent, AddEventFn, EditEventFn } from "./types";
 import { getAdjustedDate } from "../utils";
 
 import "../globals.css";
 
-const db = getFirestore(app);
-
-const getDateString = (date: Date) => {
+// Helper function to format date string (MM-DD-YYYY)
+function getDateString(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   const year = date.getFullYear();
   return `${month}-${day}-${year}`;
-};
+}
+
+const db = getFirestore(app);
 
 export default function Countdown() {
   const [events, setEvents] = useState<CountdownEvent[]>([]);
-  const [editingEvent, setEditingEvent] = useState<{
-    dateId: string;
-    description: string;
-  } | null>(null);
+  const [isAddingCountdown, setIsAddingCountdown] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
@@ -87,7 +91,7 @@ export default function Countdown() {
     setEvents(fetchedEvents);
   };
 
-  const addEvent: AddEventFn = async (id, description, isCustomId = false) => {
+  const addEvent: AddEventFn = async (id, description, isCustomId) => {
     if (!isCustomId) {
       const date = new Date(id);
       const adjustedDate = getAdjustedDate(date);
@@ -119,7 +123,7 @@ export default function Countdown() {
     oldDescription,
     newId,
     newDescription,
-    isCustomId = false
+    isCustomId
   ) => {
     // Remove from old ID
     const oldDocRef = doc(db, "countdowns", oldId);
@@ -238,36 +242,56 @@ export default function Countdown() {
   };
 
   return (
-    <div className="flex w-full gap-8 p-4">
-      <section className="w-1/2 space-y-4">
-        <AddCountdownForm
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack spacing={3}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ justifyContent: "space-between", alignItems: "center" }}
+        >
+          <Button
+            variant="contained"
+            onClick={() => setIsAddingCountdown(true)}
+          >
+            Add Countdown
+          </Button>
+          <IconButton
+            onClick={copyToClipboard}
+            color="primary"
+            aria-label="copy as markdown"
+          >
+            <ContentCopyIcon />
+          </IconButton>
+        </Stack>
+
+        <Grid container spacing={2}>
+          {events.map((event) => (
+            <Grid key={event.id} size={4}>
+              <CountdownEventCard
+                event={event}
+                onEdit={editEvent}
+                onDelete={deleteEvent}
+                formatCountdown={formatCountdown}
+                existingCustomIds={getExistingCustomIds()}
+              />
+            </Grid>
+          ))}
+        </Grid>
+
+        <CountdownForm
+          open={isAddingCountdown}
+          onClose={() => setIsAddingCountdown(false)}
           onAdd={addEvent}
           existingCustomIds={getExistingCustomIds()}
         />
-      </section>
-      <section className="w-1/2 space-y-4">
-        <div className="flex flex-col gap-4 h-[750px] overflow-y-auto border border-primary rounded-md p-2">
-          {events.map((event) => (
-            <CountdownEventCard
-              key={event.id}
-              event={event}
-              editingEvent={editingEvent}
-              setEditingEvent={setEditingEvent}
-              formatCountdown={formatCountdown}
-              editEvent={editEvent}
-              deleteEvent={deleteEvent}
-              getExistingCustomIds={getExistingCustomIds}
-            />
-          ))}
-        </div>
-        <button
-          onClick={copyToClipboard}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-white p-2 rounded-md hover:bg-secondary transition-colors"
-        >
-          <FaCopy className="h-4 w-4" />
-          {copySuccess ? "Copied!" : "Copy as Markdown"}
-        </button>
-      </section>
-    </div>
+
+        <Snackbar
+          open={copySuccess}
+          autoHideDuration={2000}
+          message="Copied to clipboard!"
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        />
+      </Stack>
+    </Container>
   );
 }

@@ -10,7 +10,7 @@ export default function VideoPage(props: {
   children?: ReactNode;
 }) {
   return (
-    <Box position="relative">
+    <Box position="relative" sx={{ height: "100%" }}>
       <Box
         component="video"
         autoPlay
@@ -30,10 +30,8 @@ export default function VideoPage(props: {
         Your browser does not support the video tag.
       </Box>
 
-      <Stack gap="100vh" color="white" mx={4} flex={1}>
-        <Box
-          display="flex"
-          flexDirection="column"
+      <Stack spacing="100vh" color="white" mx={4}>
+        <Stack
           justifyContent="center"
           alignItems="center"
           height="calc(100vh - 128px)"
@@ -50,7 +48,7 @@ export default function VideoPage(props: {
           >
             {props.title}
           </Typography>
-        </Box>
+        </Stack>
         {props.children}
       </Stack>
     </Box>

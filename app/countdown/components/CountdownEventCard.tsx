@@ -1,90 +1,121 @@
-import { FaPencilAlt, FaTrash } from "react-icons/fa";
+"use client";
 
-import EditCountdownForm from "./forms/EditCountdownForm";
+import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  IconButton,
+  Menu,
+  MenuItem,
+  Typography,
+  Box,
+} from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CountdownForm from "./forms/CountdownForm";
+import { CountdownEvent, EditEventFn, DeleteEventFn } from "../types";
 
-import { CountdownEvent } from "../types";
-
-interface EditEventFn {
-  (
-    dateId: string,
-    oldDescription: string,
-    newId: string,
-    newDescription: string,
-    isCustomId?: boolean
-  ): Promise<void>;
-}
-
-interface CountdownEventCardProps {
+export default function CountdownEventCard(props: {
   event: CountdownEvent;
-  editingEvent: { dateId: string; description: string } | null;
-  setEditingEvent: (
-    event: { dateId: string; description: string } | null
-  ) => void;
+  onEdit: EditEventFn;
+  onDelete: DeleteEventFn;
   formatCountdown: (id: string, isCustomId?: boolean) => string;
-  editEvent: EditEventFn;
-  deleteEvent: (dateId: string, description: string) => Promise<void>;
-  getExistingCustomIds: () => string[];
-}
+  existingCustomIds: string[];
+}) {
+  // State for edit form
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingDescription, setEditingDescription] = useState("");
 
-export default function CountdownEventCard({
-  event,
-  editingEvent,
-  setEditingEvent,
-  formatCountdown,
-  editEvent,
-  deleteEvent,
-  getExistingCustomIds,
-}: CountdownEventCardProps) {
+  // State for menu
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const isMenuOpen = Boolean(menuAnchorEl);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  const handleEditClick = (description: string) => {
+    setEditingDescription(description);
+    setIsEditing(true);
+    handleMenuClose();
+  };
+
+  const handleDeleteClick = (description: string) => {
+    props.onDelete(props.event.id, description);
+    handleMenuClose();
+  };
+
   return (
-    <article className="bg-accent rounded-2xl p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">
-          {formatCountdown(event.id, event.isCustomId)}
-        </h2>
-        <span className="text-sm text-gray-500">
-          {event.isCustomId ? event.id : event.id.replace(/-/g, "/")}
-        </span>
-      </div>
-      <div className="space-y-3">
-        {event.descriptions.map((description, index) => (
-          <div
-            key={`${event.id}-${index}`}
-            className="flex justify-between items-start border-b border-primary/20 pb-3 last:border-0"
-          >
-            {editingEvent?.dateId === event.id &&
-            editingEvent?.description === description ? (
-              <EditCountdownForm
-                dateId={event.id}
-                description={description}
-                onEdit={editEvent}
-                onCancel={() => setEditingEvent(null)}
-                existingCustomIds={getExistingCustomIds()}
-                isCustomId={event.isCustomId}
-              />
-            ) : (
-              <>
-                <p>{description}</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      setEditingEvent({ dateId: event.id, description })
-                    }
-                    className="text-primary hover:text-secondary"
-                  >
-                    <FaPencilAlt className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => deleteEvent(event.id, description)}
-                    className="text-primary hover:text-secondary"
-                  >
-                    <FaTrash className="h-4 w-4" />
-                  </button>
-                </div>
-              </>
-            )}
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Card>
+        <CardHeader
+          title={props.formatCountdown(props.event.id, props.event.isCustomId)}
+          subheader={
+            props.event.isCustomId
+              ? props.event.id
+              : props.event.id.replace(/-/g, "/")
+          }
+          action={
+            <IconButton
+              aria-label="settings"
+              onClick={handleMenuClick}
+              sx={{ marginLeft: "auto" }}
+            >
+              <MoreVertIcon />
+            </IconButton>
+          }
+        />
+        <CardContent>
+          {props.event.descriptions.map((description, index) => (
+            <Typography key={index} variant="body1" gutterBottom>
+              {description}
+            </Typography>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={isMenuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+      >
+        {props.event.descriptions.map((description, index) => (
+          <div key={index}>
+            <MenuItem onClick={() => handleEditClick(description)}>
+              <EditIcon sx={{ mr: 1 }} />
+              Edit "{description}"
+            </MenuItem>
+            <MenuItem onClick={() => handleDeleteClick(description)}>
+              <DeleteIcon sx={{ mr: 1 }} />
+              Delete "{description}"
+            </MenuItem>
           </div>
         ))}
-      </div>
-    </article>
+      </Menu>
+
+      <CountdownForm
+        open={isEditing}
+        onClose={() => setIsEditing(false)}
+        onEdit={props.onEdit}
+        dateId={props.event.id}
+        description={editingDescription}
+        isCustomId={props.event.isCustomId}
+        existingCustomIds={props.existingCustomIds}
+      />
+    </Box>
   );
 }

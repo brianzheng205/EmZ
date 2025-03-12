@@ -2,187 +2,143 @@
 
 import { useState, useEffect } from "react";
 import {
-  Combobox,
-  ComboboxInput,
-  ComboboxOptions,
-  ComboboxOption,
-} from "@headlessui/react";
+  Box,
+  FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  TextField,
+  Autocomplete,
+  Stack,
+  FormLabel,
+} from "@mui/material";
 
 interface CountdownFormInputsProps {
   id: string;
   description: string;
   onIdChange: (id: string, isCustom: boolean) => void;
   onDescriptionChange: (description: string) => void;
-  minDate: string;
   existingCustomIds: string[];
   isCustomId: boolean;
 }
 
-export default function CountdownFormInputs({
-  id,
-  description,
-  onIdChange,
-  onDescriptionChange,
-  minDate,
-  existingCustomIds,
-  isCustomId,
-}: CountdownFormInputsProps) {
-  const [isCustomInput, setIsCustomInput] = useState(isCustomId);
-  const [customInput, setCustomInput] = useState(isCustomId ? id : "");
-  const [query, setQuery] = useState("");
-  const [isFocused, setIsFocused] = useState(false); // Track focus state
+export default function CountdownFormInputs(props: CountdownFormInputsProps) {
+  const [customId, setCustomId] = useState(props.isCustomId ? props.id : "");
+  const [dateId, setDateId] = useState(props.isCustomId ? "" : props.id);
+  const [idError, setIdError] = useState("");
 
-  const filteredCustomIds =
-    query === ""
-      ? existingCustomIds
-      : existingCustomIds.filter((customId) =>
-          customId.toLowerCase().includes(query.toLowerCase())
-        );
+  useEffect(() => {
+    if (props.id) {
+      if (props.isCustomId) {
+        setCustomId(props.id);
+      } else {
+        // Convert MM-DD-YYYY to YYYY-MM-DD
+        const [month, day, year] = props.id.split("-");
+        setDateId(`${year}-${month}-${day}`);
+      }
+    }
+  }, [props.id, props.isCustomId]);
 
-  const handleIdTypeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const useCustom = e.target.value === "custom";
-    setIsCustomInput(useCustom);
-    if (!useCustom) {
-      onIdChange("", false);
+  const handleIdTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const isCustom = event.target.value === "custom";
+    setIdError("");
+
+    if (isCustom) {
+      props.onIdChange(customId, true);
     } else {
-      setCustomInput("");
-      setQuery("");
-      onIdChange("", true);
+      props.onIdChange(dateId, false);
     }
   };
 
-  useEffect(() => {
-    if (id === "") {
-      setCustomInput("");
-      setQuery("");
+  const handleCustomIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newId = event.target.value;
+    setCustomId(newId);
+
+    // Validate custom ID
+    if (props.existingCustomIds.includes(newId)) {
+      setIdError("This ID already exists");
+    } else {
+      setIdError("");
+      props.onIdChange(newId, true);
     }
-  }, [id]);
+  };
+
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = event.target.value;
+    setDateId(newDate);
+    props.onIdChange(newDate, false);
+  };
+
+  // Get minimum date (today) for date input
+  const today = new Date();
+  const minDate = today.toISOString().split("T")[0];
 
   return (
-    <>
-      <div className="space-y-4">
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="idType"
-              value="date"
-              checked={!isCustomInput}
-              onChange={handleIdTypeChange}
-              className="cursor-pointer accent-primary"
-            />
-            Date
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="idType"
-              value="custom"
-              checked={isCustomInput}
-              onChange={handleIdTypeChange}
-              className="cursor-pointer accent-primary"
-            />
-            Custom Text
-          </label>
-        </div>
+    <Stack spacing={3}>
+      <FormControl>
+        <FormLabel>Event Type</FormLabel>
+        <RadioGroup
+          row
+          value={props.isCustomId ? "custom" : "date"}
+          onChange={handleIdTypeChange}
+        >
+          <FormControlLabel value="date" control={<Radio />} label="Date" />
+          <FormControlLabel value="custom" control={<Radio />} label="Custom Text" />
+        </RadioGroup>
+      </FormControl>
 
-        <div className="min-h-20">
-          {!isCustomInput ? (
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium mb-1">
-                Date
-              </label>
-              <input
-                className="w-full p-2 border rounded-md bg-background cursor-pointer"
-                type="date"
-                id="date"
-                value={id}
-                onChange={(e) => onIdChange(e.target.value, false)}
-                min={minDate}
-                required
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label
-                htmlFor="customId"
-                className="block text-sm font-medium mb-1"
-              >
-                Custom Text
-              </label>
-              <Combobox
-                value={customInput}
-                onChange={(value) => {
-                  if (value === null) return;
-                  setCustomInput(value);
-                  onIdChange(value, true);
-                }}
-              >
-                <div className="relative">
-                  <ComboboxInput
-                    className="w-full p-2 border rounded-md bg-background cursor-text"
-                    placeholder="Type to search or create new..."
-                    displayValue={(value: string) => value}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setCustomInput(e.target.value);
-                      if (e.target.value.trim()) {
-                        onIdChange(e.target.value.trim(), true);
-                      }
-                    }}
-                    onFocus={() => setIsFocused(true)} // Set focus state to true
-                    onBlur={() => setIsFocused(false)} // Set focus state to false
-                    required
-                  />
-                  {isFocused && ( // Only show options when focused
-                    <ComboboxOptions
-                      static
-                      className="absolute z-10 w-full mt-1 overflow-auto bg-background rounded-md border max-h-60"
-                    >
-                      {filteredCustomIds.length === 0 && query !== "" ? (
-                        <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
-                          Nothing found. Press Enter to create "{query}".
-                        </div>
-                      ) : (
-                        filteredCustomIds.map((customId) => (
-                          <ComboboxOption
-                            key={customId}
-                            value={customId}
-                            className={({ active }) =>
-                              `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                                active
-                                  ? "bg-primary text-white"
-                                  : "text-gray-900"
-                              }`
-                            }
-                          >
-                            {customId}
-                          </ComboboxOption>
-                        ))
-                      )}
-                    </ComboboxOptions>
-                  )}
-                </div>
-              </Combobox>
-            </div>
-          )}
-        </div>
-      </div>
+      <Box minHeight={80}>
+        {props.isCustomId ? (
+          <FormControl fullWidth>
+            <FormLabel>Custom Text</FormLabel>
+            <TextField
+              label="Custom ID"
+              value={customId}
+              onChange={handleCustomIdChange}
+              error={Boolean(idError)}
+              helperText={idError}
+              fullWidth
+              required
+              size="small"
+              margin="dense"
+            />
+          </FormControl>
+        ) : (
+          <FormControl fullWidth>
+            <FormLabel>Date</FormLabel>
+            <TextField
+              label="Date"
+              type="date"
+              value={dateId}
+              onChange={handleDateChange}
+              fullWidth
+              required
+              size="small"
+              margin="dense"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                min: minDate,
+              }}
+            />
+          </FormControl>
+        )}
+      </Box>
 
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium mb-1">
-          Description
-        </label>
-        <input
-          type="text"
-          id="description"
-          value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
-          className="w-full p-2 border rounded-md bg-background"
+      <FormControl fullWidth>
+        <FormLabel>Description</FormLabel>
+        <TextField
+          label="Description"
+          value={props.description}
+          onChange={(e) => props.onDescriptionChange(e.target.value)}
           placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
           required
+          fullWidth
+          size="small"
+          margin="dense"
+          multiline
+          rows={2}
         />
-      </div>
-    </>
+      </FormControl>
+    </Stack>
   );
 }
