@@ -11,9 +11,9 @@ import {
   Grid2 as Grid,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CountdownEventCard from "./components/CountdownEventCard";
-import CountdownForm from "./components/forms/CountdownForm";
-import { CountdownEvent, AddEventFn, EditEventFn } from "./types";
+import CountdownEventCard from "../components/countdown/CountdownEventCard";
+import CountdownDialog from "../components/countdown/CountdownDialog";
+import { CountdownEvent, AddEventFn, EditEventFn } from "../types";
 import { getFirestore } from "firebase/firestore";
 import app from "../../firebase/client";
 import {
@@ -278,7 +278,7 @@ export default function Countdown() {
           ))}
         </Grid>
 
-        <CountdownForm
+        <CountdownDialog
           open={isAddingCountdown}
           onClose={() => setIsAddingCountdown(false)}
           onAdd={addEvent}

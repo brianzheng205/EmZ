@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Box,
   Card,
   CardHeader,
   CardContent,
@@ -9,13 +10,13 @@ import {
   Menu,
   MenuItem,
   Typography,
-  Box,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import CountdownForm from "./forms/CountdownForm";
-import { CountdownEvent, EditEventFn, DeleteEventFn } from "../types";
+import CountdownDialog from "./CountdownDialog";
+import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
+import * as R from "ramda";
 
 export default function CountdownEventCard(props: {
   event: CountdownEvent;
@@ -30,7 +31,7 @@ export default function CountdownEventCard(props: {
 
   // State for menu
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const isMenuOpen = Boolean(menuAnchorEl);
+  const isMenuOpen = R.isNotNil(menuAnchorEl);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setMenuAnchorEl(event.currentTarget);
@@ -52,7 +53,7 @@ export default function CountdownEventCard(props: {
   };
 
   return (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <>
       <Card>
         <CardHeader
           title={props.formatCountdown(props.event.id, props.event.isCustomId)}
@@ -94,7 +95,7 @@ export default function CountdownEventCard(props: {
         }}
       >
         {props.event.descriptions.map((description, index) => (
-          <div key={index}>
+          <Box key={index}>
             <MenuItem onClick={() => handleEditClick(description)}>
               <EditIcon sx={{ mr: 1 }} />
               Edit "{description}"
@@ -103,11 +104,11 @@ export default function CountdownEventCard(props: {
               <DeleteIcon sx={{ mr: 1 }} />
               Delete "{description}"
             </MenuItem>
-          </div>
+          </Box>
         ))}
       </Menu>
 
-      <CountdownForm
+      <CountdownDialog
         open={isEditing}
         onClose={() => setIsEditing(false)}
         onEdit={props.onEdit}
@@ -116,6 +117,6 @@ export default function CountdownEventCard(props: {
         isCustomId={props.event.isCustomId}
         existingCustomIds={props.existingCustomIds}
       />
-    </Box>
+    </>
   );
 }

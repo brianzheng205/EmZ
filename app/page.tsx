@@ -1,7 +1,7 @@
 "use client";
 
 import RoutePage from "./components/RoutePage";
-import { ROUTES } from "./SideBar";
+import { ROUTES } from "./components/layout/SideBar";
 import "./globals.css";
 
 export default function Home() {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import SideBar from "./SideBar";
-import Header from "./Header";
+import SideBar from "./components/layout/SideBar";
+import Header from "./components/layout/Header";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -26,6 +26,15 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
+  },
+  components: {
+    MuiTextField: {
+      defaultProps: {
+        InputLabelProps: {
+          shrink: true,
+        },
+      },
+    },
   },
 });
 

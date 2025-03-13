@@ -14,9 +14,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 
-import { Route } from "./components/RoutePage";
-
-import "./globals.css";
+import { Route } from "../RoutePage";
 
 export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },
