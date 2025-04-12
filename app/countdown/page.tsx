@@ -1,19 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Button,
-  Container,
-  Stack,
-  IconButton,
-  Snackbar,
-  Box,
-  Grid2 as Grid,
-} from "@mui/material";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CountdownEventCard from "../components/countdown/CountdownEventCard";
-import AddCountdownDialog from "../components/countdown/AddCountdownDialog";
-import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
 import { getFirestore } from "firebase/firestore";
 import app from "../../firebase/client";
 import {
@@ -27,9 +13,24 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import { getAdjustedDate } from "../utils";
 
-import "../globals.css";
+import { useState, useEffect } from "react";
+
+import {
+  Button,
+  Container,
+  Stack,
+  IconButton,
+  Snackbar,
+  Grid2 as Grid,
+} from "@mui/material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+
+import CountdownEventCard from "../components/countdown/CountdownEventCard";
+import AddCountdownDialog from "../components/countdown/AddCountdownDialog";
+
+import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
+import { getAdjustedDate } from "../utils";
 
 // Helper function to format date string (MM-DD-YYYY)
 function getDateString(date: Date): string {

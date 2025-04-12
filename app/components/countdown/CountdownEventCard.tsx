@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   Box,
   Card,
@@ -16,6 +17,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditCountdownDialog from "./EditCountdownDialog";
 
 import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
+import * as R from "ramda";
 
 export default function CountdownEventCard(props: {
   event: CountdownEvent;
@@ -81,15 +83,7 @@ export default function CountdownEventCard(props: {
       <EditCountdownDialog
         open={isEditing}
         onClose={() => setIsEditing(false)}
-        onSubmit={(newId, newDescription, isCustomId) =>
-          props.onEdit(
-            props.event.id,
-            editingDescription,
-            newId,
-            newDescription,
-            isCustomId
-          )
-        }
+        onSubmit={R.curry(props.onEdit)(props.event.id, editingDescription)}
         dateId={props.event.id}
         description={editingDescription}
         isCustomId={props.event.isCustomId}

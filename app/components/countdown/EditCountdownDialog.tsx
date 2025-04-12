@@ -1,16 +1,8 @@
 import CountdownDialog from "./CountdownDialog";
 
-import { SubmitEventFn } from "../../types";
+import { CountdownEventDialogProps } from "../../types";
 
-export default function AddCountdownDialog(props: {
-  open: boolean;
-  onClose: () => void;
-  existingCustomIds: string[];
-  onSubmit: SubmitEventFn;
-  dateId?: string;
-  description?: string;
-  isCustomId?: boolean;
-}) {
+export default function AddCountdownDialog(props: CountdownEventDialogProps) {
   return (
     <CountdownDialog
       title="Edit Countdown Event"
