@@ -12,8 +12,8 @@ import {
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CountdownEventCard from "../components/countdown/CountdownEventCard";
-import CountdownDialog from "../components/countdown/CountdownDialog";
-import { CountdownEvent, AddEventFn, EditEventFn } from "../types";
+import AddCountdownDialog from "../components/countdown/AddCountdownDialog";
+import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
 import { getFirestore } from "firebase/firestore";
 import app from "../../firebase/client";
 import {
@@ -91,7 +91,7 @@ export default function Countdown() {
     setEvents(fetchedEvents);
   };
 
-  const addEvent: AddEventFn = async (id, description, isCustomId) => {
+  const addEvent: SubmitEventFn = async (id, description, isCustomId) => {
     if (!isCustomId) {
       const date = new Date(id);
       const adjustedDate = getAdjustedDate(date);
@@ -278,10 +278,10 @@ export default function Countdown() {
           ))}
         </Grid>
 
-        <CountdownDialog
+        <AddCountdownDialog
           open={isAddingCountdown}
           onClose={() => setIsAddingCountdown(false)}
-          onAdd={addEvent}
+          onSubmit={addEvent}
           existingCustomIds={getExistingCustomIds()}
         />
 

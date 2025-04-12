@@ -15,7 +15,12 @@ import {
   Stack,
   FormControlLabel,
 } from "@mui/material";
-import { AddEventFn, EditEventFn } from "../../types";
+import { SubmitEventFn, CountdownEventDialogProps } from "../../types"; // Import the base props type
+
+type CountdownDialogProps = CountdownEventDialogProps & {
+  title: string;
+  submitText: string;
+};
 
 function CountdownDialogInputs(props: {
   id: string;
@@ -146,18 +151,7 @@ function CountdownDialogInputs(props: {
   );
 }
 
-export default function CountdownDialog(props: {
-  open: boolean;
-  onClose: () => void;
-  existingCustomIds: string[];
-  // For Add mode
-  onAdd?: AddEventFn;
-  // For Edit mode
-  onEdit?: EditEventFn;
-  dateId?: string;
-  description?: string;
-  isCustomId?: boolean;
-}) {
+export default function CountdownDialog(props: CountdownDialogProps) {
   // Convert MM-DD-YYYY to YYYY-MM-DD for date input if in edit mode
   const initialId =
     props.dateId && !props.isCustomId
@@ -184,27 +178,14 @@ export default function CountdownDialog(props: {
   };
 
   const handleSubmit = () => {
-    if (props.onAdd) {
-      props.onAdd(id, description, isCustomInput);
-    } else if (props.onEdit && props.dateId && props.description) {
-      props.onEdit(
-        props.dateId,
-        props.description,
-        id,
-        description,
-        isCustomInput
-      );
-    }
+    if (!id || !description) return;
+    props.onSubmit(id, description, isCustomInput);
     handleClose();
   };
 
-  const isEditMode = Boolean(props.onEdit);
-
   return (
     <Dialog open={props.open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {isEditMode ? "Edit Countdown" : "Add New Countdown"}
-      </DialogTitle>
+      <DialogTitle>{props.title}</DialogTitle>
       <DialogContent>
         <CountdownDialogInputs
           id={id}
@@ -226,7 +207,7 @@ export default function CountdownDialog(props: {
           variant="contained"
           disabled={!id || !description}
         >
-          {isEditMode ? "Save" : "Add"}
+          {props.submitText}
         </Button>
       </DialogActions>
     </Dialog>

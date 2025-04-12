@@ -13,7 +13,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-import CountdownDialog from "./CountdownDialog";
+import EditCountdownDialog from "./EditCountdownDialog";
 
 import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
 
@@ -28,9 +28,6 @@ export default function CountdownEventCard(props: {
   const [isEditing, setIsEditing] = useState(false);
   const [editingDescription, setEditingDescription] = useState("");
 
-  // State for hover
-  const [isHovered, setIsHovered] = useState(false);
-
   const handleEditClick = (description: string) => {
     setEditingDescription(description);
     setIsEditing(true);
@@ -42,11 +39,7 @@ export default function CountdownEventCard(props: {
 
   return (
     <>
-      <Card
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        sx={{ position: "relative" }}
-      >
+      <Card sx={{ position: "relative" }}>
         <CardHeader
           title={props.formatCountdown(props.event.id, props.event.isCustomId)}
           subheader={
@@ -85,10 +78,18 @@ export default function CountdownEventCard(props: {
         </CardContent>
       </Card>
 
-      <CountdownDialog
+      <EditCountdownDialog
         open={isEditing}
         onClose={() => setIsEditing(false)}
-        onEdit={props.onEdit}
+        onSubmit={(newId, newDescription, isCustomId) =>
+          props.onEdit(
+            props.event.id,
+            editingDescription,
+            newId,
+            newDescription,
+            isCustomId
+          )
+        }
         dateId={props.event.id}
         description={editingDescription}
         isCustomId={props.event.isCustomId}

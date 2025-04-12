@@ -6,7 +6,17 @@ export interface CountdownEvent {
   isCustomId: boolean;
 }
 
-export interface AddEventFn {
+export type CountdownEventDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  existingCustomIds: string[];
+  onSubmit: SubmitEventFn;
+  dateId?: string;
+  description?: string;
+  isCustomId?: boolean;
+};
+
+export interface SubmitEventFn {
   (id: string, description: string, isCustomId: boolean): Promise<void>;
 }
 
