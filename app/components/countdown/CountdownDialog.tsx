@@ -22,6 +22,7 @@ function CountdownDialogInputs(props: {
   description: string;
   onIdChange: (id: string, isCustom: boolean) => void;
   onDescriptionChange: (description: string) => void;
+  handleSubmit: () => void;
   existingCustomIds: string[];
   isCustomId: boolean;
 }) {
@@ -72,6 +73,13 @@ function CountdownDialogInputs(props: {
   // Get minimum date (today) for date input
   const today = new Date();
   const minDate = today.toISOString().split("T")[0];
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      props.handleSubmit();
+    }
+  };
 
   return (
     <Stack spacing={3}>
@@ -125,6 +133,7 @@ function CountdownDialogInputs(props: {
         label="Description"
         value={props.description}
         onChange={(e) => props.onDescriptionChange(e.target.value)}
+        onKeyDown={handleKeyPress}
         placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
         required
         fullWidth
@@ -207,6 +216,7 @@ export default function CountdownDialog(props: {
           onDescriptionChange={setDescription}
           existingCustomIds={props.existingCustomIds}
           isCustomId={isCustomInput}
+          handleSubmit={handleSubmit}
         />
       </DialogContent>
       <DialogActions>

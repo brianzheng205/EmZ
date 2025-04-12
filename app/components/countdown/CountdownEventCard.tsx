@@ -7,16 +7,15 @@ import {
   CardHeader,
   CardContent,
   IconButton,
-  Menu,
-  MenuItem,
+  Stack,
   Typography,
 } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+
 import CountdownDialog from "./CountdownDialog";
+
 import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
-import * as R from "ramda";
 
 export default function CountdownEventCard(props: {
   event: CountdownEvent;
@@ -29,32 +28,25 @@ export default function CountdownEventCard(props: {
   const [isEditing, setIsEditing] = useState(false);
   const [editingDescription, setEditingDescription] = useState("");
 
-  // State for menu
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const isMenuOpen = R.isNotNil(menuAnchorEl);
-
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
+  // State for hover
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleEditClick = (description: string) => {
     setEditingDescription(description);
     setIsEditing(true);
-    handleMenuClose();
   };
 
   const handleDeleteClick = (description: string) => {
     props.onDelete(props.event.id, description);
-    handleMenuClose();
   };
 
   return (
     <>
-      <Card>
+      <Card
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        sx={{ position: "relative" }}
+      >
         <CardHeader
           title={props.formatCountdown(props.event.id, props.event.isCustomId)}
           subheader={
@@ -62,51 +54,36 @@ export default function CountdownEventCard(props: {
               ? props.event.id
               : props.event.id.replace(/-/g, "/")
           }
-          action={
-            <IconButton
-              aria-label="settings"
-              onClick={handleMenuClick}
-              sx={{ marginLeft: "auto" }}
-            >
-              <MoreVertIcon />
-            </IconButton>
-          }
         />
         <CardContent>
           {props.event.descriptions.map((description, index) => (
-            <Typography key={index} variant="body1" gutterBottom>
-              {description}
-            </Typography>
+            <Stack
+              key={index}
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Typography variant="body1" gutterBottom>
+                {description}
+              </Typography>
+              <Box>
+                <IconButton
+                  aria-label="edit"
+                  onClick={() => handleEditClick(description)}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label="delete"
+                  onClick={() => handleDeleteClick(description)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Stack>
           ))}
         </CardContent>
       </Card>
-
-      <Menu
-        anchorEl={menuAnchorEl}
-        open={isMenuOpen}
-        onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-      >
-        {props.event.descriptions.map((description, index) => (
-          <Box key={index}>
-            <MenuItem onClick={() => handleEditClick(description)}>
-              <EditIcon sx={{ mr: 1 }} />
-              Edit "{description}"
-            </MenuItem>
-            <MenuItem onClick={() => handleDeleteClick(description)}>
-              <DeleteIcon sx={{ mr: 1 }} />
-              Delete "{description}"
-            </MenuItem>
-          </Box>
-        ))}
-      </Menu>
 
       <CountdownDialog
         open={isEditing}
