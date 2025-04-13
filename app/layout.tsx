@@ -65,7 +65,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
             sx={{ height: "calc(100vh - 64px)" }}
           >
             <SideBar isOpen={isSideBarOpen} />
-            <Box sx={{ flex: 1, overflowY: "scroll" }}>{props.children}</Box>
+            <Box sx={{ flex: 1, overflowY: "auto" }}>{props.children}</Box>
           </Stack>
         </ThemeProvider>
       </body>
