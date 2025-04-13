@@ -2,21 +2,19 @@
 
 import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 import { prompts, PromptId } from "./data";
 
 type buttonValue = "Yes" | "No";
 
-const maxNoClicks = 30;
-const minTime = 50;
-const maxTime = 500;
-const timeDelta = 50;
-const maxPositionChange = 200;
-
-const styles = {
-  button:
-    "h-full px-5 py-2.5 text-xl text-white font-bold rounded cursor-pointer",
-};
+const MAX_NO_CLICKS = 30;
+const MIN_TIME = 50;
+const MAX_TIME = 500;
+const TIME_DELTA = 50;
+const MAX_POSITION_CHANGE = 200;
 
 export default function Valentines() {
   const [currentPrompt, setCurrentPrompt] = useState<PromptId>("question");
@@ -40,8 +38,8 @@ export default function Valentines() {
 
   const autoChangePosition = (oldNoClicks: number) => {
     if (noClicksRef.current === oldNoClicks) {
-      setTopPosition(getRandomInt(-maxPositionChange, maxPositionChange));
-      setLeftPosition(getRandomInt(-maxPositionChange, maxPositionChange));
+      setTopPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
+      setLeftPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
       noClicksRef.current++;
     }
   };
@@ -49,8 +47,8 @@ export default function Valentines() {
   const changePrompt = (buttonClicked: buttonValue) => {
     if (currentPrompt === "repeat4" && buttonClicked === "No") {
       noClicksRef.current++;
-      setTopPosition(getRandomInt(-maxPositionChange, maxPositionChange));
-      setLeftPosition(getRandomInt(-maxPositionChange, maxPositionChange));
+      setTopPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
+      setLeftPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
       return;
     }
 
@@ -66,20 +64,27 @@ export default function Valentines() {
 
   useEffect(() => {
     if (currentPrompt === "repeat4") {
-      if (noClicksRef.current < maxNoClicks) {
+      if (noClicksRef.current < MAX_NO_CLICKS) {
         const currNoClicks = noClicksRef.current;
         setTimeout(
           () => autoChangePosition(currNoClicks),
-          Math.max(minTime, maxTime - noClicksRef.current * timeDelta)
+          Math.max(MIN_TIME, MAX_TIME - noClicksRef.current * TIME_DELTA)
         );
       }
     }
   }, [noClicksRef.current]);
 
-  const noVisible = noClicksRef.current < maxNoClicks;
+  const noVisible = noClicksRef.current < MAX_NO_CLICKS;
 
   return (
-    <div className="flex flex-col flex-grow justify-center items-center mb-24">
+    <Box
+      display="flex"
+      flexDirection="column"
+      height="100%"
+      justifyContent="center"
+      alignItems="center"
+      mb={6}
+    >
       <Image
         className="w-[300px] h-[300px] object-contain"
         src={prompts[currentPrompt].image}
@@ -88,40 +93,46 @@ export default function Valentines() {
         width={300}
         priority={true}
       />
-      <p className="m-5 text-4xl font-bold">{prompts[currentPrompt].text}</p>
-      <div className="flex gap-2">
+      <Typography variant="h4" component="p" m={2} fontWeight="bold">
+        {prompts[currentPrompt].text}
+      </Typography>
+      <Box display="flex" gap={2}>
         {onVictoryScreen ? (
-          <button
+          <Button
             onClick={restartClick}
-            className={`${styles.button} w-32 bg-primary hover:bg-secondary`}
+            variant="contained"
+            color="primary"
+            sx={{ width: 128 }}
           >
             Restart
-          </button>
+          </Button>
         ) : (
           <>
-            <button
+            <Button
               onClick={noVisible ? () => changePrompt("No") : () => {}}
-              className={`${
-                styles.button
-              } w-20 bg-muted hover:bg-accent relative ${
-                noVisible ? "visible" : "invisible"
-              }`}
-              style={{
+              variant="contained"
+              color="error"
+              sx={{
+                width: 80,
+                position: "relative",
+                visibility: noVisible ? "visible" : "hidden",
                 top: topPosition,
                 left: leftPosition,
               }}
             >
               No
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => changePrompt("Yes")}
-              className={`${styles.button} w-20 bg-primary hover:bg-secondary`}
+              variant="contained"
+              color="primary"
+              sx={{ width: 80 }}
             >
               Yes
-            </button>
+            </Button>
           </>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

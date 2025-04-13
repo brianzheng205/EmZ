@@ -1,3 +1,7 @@
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+
 import VideoPage from "../../../components/VideoPage";
 import ShadowedText from "../../../components/ShadowedText";
 
@@ -7,7 +11,7 @@ export default function Anniversary() {
       videoSrc="/specialOccasions/2024/anniversary/YourName.mp4"
       title="2024 Anniversary"
     >
-      <div className="flex flex-col gap-8">
+      <Box display="flex" flexDirection="column" gap={2}>
         <ShadowedText>Dear bao bei,</ShadowedText>
         <ShadowedText>
           Happy 3 Years ❤️❤️❤️❤️❤️❤️!!!! It seems that every year you get
@@ -40,13 +44,29 @@ export default function Anniversary() {
           end up 🙈. But we will know real soon so I might as well apply to be
           in Boston this year 🙈.
         </ShadowedText>
-      </div>
-      <div className="flex flex-col justify-center items-center h-[calc(100vh-64px)]">
-        <img
+      </Box>
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="calc(100vh - 64px)"
+      >
+        <Box
+          component="img"
           src="/specialOccasions/2024/anniversary/sleepy.png"
-          className="max-w-[90%] cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-90"
+          sx={{
+            maxWidth: "90%",
+            cursor: "pointer",
+            transition: "all 0.3s ease-in-out",
+            "&:hover": {
+              transform: "scale(1.1)",
+            },
+            "&:active": {
+              transform: "scale(0.9)",
+            },
+          }}
         />
-      </div>
+      </Box>
     </VideoPage>
   );
 }

@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
 import { motion } from "framer-motion";
 
-import { useState } from "react";
+import Box from "@mui/material/Box";
+import LinearProgress from "@mui/material/LinearProgress";
 
 import VideoPage from "../../../components/VideoPage";
 import ShadowedText from "../../../components/ShadowedText";
@@ -19,7 +22,7 @@ export default function EmBirthday() {
 
   return (
     <VideoPage videoSrc="/videos/DigimonOpening.mp4" title="21st Birthday">
-      <div className="flex flex-col gap-8 mb-28">
+      <Box display="flex" flexDirection="column" gap={2}>
         <ShadowedText>Dear bao bei,</ShadowedText>
         <ShadowedText>
           🎂 Happy 21st Birthday 🎂!!! It's time to get wasted 🍻!!! I just
@@ -49,9 +52,15 @@ export default function EmBirthday() {
         </ShadowedText>
         <ShadowedText>Love,</ShadowedText>
         <ShadowedText>BZ</ShadowedText>
-      </div>
+      </Box>
 
-      <div className="flex flex-col items-center gap-4 mb-64">
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        gap={2}
+        mb={32}
+      >
         <ShadowedText>
           {clickCount >= 20
             ? "Your Botamon has hatched! 🎉"
@@ -60,12 +69,12 @@ export default function EmBirthday() {
 
         {clickCount < 20 ? (
           <>
-            <div className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${(clickCount / 20) * 100}%` }}
+            <Box width="100%" maxWidth={300}>
+              <LinearProgress
+                variant="determinate"
+                value={(clickCount / 20) * 100}
               />
-            </div>
+            </Box>
             <motion.div
               animate={{ rotate: shake ? [-5, 5, -5, 5, 0] : 0 }}
               transition={{ duration: 0.5 }}
@@ -86,7 +95,7 @@ export default function EmBirthday() {
             onClick={handleEggClick}
           />
         )}
-      </div>
+      </Box>
     </VideoPage>
   );
 }

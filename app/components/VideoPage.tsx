@@ -1,36 +1,56 @@
 import { ReactNode } from "react";
 
-interface VideoPageProps {
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+
+export default function VideoPage(props: {
   videoSrc: string;
   title: string;
   children?: ReactNode;
-}
-
-export default function VideoPage({
-  videoSrc,
-  title,
-  children,
-}: VideoPageProps) {
+}) {
   return (
-    <div className="relative">
-      <video
+    <Box position="relative" sx={{ height: "100%" }}>
+      <Box
+        component="video"
         autoPlay
         loop
         playsInline
-        className="fixed bottom-0 left-0 w-full h-[calc(100vh-64px)] object-cover -z-10"
+        sx={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          height: "100vh",
+          objectFit: "cover",
+          zIndex: -10,
+        }}
       >
-        <source src={videoSrc} type="video/mp4" />
+        <source src={props.videoSrc} type="video/mp4" />
         Your browser does not support the video tag.
-      </video>
+      </Box>
 
-      <div className="flex flex-col gap-[100vh] text-white w-full">
-        <div className="flex flex-col justify-center items-center h-[calc(100vh-128px)]">
-          <h1 className="text-[15rem] text-center font-bold [text-shadow:-2px_-2px_0_#000,2px_-2px_0_#000,-2px_2px_0_#000,2px_2px_0_#000]">
-            {title}
-          </h1>
-        </div>
-        {children}
-      </div>
-    </div>
+      <Stack spacing="100vh" color="white" mx={4}>
+        <Stack
+          justifyContent="center"
+          alignItems="center"
+          height="calc(100vh - 128px)"
+        >
+          <Typography
+            variant="h1"
+            align="center"
+            fontWeight="bold"
+            sx={{
+              fontSize: "15rem",
+              textShadow:
+                "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000",
+            }}
+          >
+            {props.title}
+          </Typography>
+        </Stack>
+        {props.children}
+      </Stack>
+    </Box>
   );
 }
