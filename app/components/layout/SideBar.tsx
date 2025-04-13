@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { FiHome, FiCalendar } from "react-icons/fi";
@@ -14,6 +13,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 
+import StyledLink from "../StyledLink";
 import { Route } from "../RoutePage";
 
 export const ROUTES: Route[] = [
@@ -54,7 +54,7 @@ export default function SideBar(props: { isOpen: boolean }) {
     >
       <List sx={{ p: 2 }}>
         {ROUTES.map(({ route, label, icon }) => (
-          <Link key={route} href={route} passHref>
+          <StyledLink key={route} href={route} passHref>
             <ListItem
               sx={{
                 bgcolor: pathname === route ? "secondary.main" : "transparent",
@@ -62,6 +62,7 @@ export default function SideBar(props: { isOpen: boolean }) {
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                color: "inherit",
               }}
               disablePadding
             >
@@ -72,7 +73,7 @@ export default function SideBar(props: { isOpen: boolean }) {
                 <ListItemText primary={label} />
               </ListItemButton>
             </ListItem>
-          </Link>
+          </StyledLink>
         ))}
       </List>
     </Stack>
