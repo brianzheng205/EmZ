@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
 
-import VideoPage from "../../../components/VideoPage";
+import VideoPage from "../../../components/pages/VideoPage";
 import ShadowedText from "../../../components/ShadowedText";
 
 export default function EmBirthday() {

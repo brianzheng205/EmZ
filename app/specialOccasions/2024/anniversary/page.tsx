@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 
-import VideoPage from "../../../components/VideoPage";
+import VideoPage from "../../../components/pages/VideoPage";
 import ShadowedText from "../../../components/ShadowedText";
 
 export default function Anniversary() {

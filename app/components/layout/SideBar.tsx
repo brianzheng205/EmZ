@@ -14,7 +14,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 
 import StyledLink from "../StyledLink";
-import { Route } from "../RoutePage";
+import { Route } from "../pages/RoutePage";
 
 export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },
