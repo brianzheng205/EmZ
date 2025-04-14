@@ -29,17 +29,35 @@ const stardewTheme = createTheme({
 });
 
 const CHARACTER_HEIGHT = 100;
-const MOVEMENT_SPEED = 2;
+const CHARACTER_WIDTH = 70;
+const MOVEMENT_SPEED = 4;
 
 function isMovementKey(key: string) {
   return ["w", "a", "s", "d"].includes(key);
 }
 
+function getDeltas(heldKeys: string[]) {
+  let deltaX = 0;
+  let deltaY = 0;
+
+  R.forEach((key: string) => {
+    if (key === "w") deltaY -= MOVEMENT_SPEED;
+    else if (key === "a") deltaX -= MOVEMENT_SPEED;
+    else if (key === "s") deltaY += MOVEMENT_SPEED;
+    else if (key === "d") deltaX += MOVEMENT_SPEED;
+  }, heldKeys);
+
+  if (deltaX !== 0 && deltaY !== 0) {
+    deltaX *= Math.SQRT1_2;
+    deltaY *= Math.SQRT1_2;
+  }
+
+  return { deltaX, deltaY };
+}
+
 export default function ZBirthday() {
   const [heldKeys, setHeldKeys] = useState<string[]>([]);
-  const [lastKey, setLastKey] = useState("");
-  const [top, setTop] = useState<number>(0);
-  const [left, setLeft] = useState<number>(0);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
   const [hover, setHover] = useState(false);
   const [presents, setPresents] = useState([false, false, false]);
   const [overlayText, setOverlayText] = useState([
@@ -56,15 +74,16 @@ export default function ZBirthday() {
     false,
   ]);
   const [gamblingWon, setGamblingWon] = useState(false);
+  const [brianSrc, setBrianSrc] = useState(brian_s_idle);
 
   const checkProximity = () => {
     const emilyRect = document.querySelector(".emily")?.getBoundingClientRect();
     return (
       R.isNotNil(emilyRect) &&
-      top > emilyRect.top - 100 &&
-      top + CHARACTER_HEIGHT < emilyRect.bottom + 50 &&
-      left + 70 > emilyRect.left - 10 &&
-      left < emilyRect.right + 10
+      position.top > emilyRect.top - CHARACTER_HEIGHT &&
+      position.top + CHARACTER_HEIGHT < emilyRect.bottom + 50 &&
+      position.left + CHARACTER_WIDTH > emilyRect.left - 10 &&
+      position.left < emilyRect.right + 10
     );
   };
 
@@ -81,7 +100,6 @@ export default function ZBirthday() {
       if (!isMovementKey(event.key)) return;
 
       setHeldKeys((prev) => prev.filter((key) => key !== event.key));
-      setLastKey(event.key);
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -93,36 +111,45 @@ export default function ZBirthday() {
     };
   }, []);
 
-  // Handle character movement
+  // Handle character movement and animation
   useEffect(() => {
+    let animationFrameId: number;
+
     const handleMovement = () => {
-      let deltaTop = 0;
-      let deltaLeft = 0;
+      const { deltaX, deltaY } = getDeltas(heldKeys);
 
-      if (heldKeys.includes("w") && top > 0) deltaTop -= MOVEMENT_SPEED;
-      if (heldKeys.includes("a") && left > 0) deltaLeft -= MOVEMENT_SPEED;
-      if (
-        heldKeys.includes("s") &&
-        top < window.innerHeight - CHARACTER_HEIGHT - 70
-      )
-        deltaTop += MOVEMENT_SPEED;
-      if (heldKeys.includes("d") && left < window.innerWidth - 70)
-        deltaLeft += MOVEMENT_SPEED;
-
-      if (deltaTop != 0 && deltaLeft != 0) {
-        deltaTop *= Math.SQRT1_2;
-        deltaLeft *= Math.SQRT1_2;
-      }
-
-      if (deltaTop != 0) setTop((prev) => prev + deltaTop);
-      if (deltaLeft != 0) setLeft((prev) => prev + deltaLeft);
+      setPosition((prev) => ({
+        top: R.clamp(
+          0,
+          window.innerHeight - CHARACTER_HEIGHT - 70,
+          prev.top + deltaY
+        ),
+        left: R.clamp(
+          0,
+          window.innerWidth - CHARACTER_WIDTH,
+          prev.left + deltaX
+        ),
+      }));
+      setHover(checkProximity());
+      animationFrameId = requestAnimationFrame(handleMovement);
     };
 
-    const interval = setInterval(handleMovement, 1);
-    setHover(checkProximity());
+    const handleBrianSrc = () => {
+      if (heldKeys.length === 0) return;
 
-    return () => clearInterval(interval);
-  }, [heldKeys, top, left]);
+      const { deltaX, deltaY } = getDeltas(heldKeys);
+
+      if (deltaX > 0) setBrianSrc(brian_d_idle);
+      else if (deltaX < 0) setBrianSrc(brian_a_idle);
+      else if (deltaY < 0) setBrianSrc(brian_w_idle);
+      else if (deltaY > 0) setBrianSrc(brian_s_idle);
+    };
+
+    handleMovement();
+    handleBrianSrc();
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [heldKeys]);
 
   const startGambling = (target: number, mod: number) => {
     for (let i = 0; i <= target; i++) {
@@ -477,27 +504,11 @@ export default function ZBirthday() {
         <Image
           style={{
             position: "absolute",
-            top: top,
-            left: left,
+            top: position.top,
+            left: position.left,
             zIndex: 0,
           }}
-          src={
-            heldKeys
-              ? heldKeys.includes("w")
-                ? brian_w_idle
-                : heldKeys.includes("d")
-                ? brian_d_idle
-                : heldKeys.includes("a")
-                ? brian_a_idle
-                : brian_s_idle
-              : lastKey === "w"
-              ? brian_w_idle
-              : lastKey === "d"
-              ? brian_d_idle
-              : lastKey === "a"
-              ? brian_a_idle
-              : brian_s_idle
-          }
+          src={brianSrc}
           alt="Brian"
           height={CHARACTER_HEIGHT}
         />
