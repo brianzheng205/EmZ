@@ -2,13 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Corrected the font-face rule */
 @font-face {
   font-family: "Stardew_Valley";
   src: url("/fonts/Stardew_Valley.ttf") format("truetype");
-}
-
-/* Apply the font globally */
-body {
-  font-family: "Stardew_Valley", Arial, sans-serif;
 }
