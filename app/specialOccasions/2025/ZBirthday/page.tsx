@@ -20,7 +20,7 @@ import "/app/globals.css";
 const stardewTheme = createTheme({
   typography: {
     fontFamily: "'Stardew_Valley', Arial, sans-serif",
-    fontSize: 25, // Set the base font size to 20px
+    fontSize: 30, // Set the base font size to 20px
   },
 });
 
