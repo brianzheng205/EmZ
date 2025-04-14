@@ -2,17 +2,13 @@
 
 import Image from "next/image";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Box, Typography } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
-import * as R from "ramda";
+import Character from "./../../../components/game/Character";
 
-import brian_w_idle from "/public/specialOccasions/2025/brianbday/brian_w_idle.png";
-import brian_d_idle from "/public/specialOccasions/2025/brianbday/brian_d_idle.png";
-import brian_s_idle from "/public/specialOccasions/2025/brianbday/brian_s_idle.png";
-import brian_a_idle from "/public/specialOccasions/2025/brianbday/brian_a_idle.png";
 import emily_s_idle from "/public/specialOccasions/2025/brianbday/emily_s_idle.png";
 import chatbubble from "/public/specialOccasions/2025/brianbday/chat.png";
 import textOverlay from "/public/specialOccasions/2025/brianbday/textOverlay.png";
@@ -30,34 +26,8 @@ const stardewTheme = createTheme({
 
 const CHARACTER_HEIGHT = 100;
 const CHARACTER_WIDTH = 70;
-const MOVEMENT_SPEED = 4;
-
-function isMovementKey(key: string) {
-  return ["w", "a", "s", "d"].includes(key);
-}
-
-function getDeltas(heldKeys: string[]) {
-  let deltaX = 0;
-  let deltaY = 0;
-
-  R.forEach((key: string) => {
-    if (key === "w") deltaY -= MOVEMENT_SPEED;
-    else if (key === "a") deltaX -= MOVEMENT_SPEED;
-    else if (key === "s") deltaY += MOVEMENT_SPEED;
-    else if (key === "d") deltaX += MOVEMENT_SPEED;
-  }, heldKeys);
-
-  if (deltaX !== 0 && deltaY !== 0) {
-    deltaX *= Math.SQRT1_2;
-    deltaY *= Math.SQRT1_2;
-  }
-
-  return { deltaX, deltaY };
-}
 
 export default function ZBirthday() {
-  const [heldKeys, setHeldKeys] = useState<string[]>([]);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
   const [hover, setHover] = useState(false);
   const [presents, setPresents] = useState([false, false, false]);
   const [overlayText, setOverlayText] = useState([
@@ -74,82 +44,6 @@ export default function ZBirthday() {
     false,
   ]);
   const [gamblingWon, setGamblingWon] = useState(false);
-  const [brianSrc, setBrianSrc] = useState(brian_s_idle);
-
-  const checkProximity = () => {
-    const emilyRect = document.querySelector(".emily")?.getBoundingClientRect();
-    return (
-      R.isNotNil(emilyRect) &&
-      position.top > emilyRect.top - CHARACTER_HEIGHT &&
-      position.top + CHARACTER_HEIGHT < emilyRect.bottom + 50 &&
-      position.left + CHARACTER_WIDTH > emilyRect.left - 10 &&
-      position.left < emilyRect.right + 10
-    );
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isMovementKey(event.key)) return;
-
-      setHeldKeys((prev) =>
-        prev.includes(event.key) ? prev : [...prev, event.key]
-      );
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (!isMovementKey(event.key)) return;
-
-      setHeldKeys((prev) => prev.filter((key) => key !== event.key));
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
-
-  // Handle character movement and animation
-  useEffect(() => {
-    let animationFrameId: number;
-
-    const handleMovement = () => {
-      const { deltaX, deltaY } = getDeltas(heldKeys);
-
-      setPosition((prev) => ({
-        top: R.clamp(
-          0,
-          window.innerHeight - CHARACTER_HEIGHT - 70,
-          prev.top + deltaY
-        ),
-        left: R.clamp(
-          0,
-          window.innerWidth - CHARACTER_WIDTH,
-          prev.left + deltaX
-        ),
-      }));
-      setHover(checkProximity());
-      animationFrameId = requestAnimationFrame(handleMovement);
-    };
-
-    const handleBrianSrc = () => {
-      if (heldKeys.length === 0) return;
-
-      const { deltaX, deltaY } = getDeltas(heldKeys);
-
-      if (deltaX > 0) setBrianSrc(brian_d_idle);
-      else if (deltaX < 0) setBrianSrc(brian_a_idle);
-      else if (deltaY < 0) setBrianSrc(brian_w_idle);
-      else if (deltaY > 0) setBrianSrc(brian_s_idle);
-    };
-
-    handleMovement();
-    handleBrianSrc();
-
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [heldKeys]);
 
   const startGambling = (target: number, mod: number) => {
     for (let i = 0; i <= target; i++) {
@@ -501,16 +395,11 @@ export default function ZBirthday() {
           )}
         </Box>
 
-        <Image
-          style={{
-            position: "absolute",
-            top: position.top,
-            left: position.left,
-            zIndex: 0,
-          }}
-          src={brianSrc}
-          alt="Brian"
+        <Character
           height={CHARACTER_HEIGHT}
+          width={CHARACTER_WIDTH}
+          movementSpeed={5}
+          setHover={setHover}
         />
       </Box>
     </ThemeProvider>
