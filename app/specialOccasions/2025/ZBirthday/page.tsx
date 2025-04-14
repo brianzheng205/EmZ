@@ -1,9 +1,13 @@
 "use client";
 
 import Image from "next/image";
+
 import { useEffect, useState } from "react";
+
 import { Box, Typography } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+
+import * as R from "ramda";
 
 import brian_w_idle from "/public/specialOccasions/2025/brianbday/brian_w_idle.png";
 import brian_d_idle from "/public/specialOccasions/2025/brianbday/brian_d_idle.png";
@@ -20,14 +24,20 @@ import "/app/globals.css";
 const stardewTheme = createTheme({
   typography: {
     fontFamily: "'Stardew_Valley', Arial, sans-serif",
-    fontSize: 30, // Set the base font size to 20px
+    fontSize: 30,
   },
 });
 
+const CHARACTER_HEIGHT = 100;
+const MOVEMENT_SPEED = 2;
+
+function isMovementKey(key: string) {
+  return ["w", "a", "s", "d"].includes(key);
+}
+
 export default function ZBirthday() {
-  const [keyPressed, setKeyPressed] = useState(false);
-  const [heldKey, setHeldKey] = useState(null);
-  const [lastKey, setLastKey] = useState(null);
+  const [heldKeys, setHeldKeys] = useState<string[]>([]);
+  const [lastKey, setLastKey] = useState("");
   const [top, setTop] = useState<number>(0);
   const [left, setLeft] = useState<number>(0);
   const [hover, setHover] = useState(false);
@@ -46,32 +56,32 @@ export default function ZBirthday() {
     false,
   ]);
   const [gamblingWon, setGamblingWon] = useState(false);
-  const characterHeight = 100;
+
+  const checkProximity = () => {
+    const emilyRect = document.querySelector(".emily")?.getBoundingClientRect();
+    return (
+      R.isNotNil(emilyRect) &&
+      top > emilyRect.top - 100 &&
+      top + CHARACTER_HEIGHT < emilyRect.bottom + 50 &&
+      left + 70 > emilyRect.left - 10 &&
+      left < emilyRect.right + 10
+    );
+  };
 
   useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (!keyPressed) {
-        setKeyPressed(true);
-        if (
-          event.key === "a" ||
-          event.key === "d" ||
-          event.key === "w" ||
-          event.key === "s"
-        )
-          setHeldKey(event.key);
-      }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isMovementKey(event.key)) return;
+
+      setHeldKeys((prev) =>
+        prev.includes(event.key) ? prev : [...prev, event.key]
+      );
     };
 
-    const handleKeyUp = (event) => {
-      setKeyPressed(false);
-      setHeldKey(null);
-      if (
-        event.key === "a" ||
-        event.key === "d" ||
-        event.key === "w" ||
-        event.key === "s"
-      )
-        setLastKey(event.key);
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (!isMovementKey(event.key)) return;
+
+      setHeldKeys((prev) => prev.filter((key) => key !== event.key));
+      setLastKey(event.key);
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -81,49 +91,48 @@ export default function ZBirthday() {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, [keyPressed]);
+  }, []);
 
+  // Handle character movement
   useEffect(() => {
-    const handle = () => {
-      if (heldKey === "w" && top > 0) setTop(top - 5);
-      if (heldKey === "a" && left > 0) setLeft(left - 5);
-      if (heldKey === "s" && top < window.innerHeight - characterHeight - 70)
-        setTop(top + 5);
-      if (heldKey === "d" && left < window.innerWidth - 70) setLeft(left + 5);
+    const handleMovement = () => {
+      let deltaTop = 0;
+      let deltaLeft = 0;
+
+      if (heldKeys.includes("w") && top > 0) deltaTop -= MOVEMENT_SPEED;
+      if (heldKeys.includes("a") && left > 0) deltaLeft -= MOVEMENT_SPEED;
+      if (
+        heldKeys.includes("s") &&
+        top < window.innerHeight - CHARACTER_HEIGHT - 70
+      )
+        deltaTop += MOVEMENT_SPEED;
+      if (heldKeys.includes("d") && left < window.innerWidth - 70)
+        deltaLeft += MOVEMENT_SPEED;
+
+      if (deltaTop != 0 && deltaLeft != 0) {
+        deltaTop *= Math.SQRT1_2;
+        deltaLeft *= Math.SQRT1_2;
+      }
+
+      if (deltaTop != 0) setTop((prev) => prev + deltaTop);
+      if (deltaLeft != 0) setLeft((prev) => prev + deltaLeft);
     };
 
-    const interval = setInterval(handle, 1);
-    if (checkProximity()) {
-      setHover(true);
-    } else setHover(false);
+    const interval = setInterval(handleMovement, 1);
+    setHover(checkProximity());
+
     return () => clearInterval(interval);
-  }, [heldKey, top, left]);
+  }, [heldKeys, top, left]);
 
-  const checkProximity = () => {
-    const emilyRect = document.querySelector(".emily")?.getBoundingClientRect();
-    if (
-      emilyRect &&
-      top > emilyRect.top - 100 &&
-      top + characterHeight < emilyRect.bottom + 50 &&
-      left + 70 > emilyRect.left - 10 &&
-      left < emilyRect.right + 10
-    ) {
-      return true;
-    }
-    return false;
-  };
-
-  const startGambling = (target, mod) => {
+  const startGambling = (target: number, mod: number) => {
     for (let i = 0; i <= target; i++) {
-      setTimeout(() => {
-        setArrowLocation(i);
-      }, i * 1000);
+      setTimeout(() => setArrowLocation(i), i * 1000);
     }
 
     setTimeout(() => {
       if (target % 2 === mod) {
         setOverlayText((prev) => {
-          let newText = [...prev];
+          const newText = [...prev];
           if (presents.length === 1) {
             newText.push(
               ...[
@@ -164,7 +173,7 @@ export default function ZBirthday() {
         });
       } else {
         setOverlayText((prev) => {
-          let newText = [...prev];
+          const newText = [...prev];
           newText.push(
             ...[
               "Boohoo! You lose!",
@@ -198,8 +207,8 @@ export default function ZBirthday() {
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
-          height: "93vh",
-          width: "100vw",
+          height: "100%",
+          width: "100%",
           cursor: "url(/specialOccasions/2025/brianbday/cursor.png) 10 10,auto",
         }}
       >
@@ -253,7 +262,7 @@ export default function ZBirthday() {
                     ) {
                       if (presents.length === 3) {
                         setOverlayText((prev) => {
-                          let newText = [...prev];
+                          const newText = [...prev];
                           newText.push(
                             ...[
                               "Congratulations! You've chosen Emily's letter <3",
@@ -450,7 +459,7 @@ export default function ZBirthday() {
             }
           }}
         >
-          <Image src={emily_s_idle} alt="Emily" height={characterHeight} />
+          <Image src={emily_s_idle} alt="Emily" height={CHARACTER_HEIGHT} />
           {hover && (
             <Image
               src={chatbubble}
@@ -473,12 +482,12 @@ export default function ZBirthday() {
             zIndex: 0,
           }}
           src={
-            heldKey
-              ? heldKey === "w"
+            heldKeys
+              ? heldKeys.includes("w")
                 ? brian_w_idle
-                : heldKey === "d"
+                : heldKeys.includes("d")
                 ? brian_d_idle
-                : heldKey === "a"
+                : heldKeys.includes("a")
                 ? brian_a_idle
                 : brian_s_idle
               : lastKey === "w"
@@ -490,7 +499,7 @@ export default function ZBirthday() {
               : brian_s_idle
           }
           alt="Brian"
-          height={characterHeight}
+          height={CHARACTER_HEIGHT}
         />
       </Box>
     </ThemeProvider>
