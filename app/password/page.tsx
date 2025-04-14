@@ -11,8 +11,6 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 
-import "../globals.css";
-
 function hashValue(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
