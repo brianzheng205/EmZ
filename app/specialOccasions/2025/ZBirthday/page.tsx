@@ -45,7 +45,7 @@ export default function ZBirthday() {
     false,
     false,
   ]);
-  const [gamblingWon, setGamblingWon] = useState(false);
+  const [wonFirstGamble, setWonFirstGamble] = useState(false);
 
   const startGambling = (target: number, mod: number) => {
     for (let i = 0; i <= target; i++) {
@@ -54,73 +54,65 @@ export default function ZBirthday() {
 
     setTimeout(() => {
       if (target % 2 === mod) {
-        if (numPresents === 1) setGamblingWon(true);
-        setGambling(false);
-        setOverlayText((prev) =>
+        if (numPresents === 1) setWonFirstGamble(true);
+        setOverlayText(
           numPresents === 1
-            ? [
-                ...prev,
-                "Congratulations! You've won the gift!",
-                "It's a...",
-                "1/2 of a 5090????????",
-                "Guess you'll have to wait to find the other half to use it.",
-                "What's that? You want to double or nothing?",
-                "I guess you can since you're the birthday boy.",
-                "Choose the last gift!",
-              ]
-            : [
-                ...prev,
-                "Congratulations! You've won all of the gifts!",
-                "The first was my letter.",
-                ...(gamblingWon
-                  ? ["The second was half of a 5090"]
-                  : [
-                      "The second gift was...",
-                      "half of a 5090???????",
-                      "Guess you'll have to wait to find the other half to use it.",
-                    ]),
-                "This last one is...",
-                "an all inclusive meal at the restaurant of your choice! (even Wagyu House)",
-              ]
+            ? text.gpuWin.msgs
+            : wonFirstGamble
+            ? text.mealWinWin.msgs
+            : text.mealWinLose.msgs
         );
-        setOverlayTextIndex((prev) => prev + 1);
       } else {
-        setGambling(false);
-        setOverlayText((prev) => [
-          ...prev,
-          "Boohoo! You lose!",
-          "Guess you'll never know what the gift was :(",
-          ...(numPresents === 1
-            ? [
-                "What's that? You want to double or nothing?",
-                "I guess you can since you're the birthday boy.",
-                "Choose the last gift!",
-              ]
-            : []),
-        ]);
-        setOverlayTextIndex((prev) => prev + 1);
+        setOverlayText(
+          numPresents === 1 ? text.gpuLose.msgs : text.mealLose.msgs
+        );
       }
 
+      setGambling(false);
       setArrowLocation(-1);
-    }, (target + 1) * 1000);
+      setOverlayTextIndex(0);
+    }, (target + 2) * 1000);
   };
 
   const onPresentClick = () => {
     if (overlayTextIndex !== overlayText.length - 1 || gambling) return;
 
     if (numPresents === 3) {
-      setOverlayText((prev) => [...prev, ...text.letter.msgs]);
-      setOverlayTextIndex((prev) => prev + 1);
+      setOverlayText(text.letter.msgs);
     } else {
-      setOverlayText((prev) => [...prev, "Choose a color to gamble on:"]);
-      setOverlayTextIndex((prev) => prev + 1);
+      setOverlayText(text.startGamble.msgs);
       setGambling(true);
       setGamblingChoicesVisible(true);
       setGamblingChoiceHover([false, false]);
     }
 
+    setOverlayTextIndex(0);
     setNumPresents((prev) => prev - 1);
   };
+
+  const renderGamblingChoice = (color: string, index: number) => (
+    <Typography
+      sx={{
+        border: gamblingChoiceHover[index] ? `3px solid` : "none",
+        borderRadius: "5px",
+        padding: "0 10px",
+      }}
+      onMouseOver={() =>
+        setGamblingChoiceHover(index === 0 ? [true, false] : [false, true])
+      }
+      onMouseOut={() => setGamblingChoiceHover([false, false])}
+      onClick={(e) => {
+        e.stopPropagation();
+        setGamblingChoicesVisible(false);
+        setOverlayText(text.duringGamble.msgs);
+        setOverlayTextIndex(0);
+        let target = Math.floor(Math.random() * 8);
+        startGambling(target, index);
+      }}
+    >
+      {color}
+    </Typography>
+  );
 
   return (
     <ThemeProvider theme={stardewTheme}>
@@ -253,60 +245,14 @@ export default function ZBirthday() {
                     padding: "24px 36px",
                   }}
                 >
-                  <Typography sx={{ lineHeight: 1.05 }}>
+                  <Typography sx={{ lineHeight: 1 }}>
                     {overlayText[overlayTextIndex]}
                   </Typography>
 
                   {gamblingChoicesVisible && (
                     <>
-                      <Typography
-                        sx={{
-                          border: gamblingChoiceHover[0] ? `3px solid` : "none",
-                          borderRadius: "5px",
-                          padding: "0 10px",
-                        }}
-                        onMouseOver={() =>
-                          setGamblingChoiceHover([true, false])
-                        }
-                        onMouseOut={() =>
-                          setGamblingChoiceHover([false, false])
-                        }
-                        onClick={() => {
-                          setGamblingChoicesVisible(false);
-                          setOverlayText((prev) => [...prev, "*Gulp*"]);
-                          setOverlayTextIndex((prev) =>
-                            overlayText.length > 17 ? prev : prev + 1
-                          );
-                          let target = Math.floor(Math.random() * 8);
-                          startGambling(target, 0);
-                        }}
-                      >
-                        Green
-                      </Typography>
-                      <Typography
-                        sx={{
-                          border: gamblingChoiceHover[1] ? `3px solid` : "none",
-                          borderRadius: "5px",
-                          padding: "0 10px",
-                        }}
-                        onMouseOver={() =>
-                          setGamblingChoiceHover([false, true])
-                        }
-                        onMouseOut={() =>
-                          setGamblingChoiceHover([false, false])
-                        }
-                        onClick={() => {
-                          setGamblingChoicesVisible(false);
-                          setOverlayText((prev) => [...prev, "*Gulp*"]);
-                          setOverlayTextIndex((prev) =>
-                            overlayText.length > 17 ? prev : prev + 1
-                          );
-                          let target = Math.floor(Math.random() * 8);
-                          startGambling(target, 1);
-                        }}
-                      >
-                        Orange
-                      </Typography>
+                      {renderGamblingChoice("Green", 0)}
+                      {renderGamblingChoice("Orange", 1)}
                     </>
                   )}
                 </Box>
@@ -329,7 +275,7 @@ export default function ZBirthday() {
               setGambling(false);
               setGamblingChoicesVisible(false);
               setArrowLocation(-1);
-              setGamblingWon(false);
+              setWonFirstGamble(false);
               setGamblingChoiceHover([false, false]);
             }
           }}

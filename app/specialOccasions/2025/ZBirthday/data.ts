@@ -1,3 +1,22 @@
+const loseMsgs = [
+  "Boohoo! You lose!",
+  "Guess you'll never know what the gift was :(",
+];
+
+const mealWinMsgs = [
+  "Congratulations! You've won all of the gifts!",
+  "The first was my letter.",
+  // insert conditional msg here
+  "This last one is...",
+  "an all inclusive meal at the restaurant of your choice! (even Wagyu House)",
+];
+
+const doubleOrNothingMsgs = [
+  "What's that? You want to double or nothing?",
+  "I guess you can since you're the birthday boy.",
+  "Choose the last gift!",
+];
+
 const text = {
   intro: {
     msgs: [
@@ -7,6 +26,7 @@ const text = {
     ],
     // getNext: () => "outro",
   },
+  // first present
   letter: {
     msgs: [
       "Congratulations! You've chosen Emily's letter <3",
@@ -22,6 +42,49 @@ const text = {
       "What's that? You want to gamble the letter for the other presents?",
       "Well, alright :( Choose the gift you want to gamble for the letter",
     ],
+  },
+  // start gamble
+  startGamble: {
+    msgs: ["Choose a color to gamble on:"],
+  },
+  duringGamble: {
+    msgs: ["*Gulp*"],
+  },
+  // second present win
+  gpuWin: {
+    msgs: [
+      "Congratulations! You've won the gift!",
+      "It's a...",
+      "1/2 of a 5090????????",
+      "Guess you'll have to wait to find the other half to use it.",
+      ...doubleOrNothingMsgs,
+    ],
+  },
+  // second present lose
+  gpuLose: {
+    msgs: [...loseMsgs, ...doubleOrNothingMsgs],
+  },
+  // third present win w/ prev win
+  mealWinWin: {
+    msgs: [
+      ...mealWinMsgs.slice(0, 2),
+      "The second was half of a 5090",
+      ...mealWinMsgs.slice(2),
+    ],
+  },
+  // third present win w/ prev lose
+  mealWinLose: {
+    msgs: [
+      ...mealWinMsgs.slice(0, 2),
+      "The second gift was...",
+      "half of a 5090???????",
+      "Guess you'll have to wait to find the other half to use it.",
+      ...mealWinMsgs.slice(2),
+    ],
+  },
+  // third present lose
+  mealLose: {
+    msgs: loseMsgs,
   },
 };
 
