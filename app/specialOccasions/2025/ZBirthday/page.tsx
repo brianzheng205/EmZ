@@ -14,7 +14,6 @@ import Character from "./../../../components/game/Character";
 import text from "./data";
 import emily_s_idle from "/public/specialOccasions/2025/brianbday/emily_s_idle.png";
 import chatbubble from "/public/specialOccasions/2025/brianbday/chat.png";
-import textOverlay from "/public/specialOccasions/2025/brianbday/textOverlay.png";
 import present from "/public/specialOccasions/2025/brianbday/present.png";
 import arrow from "/public/specialOccasions/2025/brianbday/arrow.png";
 
@@ -154,6 +153,7 @@ export default function ZBirthday() {
                 flexDirection: "row",
                 justifyContent: "space-around",
                 marginBottom: "3%",
+                height: "40%",
               }}
             >
               {R.map(
@@ -189,6 +189,7 @@ export default function ZBirthday() {
                 flexDirection: "row",
                 justifyContent: "center",
                 visibility: gambling ? "visible" : "hidden",
+                height: "10%",
               }}
             >
               {R.map(
@@ -220,6 +221,7 @@ export default function ZBirthday() {
             <Stack
               sx={{
                 alignItems: "center",
+                height: "50%",
               }}
               onClick={() =>
                 setOverlayTextIndex((prev) =>
@@ -233,25 +235,20 @@ export default function ZBirthday() {
                 sx={{
                   position: "relative",
                   display: "inline-block",
-                  width: "50%",
-                  height: "auto",
+                  height: "100%",
+                  aspectRatio: "579/180",
+                  backgroundImage: `url(/specialOccasions/2025/brianbday/textOverlay.png)`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               >
-                <Image
-                  src={textOverlay}
-                  alt="Text Overlay Background"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                />
                 <Box
                   sx={{
                     position: "absolute",
                     top: 0,
                     left: 0,
                     color: "#530c01",
-                    padding: "24px 32px",
+                    padding: "24px 36px",
                   }}
                 >
                   <Typography sx={{ lineHeight: 1.05 }}>
