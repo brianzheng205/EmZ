@@ -19,7 +19,7 @@ export default function Character(props: {
   height: number;
   width: number;
   movementSpeed: number;
-  setHover: Dispatch<SetStateAction<boolean>>;
+  setIsHovering: Dispatch<SetStateAction<boolean>>;
 }) {
   const [heldKeys, setHeldKeys] = useState<string[]>([]);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -96,7 +96,7 @@ export default function Character(props: {
         ),
         left: R.clamp(0, window.innerWidth - props.width, prev.left + deltaX),
       }));
-      props.setHover(checkProximity());
+      props.setIsHovering(checkProximity());
       animationFrameId = requestAnimationFrame(handleMovement);
     };
 

@@ -17,7 +17,7 @@ import chatbubble from "/public/specialOccasions/2025/brianbday/chat.png";
 import present from "/public/specialOccasions/2025/brianbday/present.png";
 import arrow from "/public/specialOccasions/2025/brianbday/arrow.png";
 
-import "/app/globals.css";
+import "./styles.css";
 
 const stardewTheme = createTheme({
   typography: {
@@ -33,19 +33,23 @@ const CHARACTER_HEIGHT = 100;
 const CHARACTER_WIDTH = 70;
 
 export default function ZBirthday() {
-  const [hover, setHover] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const [numPresents, setNumPresents] = useState(3);
-  const [selectedPresent, setSelectedPresent] = useState(-1);
-  const [overlayText, setOverlayText] = useState(text.intro.msgs);
-  const [overlayTextIndex, setOverlayTextIndex] = useState(overlayText.length);
-  const [gambling, setGambling] = useState(false);
-  const [gamblingChoicesVisible, setGamblingChoicesVisible] = useState(false);
+
+  // Overlay Text
+  const [overlayTextKey, setOverlayTextKey] =
+    useState<keyof typeof text>("intro");
+  const overlayTextsList = R.path([overlayTextKey, "msgs"], text);
+  const [overlayTextIndex, setOverlayTextIndex] = useState(
+    overlayTextsList.length
+  );
+  const overlayText = overlayTextsList[overlayTextIndex];
+
+  // Gambling
   const [arrowLocation, setArrowLocation] = useState(-1);
-  const [gamblingChoiceHover, setGamblingChoiceHover] = useState([
-    false,
-    false,
-  ]);
   const [wonFirstGamble, setWonFirstGamble] = useState(false);
+  const isChoosingColor = overlayTextKey === "startGamble";
+  const isGambling = overlayTextKey === "duringGamble";
 
   const startGambling = (target: number, mod: number) => {
     for (let i = 0; i <= target; i++) {
@@ -55,35 +59,29 @@ export default function ZBirthday() {
     setTimeout(() => {
       if (target % 2 === mod) {
         if (numPresents === 1) setWonFirstGamble(true);
-        setOverlayText(
+        setOverlayTextKey(
           numPresents === 1
-            ? text.gpuWin.msgs
+            ? "gpuWin"
             : wonFirstGamble
-            ? text.mealWinWin.msgs
-            : text.mealWinLose.msgs
+            ? "mealWinWin"
+            : "mealWinLose"
         );
       } else {
-        setOverlayText(
-          numPresents === 1 ? text.gpuLose.msgs : text.mealLose.msgs
-        );
+        setOverlayTextKey(numPresents === 1 ? "gpuLose" : "mealLose");
       }
 
-      setGambling(false);
       setArrowLocation(-1);
       setOverlayTextIndex(0);
     }, (target + 2) * 1000);
   };
 
   const onPresentClick = () => {
-    if (overlayTextIndex !== overlayText.length - 1 || gambling) return;
+    if (overlayTextIndex !== overlayTextsList.length - 1 || isGambling) return;
 
     if (numPresents === 3) {
-      setOverlayText(text.letter.msgs);
+      setOverlayTextKey("letter");
     } else {
-      setOverlayText(text.startGamble.msgs);
-      setGambling(true);
-      setGamblingChoicesVisible(true);
-      setGamblingChoiceHover([false, false]);
+      setOverlayTextKey("startGamble");
     }
 
     setOverlayTextIndex(0);
@@ -93,18 +91,14 @@ export default function ZBirthday() {
   const renderGamblingChoice = (color: string, index: number) => (
     <Typography
       sx={{
-        border: gamblingChoiceHover[index] ? `3px solid` : "none",
         borderRadius: "5px",
         padding: "0 10px",
+        "&:hover": {
+          border: "3px solid",
+        },
       }}
-      onMouseOver={() =>
-        setGamblingChoiceHover(index === 0 ? [true, false] : [false, true])
-      }
-      onMouseOut={() => setGamblingChoiceHover([false, false])}
       onClick={(e) => {
-        e.stopPropagation();
-        setGamblingChoicesVisible(false);
-        setOverlayText(text.duringGamble.msgs);
+        setOverlayTextKey("duringGamble");
         setOverlayTextIndex(0);
         let target = Math.floor(Math.random() * 8);
         startGambling(target, index);
@@ -129,7 +123,7 @@ export default function ZBirthday() {
           cursor: "url(/specialOccasions/2025/brianbday/cursor.png) 10 10,auto",
         }}
       >
-        {overlayTextIndex < overlayText.length && (
+        {overlayTextIndex < overlayTextsList.length && (
           <Stack
             sx={{
               padding: "4% 2% 1% 2%",
@@ -159,18 +153,19 @@ export default function ZBirthday() {
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
+                      "& .hover-img": {
+                        transition: "transform 0.3s ease",
+                      },
+                      "&:hover .hover-img": {
+                        transform: "scale(1.3)",
+                      },
                     }}
                     key={index}
                   >
                     <Image
-                      style={{
-                        transform:
-                          index === selectedPresent ? "scale(1.3)" : "scale(1)",
-                      }}
+                      className="hover-img"
                       src={present}
                       alt="present"
-                      onMouseOver={() => setSelectedPresent(index)}
-                      onMouseOut={() => setSelectedPresent(-1)}
                       onClick={onPresentClick}
                     />
                   </Box>
@@ -183,7 +178,7 @@ export default function ZBirthday() {
               sx={{
                 flexDirection: "row",
                 justifyContent: "center",
-                visibility: gambling ? "visible" : "hidden",
+                visibility: isGambling ? "visible" : "hidden",
                 height: "10%",
               }}
             >
@@ -197,16 +192,9 @@ export default function ZBirthday() {
                         height: 30,
                       }}
                     />
-                    <Image
-                      style={{
-                        visibility:
-                          index == arrowLocation ? "visible" : "hidden",
-                      }}
-                      src={arrow}
-                      alt="arrow"
-                      width={30}
-                      height={30}
-                    />
+                    {index === arrowLocation && (
+                      <Image src={arrow} alt="arrow" width={30} height={30} />
+                    )}
                   </Box>
                 ),
                 R.range(0, 8)
@@ -220,7 +208,9 @@ export default function ZBirthday() {
               }}
               onClick={() =>
                 setOverlayTextIndex((prev) =>
-                  prev < overlayText.length - 1 || numPresents <= 0
+                  (prev < overlayTextsList.length - 1 || numPresents <= 0) &&
+                  !isChoosingColor &&
+                  !isGambling
                     ? prev + 1
                     : prev
                 )
@@ -245,11 +235,9 @@ export default function ZBirthday() {
                     padding: "24px 36px",
                   }}
                 >
-                  <Typography sx={{ lineHeight: 1 }}>
-                    {overlayText[overlayTextIndex]}
-                  </Typography>
+                  <Typography sx={{ lineHeight: 1 }}>{overlayText}</Typography>
 
-                  {gamblingChoicesVisible && (
+                  {isChoosingColor && (
                     <>
                       {renderGamblingChoice("Green", 0)}
                       {renderGamblingChoice("Orange", 1)}
@@ -265,23 +253,19 @@ export default function ZBirthday() {
           sx={{ position: "absolute", top: "60%", left: "80%", zIndex: 0 }}
           className="emily"
           onContextMenu={(e) => {
-            if (hover) {
+            if (isHovering) {
               e.preventDefault();
-              setHover(false);
+              setIsHovering(false);
               setOverlayTextIndex(0);
               setNumPresents(3);
-              setSelectedPresent(-1);
-              setOverlayText(text.intro.msgs);
-              setGambling(false);
-              setGamblingChoicesVisible(false);
+              setOverlayTextKey("intro");
               setArrowLocation(-1);
               setWonFirstGamble(false);
-              setGamblingChoiceHover([false, false]);
             }
           }}
         >
           <Image src={emily_s_idle} alt="Emily" height={CHARACTER_HEIGHT} />
-          {hover && (
+          {isHovering && (
             <Image
               src={chatbubble}
               alt="bubble"
@@ -299,7 +283,7 @@ export default function ZBirthday() {
           height={CHARACTER_HEIGHT}
           width={CHARACTER_WIDTH}
           movementSpeed={5}
-          setHover={setHover}
+          setIsHovering={setIsHovering}
         />
       </Box>
     </ThemeProvider>
