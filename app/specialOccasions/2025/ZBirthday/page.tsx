@@ -45,7 +45,7 @@ export default function ZBirthday() {
   // Overlay Text
   const [overlayTextKey, setOverlayTextKey] =
     useState<keyof typeof text>("intro");
-  const overlayTextsList = R.path([overlayTextKey, "msgs"], text);
+  const overlayTextsList = text[overlayTextKey];
   const [overlayTextIndex, setOverlayTextIndex] = useState(
     overlayTextsList.length
   );
@@ -57,9 +57,24 @@ export default function ZBirthday() {
   const isChoosingColor = overlayTextKey === "startGamble";
   const isGambling = overlayTextKey === "duringGamble";
 
-  // TODO create function to decide next overlay text key
+  const handleNextKey = (index?: number) => {
+    if (overlayTextIndex < overlayTextsList.length - 1) return overlayTextKey;
 
-  const startGambling = (target: number, mod: number) => {
+    if (overlayTextKey === "intro") setOverlayTextKey("letter");
+    else if (overlayTextKey === "letter") setOverlayTextKey("startGamble");
+    else if (overlayTextKey === "startGamble" && index !== undefined) {
+      setOverlayTextKey("duringGamble");
+      startGambling(index); // takes care of "duringGamble" -> "gpuWin"/"gpuLose" or "mealWinWin"/"mealWinLose"/"mealLose"
+      return; // don't set overlayTextIndex bc startGambling will do it after a delay
+    } else if (["gpuWin", "gpuLose"].includes(overlayTextKey))
+      setOverlayTextKey("startGamble");
+
+    setOverlayTextIndex(0);
+  };
+
+  const startGambling = (mod: number) => {
+    const target = Math.floor(Math.random() * 8);
+
     for (let i = 0; i <= target; i++) {
       setTimeout(() => setArrowLocation(i), i * 1000);
     }
@@ -86,13 +101,7 @@ export default function ZBirthday() {
   const onPresentClick = () => {
     if (overlayTextIndex !== overlayTextsList.length - 1 || isGambling) return;
 
-    if (numPresents === 3) {
-      setOverlayTextKey("letter");
-    } else {
-      setOverlayTextKey("startGamble");
-    }
-
-    setOverlayTextIndex(0);
+    handleNextKey();
     setNumPresents((prev) => prev - 1);
   };
 
@@ -105,12 +114,7 @@ export default function ZBirthday() {
           border: "3px solid",
         },
       }}
-      onClick={(e) => {
-        setOverlayTextKey("duringGamble");
-        setOverlayTextIndex(0);
-        let target = Math.floor(Math.random() * 8);
-        startGambling(target, index);
-      }}
+      onClick={() => handleNextKey(index)}
     >
       {color}
     </Typography>
@@ -129,6 +133,7 @@ export default function ZBirthday() {
           width: "100%",
           height: "100%",
           cursor: "url(/specialOccasions/2025/brianbday/cursor.png) 10 10,auto",
+          userSelect: "none",
         }}
       >
         {overlayTextIndex < overlayTextsList.length && (
@@ -264,9 +269,9 @@ export default function ZBirthday() {
             if (isHovering) {
               e.preventDefault();
               setIsHovering(false);
-              setOverlayTextIndex(0);
               setNumPresents(3);
               setOverlayTextKey("intro");
+              setOverlayTextIndex(0);
               setArrowLocation(-1);
               setWonFirstGamble(false);
             }
