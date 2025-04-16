@@ -32,6 +32,12 @@ const stardewTheme = createTheme({
 const CHARACTER_HEIGHT = 100;
 const CHARACTER_WIDTH = 70;
 
+// TODO convert to using canvas for better performance and consistent positioning (hopefully)
+
+// TODO fix Image console warnings about setting height and not width
+
+// TODO add text bubble to cursor rather than its own image
+
 export default function ZBirthday() {
   const [isHovering, setIsHovering] = useState(false);
   const [numPresents, setNumPresents] = useState(3);
@@ -50,6 +56,8 @@ export default function ZBirthday() {
   const [wonFirstGamble, setWonFirstGamble] = useState(false);
   const isChoosingColor = overlayTextKey === "startGamble";
   const isGambling = overlayTextKey === "duringGamble";
+
+  // TODO create function to decide next overlay text key
 
   const startGambling = (target: number, mod: number) => {
     for (let i = 0; i <= target; i++) {
