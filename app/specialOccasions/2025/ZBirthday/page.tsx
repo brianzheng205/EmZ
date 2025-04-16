@@ -23,6 +23,9 @@ const stardewTheme = createTheme({
   typography: {
     fontFamily: "'Stardew_Valley', Arial, sans-serif",
     fontSize: 30,
+    allVariants: {
+      color: "rgb(106, 33, 23)",
+    },
   },
 });
 
@@ -247,7 +250,6 @@ export default function ZBirthday() {
                     position: "absolute",
                     top: 0,
                     left: 0,
-                    color: "#530c01",
                     padding: "24px 36px",
                   }}
                 >
@@ -259,10 +261,7 @@ export default function ZBirthday() {
                     <>
                       <Typography
                         sx={{
-                          width: "100%",
-                          border: gamblingChoiceHover[0]
-                            ? "3px solid rgb(106, 33, 23)"
-                            : "none",
+                          border: gamblingChoiceHover[0] ? `3px solid` : "none",
                           borderRadius: "5px",
                           padding: "0 10px",
                         }}
@@ -286,10 +285,7 @@ export default function ZBirthday() {
                       </Typography>
                       <Typography
                         sx={{
-                          width: "100%",
-                          border: gamblingChoiceHover[1]
-                            ? "3px solid rgb(106, 33, 23)"
-                            : "none",
+                          border: gamblingChoiceHover[1] ? `3px solid` : "none",
                           borderRadius: "5px",
                           padding: "0 10px",
                         }}
