@@ -1,8 +1,7 @@
 "use client";
 
-import { getFirestore } from "firebase/firestore";
-import app from "../../firebase/client";
 import {
+  getFirestore,
   collection,
   getDocs,
   doc,
@@ -13,6 +12,7 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
+import app from "../../firebase/client";
 
 import { useState, useEffect } from "react";
 

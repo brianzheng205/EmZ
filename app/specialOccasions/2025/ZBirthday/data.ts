@@ -6,7 +6,7 @@ const loseMsgs = [
 const mealWinMsgs = [
   "Congratulations! You've won all of the gifts!",
   "The first was my letter.",
-  // insert conditional msg here
+  // insert conditional msgs here
   "This last one is...",
   "an all inclusive meal at the restaurant of your choice! (even Wagyu House)",
 ];
