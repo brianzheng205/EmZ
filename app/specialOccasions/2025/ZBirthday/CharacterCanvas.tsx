@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { resizeCanvas } from "../../../utils";
 
-const MOVEMENT_SPEED = 25;
+const MOVEMENT_SPEED = 5;
 const CHARACTER_SIZE = { width: 70, height: 100 };
 
 export default function CharacterCanvas(props: {
@@ -128,8 +128,10 @@ export default function CharacterCanvas(props: {
       });
 
       // Normalize diagonal movemeant
-      dx *= Math.SQRT1_2;
-      dy *= Math.SQRT1_2;
+      if (dx !== 0 && dy !== 0) {
+        dx *= Math.SQRT1_2;
+        dy *= Math.SQRT1_2;
+      }
 
       brian.x = Math.max(0, Math.min(canvas.width - brian.width, brian.x + dx));
       brian.y = Math.max(

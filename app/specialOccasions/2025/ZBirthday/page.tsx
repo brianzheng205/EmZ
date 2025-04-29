@@ -27,7 +27,6 @@ const stardewTheme = createTheme({
   },
 });
 
-// TODO add text bubble to cursor rather than its own image
 export default function ZBirthday() {
   const [numPresents, setNumPresents] = useState(3);
 
