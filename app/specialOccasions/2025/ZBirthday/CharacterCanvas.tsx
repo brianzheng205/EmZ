@@ -5,7 +5,10 @@ import { resizeCanvas } from "../../../utils";
 const MOVEMENT_SPEED = 25;
 const CHARACTER_SIZE = { width: 70, height: 100 };
 
-export default function CharacterCanvas(props: { onStartConvo: () => void }) {
+export default function CharacterCanvas(props: {
+  onStartConvo: () => void;
+  isOverlayVisible: boolean; // New prop
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -100,6 +103,8 @@ export default function CharacterCanvas(props: { onStartConvo: () => void }) {
     };
 
     const update = () => {
+      if (props.isOverlayVisible) return; // Prevent movement if overlay is visible
+
       let dx = 0;
       let dy = 0;
 
@@ -173,7 +178,7 @@ export default function CharacterCanvas(props: { onStartConvo: () => void }) {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("contextmenu", handleRightClick);
     };
-  }, []);
+  }, [props.isOverlayVisible]); // Add dependency for overlay visibility
 
   return (
     <canvas

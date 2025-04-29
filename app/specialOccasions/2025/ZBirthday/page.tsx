@@ -39,6 +39,7 @@ export default function ZBirthday() {
     overlayTextsList.length
   );
   const overlayText = overlayTextsList[overlayTextIndex];
+  const isOverlayVisible = overlayTextIndex < overlayTextsList.length;
 
   // Gambling
   const [arrowLocation, setArrowLocation] = useState(-1);
@@ -255,9 +256,12 @@ export default function ZBirthday() {
           userSelect: "none",
         }}
       >
-        <CharacterCanvas onStartConvo={onStartConvo} />
+        <CharacterCanvas
+          onStartConvo={onStartConvo}
+          isOverlayVisible={isOverlayVisible}
+        />
 
-        {overlayTextIndex < overlayTextsList.length && (
+        {isOverlayVisible && (
           <Stack
             sx={{
               padding: "4% 2% 1% 2%",
