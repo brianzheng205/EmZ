@@ -23,12 +23,13 @@ import {
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 
-import AddCountdownDialog from "@/components/countdown/AddCountdownDialog";
-import CountdownEventCard from "@/components/countdown/CountdownEventCard";
 import app from "@firebase";
 
 import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
 import { getAdjustedDate } from "../utils";
+
+import AddCountdownDialog from "./AddCountdownDialog";
+import CountdownEventCard from "./CountdownEventCard";
 
 // Helper function to format date string (MM-DD-YYYY)
 function getDateString(date: Date): string {

@@ -11,10 +11,15 @@ import {
   TbLayoutSidebarLeftExpand,
 } from "react-icons/tb";
 
-function ToggleSideBarButton(props: { isOpen: boolean; onClick: () => void }) {
+interface ToggleSideBarButtonProps {
+  isOpen: boolean;
+  onClick: () => void;
+}
+
+function ToggleSideBarButton({ isOpen, onClick }: ToggleSideBarButtonProps) {
   return (
-    <IconButton color="inherit" onClick={props.onClick}>
-      {props.isOpen ? (
+    <IconButton color="inherit" onClick={onClick}>
+      {isOpen ? (
         <TbLayoutSidebarLeftCollapseFilled />
       ) : (
         <TbLayoutSidebarLeftExpand />
@@ -23,10 +28,15 @@ function ToggleSideBarButton(props: { isOpen: boolean; onClick: () => void }) {
   );
 }
 
-export default function Header(props: {
+interface HeaderProps {
   isSideBarOpen: boolean;
   setIsSideBarOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
+}
+
+export default function Header({
+  isSideBarOpen,
+  setIsSideBarOpen,
+}: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -45,8 +55,8 @@ export default function Header(props: {
       <Toolbar>
         <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
           <ToggleSideBarButton
-            isOpen={props.isSideBarOpen}
-            onClick={() => props.setIsSideBarOpen((prev) => !prev)}
+            isOpen={isSideBarOpen}
+            onClick={() => setIsSideBarOpen((prev) => !prev)}
           />
           {showBackButton && (
             <IconButton color="inherit" onClick={handleBack}>

@@ -37,7 +37,11 @@ export const ROUTES: Route[] = [
 
 const BORDER_RADIUS = "16px";
 
-export default function SideBar(props: { isOpen: boolean }) {
+interface SideBarProps {
+  isOpen: boolean;
+}
+
+export default function SideBar({ isOpen }: SideBarProps) {
   const pathname = usePathname();
 
   return (
@@ -47,9 +51,9 @@ export default function SideBar(props: { isOpen: boolean }) {
         color: "white",
         transition: "all 500ms",
         overflow: "hidden",
-        minWidth: props.isOpen ? 230 : 0,
-        maxWidth: props.isOpen ? 230 : 0,
-        opacity: props.isOpen ? 1 : 0.3,
+        minWidth: isOpen ? 230 : 0,
+        maxWidth: isOpen ? 230 : 0,
+        opacity: isOpen ? 1 : 0.3,
       }}
     >
       <List sx={{ p: 2 }}>

@@ -6,8 +6,8 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
 
-import VideoPage from "../../../components/pages/VideoPage";
-import ShadowedText from "../../../components/ShadowedText";
+import VideoPage from "@/components/pages/VideoPage";
+import ShadowedText from "@/components/ShadowedText";
 
 export default function EmBirthday() {
   const [clickCount, setClickCount] = useState(0);

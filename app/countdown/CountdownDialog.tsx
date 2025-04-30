@@ -16,17 +16,9 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
-import { CountdownEventDialogProps } from "../../types"; // Import the base props type
+import { CountdownEventDialogProps } from "../types"; // Import the base props type
 
-function CountdownDialogInputs({
-  id,
-  description,
-  onIdChange,
-  onDescriptionChange,
-  handleSubmit,
-  existingCustomIds,
-  isCustomId,
-}: {
+interface CountdownDialogInputsProps {
   id: string;
   description: string;
   // eslint-disable-next-line no-unused-vars
@@ -36,7 +28,17 @@ function CountdownDialogInputs({
   handleSubmit: () => void;
   existingCustomIds: string[];
   isCustomId: boolean;
-}) {
+}
+
+function CountdownDialogInputs({
+  id,
+  description,
+  onIdChange,
+  onDescriptionChange,
+  handleSubmit,
+  existingCustomIds,
+  isCustomId,
+}: CountdownDialogInputsProps) {
   const [customId, setCustomId] = useState(isCustomId ? id : "");
   const [dateId, setDateId] = useState(isCustomId ? "" : id);
   const [idError, setIdError] = useState("");

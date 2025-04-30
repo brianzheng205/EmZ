@@ -7,12 +7,19 @@ const linkStyle: CSSProperties = {
   color: "inherit",
 };
 
-export default function StyledLink(
-  props: LinkProps & { children: React.ReactNode }
-) {
+interface StyledLinkProps extends LinkProps {
+  children: React.ReactNode;
+}
+
+export default function StyledLink({
+  href,
+  as,
+  children,
+  ...props
+}: StyledLinkProps) {
   return (
-    <Link {...props} style={linkStyle}>
-      {props.children}
+    <Link href={href} as={as} style={linkStyle} {...props}>
+      {children}
     </Link>
   );
 }

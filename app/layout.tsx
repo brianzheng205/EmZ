@@ -42,7 +42,11 @@ const theme = createTheme({
   },
 });
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   return (
@@ -74,7 +78,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
             sx={{ height: "calc(100vh - 64px)" }}
           >
             <SideBar isOpen={isSideBarOpen} />
-            <Box sx={{ flex: 1, overflowY: "auto" }}>{props.children}</Box>
+            <Box sx={{ flex: 1, overflowY: "auto" }}>{children}</Box>
           </Stack>
         </ThemeProvider>
       </body>
