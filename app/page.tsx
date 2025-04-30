@@ -1,3 +1,5 @@
+"use client";
+
 import { ROUTES } from "./components/layout/SideBar";
 import RoutePage from "./components/pages/RoutePage";
 

@@ -11,7 +11,6 @@ import {
   TbLayoutSidebarLeftExpand,
 } from "react-icons/tb";
 
-
 function ToggleSideBarButton(props: { isOpen: boolean; onClick: () => void }) {
   return (
     <IconButton color="inherit" onClick={props.onClick}>

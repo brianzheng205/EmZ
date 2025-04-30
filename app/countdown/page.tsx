@@ -1,6 +1,5 @@
 "use client";
 
-import app from "@firebase";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
   Button,
@@ -26,6 +25,7 @@ import { useState, useEffect } from "react";
 
 import AddCountdownDialog from "@/components/countdown/AddCountdownDialog";
 import CountdownEventCard from "@/components/countdown/CountdownEventCard";
+import app from "@firebase";
 
 import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
 import { getAdjustedDate } from "../utils";
