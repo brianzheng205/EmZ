@@ -3,11 +3,10 @@ import { useEffect, useRef } from "react";
 import { resizeCanvas } from "../../../utils";
 
 const MOVEMENT_SPEED = 5;
-const CHARACTER_SIZE = { width: 70, height: 100 };
 
 export default function CharacterCanvas(props: {
   onStartConvo: () => void;
-  isOverlayVisible: boolean; // New prop
+  isOverlayVisible: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -37,8 +36,8 @@ export default function CharacterCanvas(props: {
     const brian = {
       x: 200,
       y: 200,
-      width: CHARACTER_SIZE.width,
-      height: CHARACTER_SIZE.height,
+      width: 46,
+      height: 100,
       img: brianImages.d,
     };
 
@@ -46,7 +45,7 @@ export default function CharacterCanvas(props: {
     const emily = {
       x: width * 0.8,
       y: height * 0.6,
-      width: 70,
+      width: 54,
       height: 100,
       img: new Image(),
     };
