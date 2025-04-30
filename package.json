@@ -16,7 +16,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prepare": "husky",
+    "test": "echo \"No tests yet\" && exit 0"
   },
   "devDependencies": {
     "@types/node": "22.10.1",
@@ -26,6 +28,7 @@
     "eslint-config-next": "^15.3.1",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.7",
     "typescript": "5.7.2"
   }
 }
