@@ -4,7 +4,6 @@ import { CssBaseline, Box, Stack } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useState } from "react";
 
-
 import Header from "./components/layout/Header";
 import SideBar from "./components/layout/SideBar";
 
@@ -55,6 +54,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           href="https://fonts.gstatic.com"
           crossOrigin=""
         />
+        {/* TODO: Fix the font loading issue */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap"
           rel="stylesheet"

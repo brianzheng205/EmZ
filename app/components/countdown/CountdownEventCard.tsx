@@ -14,16 +14,15 @@ import {
 import * as R from "ramda";
 import { useState } from "react";
 
-
 import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
 
 import EditCountdownDialog from "./EditCountdownDialog";
-
 
 export default function CountdownEventCard(props: {
   event: CountdownEvent;
   onEdit: EditEventFn;
   onDelete: DeleteEventFn;
+  // eslint-disable-next-line no-unused-vars
   formatCountdown: (id: string, isCustomId?: boolean) => string;
   existingCustomIds: string[];
 }) {

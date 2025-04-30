@@ -17,8 +17,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky",
-    "test": "echo \"No tests yet\" && exit 0"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "22.10.1",
