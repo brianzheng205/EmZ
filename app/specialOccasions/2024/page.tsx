@@ -1,6 +1,7 @@
-import RoutePage from "../../components/pages/RoutePage";
 import { FiHeart } from "react-icons/fi";
 import { IoRose } from "react-icons/io5";
+
+import RoutePage from "../../components/pages/RoutePage";
 import { Route } from "../../components/pages/RoutePage";
 
 const ROUTES: Route[] = [

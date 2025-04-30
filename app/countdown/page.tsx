@@ -1,5 +1,15 @@
 "use client";
 
+import app from "@firebase";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import {
+  Button,
+  Container,
+  Stack,
+  IconButton,
+  Snackbar,
+  Grid2 as Grid,
+} from "@mui/material";
 import {
   getFirestore,
   collection,
@@ -12,22 +22,10 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import app from "../../firebase/client";
-
 import { useState, useEffect } from "react";
 
-import {
-  Button,
-  Container,
-  Stack,
-  IconButton,
-  Snackbar,
-  Grid2 as Grid,
-} from "@mui/material";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-
-import CountdownEventCard from "../components/countdown/CountdownEventCard";
-import AddCountdownDialog from "../components/countdown/AddCountdownDialog";
+import AddCountdownDialog from "@/components/countdown/AddCountdownDialog";
+import CountdownEventCard from "@/components/countdown/CountdownEventCard";
 
 import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
 import { getAdjustedDate } from "../utils";

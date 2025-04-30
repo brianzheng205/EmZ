@@ -1,10 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 
-import { FiHome, FiCalendar } from "react-icons/fi";
-import { MdOutlineTimer } from "react-icons/md";
-import { HiOutlineBanknotes } from "react-icons/hi2";
 
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -12,9 +8,13 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
+import { usePathname } from "next/navigation";
+import { FiHome, FiCalendar } from "react-icons/fi";
+import { HiOutlineBanknotes } from "react-icons/hi2";
+import { MdOutlineTimer } from "react-icons/md";
 
-import StyledLink from "../StyledLink";
 import { Route } from "../pages/RoutePage";
+import StyledLink from "../StyledLink";
 
 export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },

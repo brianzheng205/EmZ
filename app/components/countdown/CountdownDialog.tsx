@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,6 +14,8 @@ import {
   Stack,
   FormControlLabel,
 } from "@mui/material";
+import { useState, useEffect } from "react";
+
 import { SubmitEventFn, CountdownEventDialogProps } from "../../types"; // Import the base props type
 
 type CountdownDialogProps = CountdownEventDialogProps & {

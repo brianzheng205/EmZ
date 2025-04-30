@@ -1,12 +1,12 @@
 "use client";
 
+import { CssBaseline, Box, Stack } from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useState } from "react";
 
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { CssBaseline, Box, Stack } from "@mui/material";
 
-import SideBar from "./components/layout/SideBar";
 import Header from "./components/layout/Header";
+import SideBar from "./components/layout/SideBar";
 
 const theme = createTheme({
   palette: {

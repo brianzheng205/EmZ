@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import React, { useState, useRef, useEffect } from "react";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import Image from "next/image";
+import React, { useState, useEffect } from "react";
 
 import { prompts, PromptId } from "./data";
 
@@ -13,22 +13,24 @@ type buttonValue = "Yes" | "No";
 const MAX_NO_CLICKS = 30;
 const MIN_TIME = 50;
 const MAX_TIME = 500;
-const TIME_DELTA = 50;
+const DELTA_TIME = 50;
 const MAX_POSITION_CHANGE = 200;
 
 export default function Valentines() {
   const [currentPrompt, setCurrentPrompt] = useState<PromptId>("question");
   const [topPosition, setTopPosition] = useState(0);
   const [leftPosition, setLeftPosition] = useState(0);
-  const noClicksRef = useRef(0);
+  const [numNoClicks, setNumNoClicks] = useState(0);
+
   const onVictoryScreen =
     currentPrompt === "victory" || currentPrompt === "reluctantVictory";
+  const noVisible = numNoClicks < MAX_NO_CLICKS;
 
   // reset variables
   const restartClick = () => {
     setTopPosition(0);
     setLeftPosition(0);
-    noClicksRef.current = 0;
+    setNumNoClicks(0);
     setCurrentPrompt("question");
   };
 
@@ -36,17 +38,9 @@ export default function Valentines() {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
-  const autoChangePosition = (oldNoClicks: number) => {
-    if (noClicksRef.current === oldNoClicks) {
-      setTopPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
-      setLeftPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
-      noClicksRef.current++;
-    }
-  };
-
   const changePrompt = (buttonClicked: buttonValue) => {
     if (currentPrompt === "repeat4" && buttonClicked === "No") {
-      noClicksRef.current++;
+      setNumNoClicks((prev) => prev + 1);
       setTopPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
       setLeftPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
       return;
@@ -63,18 +57,20 @@ export default function Valentines() {
   };
 
   useEffect(() => {
-    if (currentPrompt === "repeat4") {
-      if (noClicksRef.current < MAX_NO_CLICKS) {
-        const currNoClicks = noClicksRef.current;
-        setTimeout(
-          () => autoChangePosition(currNoClicks),
-          Math.max(MIN_TIME, MAX_TIME - noClicksRef.current * TIME_DELTA)
-        );
-      }
-    }
-  }, [noClicksRef.current]);
+    const autoChangePosition = () => {
+      setTopPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
+      setLeftPosition(getRandomInt(-MAX_POSITION_CHANGE, MAX_POSITION_CHANGE));
+      setNumNoClicks((prev) => prev + 1);
+    };
 
-  const noVisible = noClicksRef.current < MAX_NO_CLICKS;
+    if (currentPrompt === "repeat4" && noVisible) {
+      const timeout = setTimeout(
+        autoChangePosition,
+        Math.max(MIN_TIME, MAX_TIME - numNoClicks * DELTA_TIME)
+      );
+      return () => clearTimeout(timeout);
+    }
+  }, [currentPrompt, noVisible, numNoClicks]);
 
   return (
     <Box

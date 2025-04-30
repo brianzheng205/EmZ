@@ -1,8 +1,8 @@
 "use client";
 
+import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
 import app from "../../firebase/client";
 
 // TODO: Get rid of the math.max thing after 2025
@@ -38,8 +38,8 @@ const fetchTaxBrackets = async (path: string) => {
 };
 
 import "../globals.css";
-import PostTax, { PreTax, calculateGross } from "./table";
 import EditableCell from "./EditableCell";
+import PostTax, { PreTax, calculateGross } from "./table";
 
 export default function Finance() {
   const headers = [

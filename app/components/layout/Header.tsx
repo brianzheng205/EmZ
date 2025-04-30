@@ -1,18 +1,16 @@
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 import Link from "next/link";
-
 import { usePathname, useRouter } from "next/navigation";
-
 import { IoArrowBackOutline } from "react-icons/io5";
 import {
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarLeftExpand,
 } from "react-icons/tb";
 
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
 
 function ToggleSideBarButton(props: { isOpen: boolean; onClick: () => void }) {
   return (

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   Box,
   Card,
@@ -11,13 +11,14 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import * as R from "ramda";
+import { useState } from "react";
+
+
+import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
 
 import EditCountdownDialog from "./EditCountdownDialog";
 
-import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
-import * as R from "ramda";
 
 export default function CountdownEventCard(props: {
   event: CountdownEvent;

@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
 import Typography from "@mui/material/Typography";
+import { ReactNode } from "react";
 
 export default function ShadowedText(props: { children: ReactNode }) {
   return (

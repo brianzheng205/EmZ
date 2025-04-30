@@ -1,13 +1,18 @@
 import { useEffect, useRef } from "react";
 
-import { resizeCanvas } from "../../../utils";
+import { resizeCanvas } from "@/utils";
 
 const MOVEMENT_SPEED = 5;
 
-export default function CharacterCanvas(props: {
+interface CharacterCanvasProps {
   onStartConvo: () => void;
   isOverlayVisible: boolean;
-}) {
+}
+
+export default function CharacterCanvas({
+  onStartConvo,
+  isOverlayVisible,
+}: CharacterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -16,7 +21,7 @@ export default function CharacterCanvas(props: {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let { width, height } = canvas.parentElement!.getBoundingClientRect();
+    const { width, height } = canvas.parentElement!.getBoundingClientRect();
 
     canvas.width = width;
     canvas.height = height;
@@ -102,7 +107,7 @@ export default function CharacterCanvas(props: {
     };
 
     const update = () => {
-      if (props.isOverlayVisible) return; // Prevent movement if overlay is visible
+      if (isOverlayVisible) return; // Prevent movement if overlay is visible
 
       let dx = 0;
       let dy = 0;
@@ -163,7 +168,7 @@ export default function CharacterCanvas(props: {
         offsetY >= chatBubble.y &&
         offsetY <= chatBubble.y + chatBubble.height
       ) {
-        props.onStartConvo(); // Trigger the callback
+        onStartConvo(); // Trigger the callback
       }
     };
 
@@ -179,7 +184,7 @@ export default function CharacterCanvas(props: {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("contextmenu", handleRightClick);
     };
-  }, [props.isOverlayVisible]); // Add dependency for overlay visibility
+  }, [isOverlayVisible, onStartConvo]);
 
   return (
     <canvas

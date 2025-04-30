@@ -1,6 +1,5 @@
 import { LinkProps } from "next/link";
 import Link from "next/link";
-
 import { CSSProperties } from "react";
 
 const linkStyle: CSSProperties = {
