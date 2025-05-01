@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   Box,
   Card,
@@ -11,21 +11,29 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import * as R from "ramda";
+import { useState } from "react";
+
+import { CountdownEvent, EditEventFn, DeleteEventFn } from "../types";
 
 import EditCountdownDialog from "./EditCountdownDialog";
 
-import { CountdownEvent, EditEventFn, DeleteEventFn } from "../../types";
-import * as R from "ramda";
-
-export default function CountdownEventCard(props: {
+interface CountdownEventCardProps {
   event: CountdownEvent;
   onEdit: EditEventFn;
   onDelete: DeleteEventFn;
+  // eslint-disable-next-line no-unused-vars
   formatCountdown: (id: string, isCustomId?: boolean) => string;
   existingCustomIds: string[];
-}) {
+}
+
+export default function CountdownEventCard({
+  event,
+  onEdit,
+  onDelete,
+  formatCountdown,
+  existingCustomIds,
+}: CountdownEventCardProps) {
   // State for edit form
   const [isEditing, setIsEditing] = useState(false);
   const [editingDescription, setEditingDescription] = useState("");
@@ -36,22 +44,18 @@ export default function CountdownEventCard(props: {
   };
 
   const handleDeleteClick = (description: string) => {
-    props.onDelete(props.event.id, description);
+    onDelete(event.id, description);
   };
 
   return (
     <>
       <Card sx={{ position: "relative" }}>
         <CardHeader
-          title={props.formatCountdown(props.event.id, props.event.isCustomId)}
-          subheader={
-            props.event.isCustomId
-              ? props.event.id
-              : props.event.id.replace(/-/g, "/")
-          }
+          title={formatCountdown(event.id, event.isCustomId)}
+          subheader={event.isCustomId ? event.id : event.id.replace(/-/g, "/")}
         />
         <CardContent>
-          {props.event.descriptions.map((description, index) => (
+          {event.descriptions.map((description, index) => (
             <Stack
               key={index}
               direction="row"
@@ -83,11 +87,11 @@ export default function CountdownEventCard(props: {
       <EditCountdownDialog
         open={isEditing}
         onClose={() => setIsEditing(false)}
-        onSubmit={R.curry(props.onEdit)(props.event.id, editingDescription)}
-        dateId={props.event.id}
+        onSubmit={R.curry(onEdit)(event.id, editingDescription)}
+        dateId={event.id}
         description={editingDescription}
-        isCustomId={props.event.isCustomId}
-        existingCustomIds={props.existingCustomIds}
+        isCustomId={event.isCustomId}
+        existingCustomIds={existingCustomIds}
       />
     </>
   );

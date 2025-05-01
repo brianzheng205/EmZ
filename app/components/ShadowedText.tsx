@@ -1,7 +1,11 @@
-import { ReactNode } from "react";
 import Typography from "@mui/material/Typography";
+import { ReactNode } from "react";
 
-export default function ShadowedText(props: { children: ReactNode }) {
+interface ShadowedTextProps {
+  children: ReactNode;
+}
+
+export default function ShadowedText({ children }: ShadowedTextProps) {
   return (
     <Typography
       variant="h4"
@@ -12,7 +16,7 @@ export default function ShadowedText(props: { children: ReactNode }) {
           "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000",
       }}
     >
-      {props.children}
+      {children}
     </Typography>
   );
 }

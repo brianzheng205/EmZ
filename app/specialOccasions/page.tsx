@@ -1,8 +1,6 @@
-"use client";
-
-import RoutePage from "../components/RoutePage";
 import { FiCalendar } from "react-icons/fi";
-import { Route } from "../components/RoutePage";
+
+import RoutePage, { Route } from "../components/pages/RoutePage";
 
 const ROUTES: Route[] = [
   {

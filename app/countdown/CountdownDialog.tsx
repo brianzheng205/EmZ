@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -15,44 +14,53 @@ import {
   Stack,
   FormControlLabel,
 } from "@mui/material";
-import { SubmitEventFn, CountdownEventDialogProps } from "../../types"; // Import the base props type
+import { useState, useEffect } from "react";
 
-type CountdownDialogProps = CountdownEventDialogProps & {
-  title: string;
-  submitText: string;
-};
+import { CountdownEventDialogProps } from "../types"; // Import the base props type
 
-function CountdownDialogInputs(props: {
+interface CountdownDialogInputsProps {
   id: string;
   description: string;
+  // eslint-disable-next-line no-unused-vars
   onIdChange: (id: string, isCustom: boolean) => void;
+  // eslint-disable-next-line no-unused-vars
   onDescriptionChange: (description: string) => void;
   handleSubmit: () => void;
   existingCustomIds: string[];
   isCustomId: boolean;
-}) {
-  const [customId, setCustomId] = useState(props.isCustomId ? props.id : "");
-  const [dateId, setDateId] = useState(props.isCustomId ? "" : props.id);
+}
+
+function CountdownDialogInputs({
+  id,
+  description,
+  onIdChange,
+  onDescriptionChange,
+  handleSubmit,
+  existingCustomIds,
+  isCustomId,
+}: CountdownDialogInputsProps) {
+  const [customId, setCustomId] = useState(isCustomId ? id : "");
+  const [dateId, setDateId] = useState(isCustomId ? "" : id);
   const [idError, setIdError] = useState("");
 
   useEffect(() => {
-    if (!props.id) return;
+    if (!id) return;
 
-    if (props.isCustomId) {
-      setCustomId(props.id);
+    if (isCustomId) {
+      setCustomId(id);
     } else {
-      setDateId(props.id);
+      setDateId(id);
     }
-  }, [props.id, props.isCustomId]);
+  }, [id, isCustomId]);
 
   const handleIdTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const isCustom = event.target.value === "custom";
     setIdError("");
 
     if (isCustom) {
-      props.onIdChange(customId, true);
+      onIdChange(customId, true);
     } else {
-      props.onIdChange(dateId, false);
+      onIdChange(dateId, false);
     }
   };
 
@@ -61,18 +69,18 @@ function CountdownDialogInputs(props: {
     setCustomId(newId);
 
     // Validate custom ID
-    if (props.existingCustomIds.includes(newId)) {
+    if (existingCustomIds.includes(newId)) {
       setIdError("This ID already exists");
     } else {
       setIdError("");
-      props.onIdChange(newId, true);
+      onIdChange(newId, true);
     }
   };
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = event.target.value;
     setDateId(newDate);
-    props.onIdChange(newDate, false);
+    onIdChange(newDate, false);
   };
 
   // Get minimum date (today) for date input
@@ -82,7 +90,7 @@ function CountdownDialogInputs(props: {
   const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      props.handleSubmit();
+      handleSubmit();
     }
   };
 
@@ -92,7 +100,7 @@ function CountdownDialogInputs(props: {
         <FormLabel>Event Type</FormLabel>
         <RadioGroup
           row
-          value={props.isCustomId ? "custom" : "date"}
+          value={isCustomId ? "custom" : "date"}
           onChange={handleIdTypeChange}
         >
           <FormControlLabel value="date" control={<Radio />} label="Date" />
@@ -104,7 +112,7 @@ function CountdownDialogInputs(props: {
         </RadioGroup>
       </FormControl>
 
-      {props.isCustomId ? (
+      {isCustomId ? (
         <TextField
           label="Custom Text"
           value={customId}
@@ -136,8 +144,8 @@ function CountdownDialogInputs(props: {
 
       <TextField
         label="Description"
-        value={props.description}
-        onChange={(e) => props.onDescriptionChange(e.target.value)}
+        value={description}
+        onChange={(e) => onDescriptionChange(e.target.value)}
         onKeyDown={handleKeyPress}
         placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
         required
@@ -151,41 +159,56 @@ function CountdownDialogInputs(props: {
   );
 }
 
-export default function CountdownDialog(props: CountdownDialogProps) {
+type CountdownDialogProps = CountdownEventDialogProps & {
+  title: string;
+  submitText: string;
+};
+
+export default function CountdownDialog({
+  title,
+  submitText,
+  dateId,
+  isCustomId,
+  description: initialDescription,
+  open,
+  onClose,
+  onSubmit,
+  existingCustomIds,
+}: CountdownDialogProps) {
   // Convert MM-DD-YYYY to YYYY-MM-DD for date input if in edit mode
   const initialId =
-    props.dateId && !props.isCustomId
+    dateId && !isCustomId
       ? (() => {
-          const [month, day, year] = props.dateId.split("-");
+          const [month, day, year] = dateId.split("-");
           return `${year}-${month}-${day}`;
         })()
-      : props.dateId || "";
+      : dateId || "";
 
   const [id, setId] = useState(initialId);
-  const [description, setDescription] = useState(props.description || "");
-  const [isCustomInput, setIsCustomInput] = useState(Boolean(props.isCustomId));
+  const [description, setDescription] = useState(initialDescription || "");
+  const [isCustomInput, setIsCustomInput] = useState(Boolean(isCustomId));
 
   useEffect(() => {
-    if (props.open) {
+    if (open) {
       setId(initialId);
-      setDescription(props.description || "");
-      setIsCustomInput(Boolean(props.isCustomId));
+      setDescription(initialDescription || "");
+      setIsCustomInput(Boolean(isCustomId));
     }
-  }, [props.open]);
+  }, [open, initialId, initialDescription, isCustomId]);
 
   const handleClose = () => {
-    props.onClose();
+    onClose();
   };
 
   const handleSubmit = () => {
     if (!id || !description) return;
-    props.onSubmit(id, description, isCustomInput);
+    onSubmit(id, description, isCustomInput);
     handleClose();
   };
 
   return (
-    <Dialog open={props.open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{props.title}</DialogTitle>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <CountdownDialogInputs
           id={id}
@@ -195,7 +218,7 @@ export default function CountdownDialog(props: CountdownDialogProps) {
             setIsCustomInput(isCustom);
           }}
           onDescriptionChange={setDescription}
-          existingCustomIds={props.existingCustomIds}
+          existingCustomIds={existingCustomIds}
           isCustomId={isCustomInput}
           handleSubmit={handleSubmit}
         />
@@ -207,7 +230,7 @@ export default function CountdownDialog(props: CountdownDialogProps) {
           variant="contained"
           disabled={!id || !description}
         >
-          {props.submitText}
+          {submitText}
         </Button>
       </DialogActions>
     </Dialog>

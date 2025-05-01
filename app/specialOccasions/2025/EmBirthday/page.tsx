@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
-
-import { motion } from "framer-motion";
-
 import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { useState } from "react";
 
-import VideoPage from "../../../components/VideoPage";
-import ShadowedText from "../../../components/ShadowedText";
+import VideoPage from "@/components/pages/VideoPage";
+import ShadowedText from "@/components/ShadowedText";
 
 export default function EmBirthday() {
   const [clickCount, setClickCount] = useState(0);
@@ -79,19 +78,27 @@ export default function EmBirthday() {
               animate={{ rotate: shake ? [-5, 5, -5, 5, 0] : 0 }}
               transition={{ duration: 0.5 }}
             >
-              <img
+              <Image
                 src="/images/botamon-egg.png"
                 alt="Botamon Egg"
-                className="w-64 h-64 cursor-pointer"
+                width={256}
+                height={256}
+                style={{ cursor: "pointer", width: "256px", height: "256px" }}
                 onClick={handleEggClick}
               />
             </motion.div>
           </>
         ) : (
-          <img
+          <Image
             src="/images/botamon.png"
             alt="Botamon"
-            className="w-64 h-64 cursor-pointer transition-all duration-300 ease-in-out hover:scale-110 active:scale-90"
+            width={256}
+            height={256}
+            style={{
+              cursor: "pointer",
+              width: "256px",
+              height: "256px",
+            }}
             onClick={handleEggClick}
           />
         )}

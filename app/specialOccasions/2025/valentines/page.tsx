@@ -1,14 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
-import { useState, useRef, useEffect } from "react";
-
-import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
-import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
-import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
-
-import { pictures } from "./data";
 import {
   Box,
   Typography,
@@ -18,12 +9,19 @@ import {
   LinearProgress,
 } from "@mui/material";
 import Stack from "@mui/material/Stack";
+import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
+import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { IoPlayCircle, IoPauseCircle } from "react-icons/io5";
 
-const INTERVAL_DURATION = 5000;
+import { pictures } from "./data";
+
+const INTERVAL_DURATION = 600;
 
 function PictureDisplay(props: { currentPicIndex: number }) {
   return (
-    <Fade in={true} key={props.currentPicIndex} timeout={600}>
+    <Fade in={true} key={props.currentPicIndex} timeout={INTERVAL_DURATION}>
       <Box
         sx={{
           position: "relative",
@@ -49,7 +47,7 @@ function PictureDisplay(props: { currentPicIndex: number }) {
 
 function PictureInfo(props: { currentPicIndex: number }) {
   return (
-    <Fade in={true} key={props.currentPicIndex} timeout={600}>
+    <Fade in={true} key={props.currentPicIndex} timeout={INTERVAL_DURATION}>
       <Stack sx={{ gap: 1, width: "100%" }}>
         <Typography
           variant="h1"
@@ -99,17 +97,18 @@ function AutoPlayIndicator(props: {
   onComplete: () => void;
   progressId: number;
 }) {
+  const { isPlaying, onComplete } = props;
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (!props.isPlaying) return;
+    if (!isPlaying) return;
 
     const timer = setInterval(() => {
       setProgress((oldProgress) => {
         if (oldProgress >= 100) {
           clearInterval(timer);
           setTimeout(() => {
-            props.onComplete();
+            onComplete();
             setProgress(0);
           }, 120);
           return 100;
@@ -122,7 +121,7 @@ function AutoPlayIndicator(props: {
     return () => {
       clearInterval(timer);
     };
-  }, [props.isPlaying, props.onComplete]);
+  }, [isPlaying, onComplete]);
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -133,11 +132,8 @@ function AutoPlayIndicator(props: {
 
 function ProgressSlider(props: {
   currentPicIndex: number;
-  onChange: (
-    event: Event,
-    value: number | number[],
-    activeThumb: number
-  ) => void;
+  // eslint-disable-next-line no-unused-vars
+  onChange: (event: Event, value: number | number[]) => void;
 }) {
   const progress = (props.currentPicIndex / (pictures.length - 1)) * 100;
 
@@ -181,11 +177,7 @@ function AudioPlayer(props: { isPlaying: boolean }) {
     }
   }, [volume, isMuted]);
 
-  const handleVolumeChange = (
-    event: Event,
-    value: number | number[],
-    activeThumb: number
-  ) => {
+  const handleVolumeChange = (event: Event, value: number | number[]) => {
     const newVolume = value as number;
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
@@ -256,11 +248,7 @@ export default function Valentines2025() {
     setProgressKey((prev) => prev + 1);
   };
 
-  const handleSliderChange = (
-    event: Event,
-    value: number | number[],
-    activeThumb: number
-  ) => {
+  const handleSliderChange = (event: Event, value: number | number[]) => {
     const newIndex = Math.round(
       ((value as number) / 100) * (pictures.length - 1)
     );

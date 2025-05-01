@@ -9,7 +9,7 @@ type Prompt = {
   text: string;
   nextPromptYes?: PromptId;
   nextPromptNo?: PromptId;
-  image: any;
+  image: string;
 };
 
 export type PromptId =

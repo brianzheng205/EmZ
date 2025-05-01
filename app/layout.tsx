@@ -1,12 +1,11 @@
 "use client";
 
+import { CssBaseline, Box, Stack } from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useState } from "react";
 
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { CssBaseline, Box, Stack } from "@mui/material";
-
-import SideBar from "./components/layout/SideBar";
 import Header from "./components/layout/Header";
+import SideBar from "./components/layout/SideBar";
 
 const theme = createTheme({
   palette: {
@@ -43,7 +42,11 @@ const theme = createTheme({
   },
 });
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   const [isSideBarOpen, setIsSideBarOpen] = useState(false);
 
   return (
@@ -55,6 +58,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           href="https://fonts.gstatic.com"
           crossOrigin=""
         />
+        {/* TODO: Fix the font loading issue */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap"
           rel="stylesheet"
@@ -73,7 +78,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
             sx={{ height: "calc(100vh - 64px)" }}
           >
             <SideBar isOpen={isSideBarOpen} />
-            <Box sx={{ flex: 1, overflowY: "auto" }}>{props.children}</Box>
+            <Box sx={{ flex: 1, overflowY: "auto" }}>{children}</Box>
           </Stack>
         </ThemeProvider>
       </body>

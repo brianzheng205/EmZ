@@ -1,6 +1,6 @@
-import CountdownDialog from "./CountdownDialog";
+import { CountdownEventDialogProps } from "../types";
 
-import { CountdownEventDialogProps } from "../../types";
+import CountdownDialog from "./CountdownDialog";
 
 export default function AddCountdownDialog(props: CountdownEventDialogProps) {
   return (

@@ -1,9 +1,11 @@
-// COUNTDOWN
+/* eslint-disable no-unused-vars */
 
+// COUNTDOWN
 export interface CountdownEvent {
   id: string; // date string like "1-6-2024" or custom text
   descriptions: string[];
   isCustomId: boolean;
+  priority?: number; // Optional priority level for the event
 }
 
 export type CountdownEventDialogProps = {
@@ -14,6 +16,7 @@ export type CountdownEventDialogProps = {
   dateId?: string;
   description?: string;
   isCustomId?: boolean;
+  priority?: number; // Optional priority level for the dialog
 };
 
 export interface SubmitEventFn {

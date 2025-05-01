@@ -1,20 +1,20 @@
 "use client";
 
+import {
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Stack,
+} from "@mui/material";
 import { usePathname } from "next/navigation";
-
 import { FiHome, FiCalendar } from "react-icons/fi";
-import { MdOutlineTimer } from "react-icons/md";
 import { HiOutlineBanknotes } from "react-icons/hi2";
+import { MdOutlineTimer } from "react-icons/md";
 
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Stack from "@mui/material/Stack";
-
+import { Route } from "../pages/RoutePage";
 import StyledLink from "../StyledLink";
-import { Route } from "../RoutePage";
 
 export const ROUTES: Route[] = [
   { route: "/", label: "Home", icon: <FiHome /> },
@@ -37,7 +37,11 @@ export const ROUTES: Route[] = [
 
 const BORDER_RADIUS = "16px";
 
-export default function SideBar(props: { isOpen: boolean }) {
+interface SideBarProps {
+  isOpen: boolean;
+}
+
+export default function SideBar({ isOpen }: SideBarProps) {
   const pathname = usePathname();
 
   return (
@@ -47,9 +51,9 @@ export default function SideBar(props: { isOpen: boolean }) {
         color: "white",
         transition: "all 500ms",
         overflow: "hidden",
-        minWidth: props.isOpen ? 230 : 0,
-        maxWidth: props.isOpen ? 230 : 0,
-        opacity: props.isOpen ? 1 : 0.3,
+        minWidth: isOpen ? 230 : 0,
+        maxWidth: isOpen ? 230 : 0,
+        opacity: isOpen ? 1 : 0.3,
       }}
     >
       <List sx={{ p: 2 }}>

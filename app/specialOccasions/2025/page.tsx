@@ -1,7 +1,7 @@
-import RoutePage from "../../components/RoutePage";
-import { FiHeart, FiGift } from "react-icons/fi";
 import { BsCake2 } from "react-icons/bs";
-import { Route } from "../../components/RoutePage";
+import { FiHeart, FiGift } from "react-icons/fi";
+
+import RoutePage, { Route } from "@/components/pages/RoutePage";
 
 const ROUTES: Route[] = [
   {
