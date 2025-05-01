@@ -8,20 +8,20 @@ import {
   DocumentData,
   deleteField,
 } from "firebase/firestore";
-import app from "../../firebase/client";
-
 import { useEffect, useState, useMemo } from "react";
 
+import app from "../../firebase/client";
+
+import { EditableTextCell } from "./EditableCell";
+import styles from "./styles";
 import DataRow, { calculateGross, UneditableCell } from "./table";
 
-import "../globals.css";
-import styles from "./styles";
+// import "../globals.css";
 
 interface Section {
   categories: Set<string>;
   isPreTax: boolean;
 }
-import { EditableTextCell } from "./EditableCell";
 
 interface Section {
   categories: Set<string>;
@@ -96,8 +96,10 @@ export default function Finance() {
     updateBudget(brianBudgetPath, setBrianBudget);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(updateEmilyBudget, [emilyBudgetPath]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(updateBrianBudget, [brianBudgetPath]);
 
   useEffect(() => {

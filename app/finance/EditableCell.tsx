@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-import "../globals.css";
-import styles from "./styles";
+// import "../globals.css";
+// import styles from "./styles";
 
 function formatValue(value?: number) {
   return value !== undefined ? Number(value.toFixed(0)) : 0;
@@ -9,6 +9,7 @@ function formatValue(value?: number) {
 
 export default function EditableCell(props: {
   initialValue?: number;
+  // eslint-disable-next-line no-unused-vars
   updateFunction: (amount: number) => void;
 }) {
   const [value, setValue] = useState<number>(formatValue(props.initialValue));
@@ -22,7 +23,7 @@ export default function EditableCell(props: {
 
   return (
     <td
-      className={`${styles.cell} border-collapse border border-black bg-accent cursor-pointer relative`}
+      className={`border-collapse border border-black bg-accent cursor-pointer relative`}
       onDoubleClick={() => setIsEditing(true)}
     >
       {isEditing ? (
@@ -66,6 +67,7 @@ export default function EditableCell(props: {
 
 export function EditableTextCell(props: {
   initialValue?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateFunction: any;
   children?: React.ReactNode;
   tdProps?: React.TdHTMLAttributes<HTMLTableCellElement>;
@@ -80,7 +82,7 @@ export function EditableTextCell(props: {
     <td
       {...props.tdProps}
       className={`${
-        styles.cell
+        false && "styles.cell"
       } border-collapse border border-black bg-accent cursor-pointer relative ${
         props.tdProps?.className || ""
       }`}

@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
 import crypto from "crypto";
 
-import "../globals.css";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 function hashValue(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -31,24 +34,49 @@ export default function PasswordPage() {
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-4">Enter Password</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col">
-        <input
-          type="password"
-          placeholder="Password"
-          className="border border-gray-300 rounded px-4 py-2 mb-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button
-          type="submit"
-          className="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded"
+    <Container maxWidth="sm">
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        mt={4}
+      >
+        <Typography variant="h4" component="h1" gutterBottom>
+          Enter Password
+        </Typography>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          display="flex"
+          flexDirection="column"
+          width="100%"
         >
-          Submit
-        </button>
-      </form>
-      {error && <p className="text-red-600">{error}</p>}
-    </div>
+          <TextField
+            type="password"
+            label="Password"
+            variant="outlined"
+            margin="normal"
+            fullWidth
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            Submit
+          </Button>
+        </Box>
+        {error && (
+          <Typography color="error" mt={2}>
+            {error}
+          </Typography>
+        )}
+      </Box>
+    </Container>
   );
 }

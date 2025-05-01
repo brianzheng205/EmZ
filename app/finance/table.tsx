@@ -1,9 +1,10 @@
 import { DocumentData, doc, getFirestore, updateDoc } from "firebase/firestore";
+
 import app from "../../firebase/client";
 
 import EditableCell from "./EditableCell";
-import styles from "./styles";
-import "../globals.css";
+// import styles from "./styles";
+// import "../globals.css";
 
 type RowData = {
   amount: number;
@@ -52,6 +53,7 @@ function calculateYearlyTakeHome(person: DocumentData) {
 }
 
 // TODO
+// eslint-disable-next-line
 function removeDeductions(person: DocumentData): number {
   return 0;
 }
@@ -76,7 +78,7 @@ export function UneditableCell(props: {
 }) {
   return (
     <td
-      className={`border-collapse border border-black ${styles.cell} ${
+      className={`border-collapse border border-black ${"styles.cell"} ${
         props.className || ""
       }`}
       {...props.tdProps}
