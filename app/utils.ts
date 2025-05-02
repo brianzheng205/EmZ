@@ -13,7 +13,7 @@ const db = getFirestore(app);
 
 export async function fetchData(path: string, ...pathSegments: string[]) {
   const docRef = doc(db, path, ...pathSegments);
-  return fetchDocument(docRef);
+  return await fetchDocument(docRef);
 }
 
 export async function fetchDocument(docRef: DocumentReference) {

@@ -38,8 +38,8 @@ export type CombinedBudget = {
   [section: string]: SectionData;
 };
 
-// TODO create take home row and make pretax rows a percentage of take home instead of gross total
 // TODO make calculated cells not editable
+// TODO create docstrings for all functions
 
 // HELPERS
 const getPersonFromColumn = (column: number) =>
@@ -64,7 +64,6 @@ const convertCurrency = (data: BudgetData, targetTime: string) => {
   return 0;
 };
 
-// const convertHeaderToPercent = (header: string) => header.replace("$", "%");
 const convertHeaderToCurrecy = (header: string) => header.replace("%", "$");
 
 const currencyFormatter: GridValueFormatter = (value: number) =>
@@ -95,8 +94,20 @@ export const COLUMN_HEADERS = [
 ];
 
 export const columns: GridColDef[] = [
-  { field: "section", headerName: "Section", type: "string", flex: 2 },
-  { field: "category", headerName: "Category", type: "string", flex: 2 },
+  {
+    field: "section",
+    headerName: "Section",
+    type: "string",
+    flex: 2,
+    editable: true,
+  },
+  {
+    field: "category",
+    headerName: "Category",
+    type: "string",
+    flex: 2,
+    editable: true,
+  },
   ...COLUMN_HEADERS.map(
     (header, column) =>
       ({
@@ -237,6 +248,8 @@ const getSavingsRow = (
 };
 
 export const getDataRows = (combinedBudget: CombinedBudget) => {
+  if (R.isEmpty(combinedBudget)) return [];
+
   const grossTotalRow = getGrossTotalRow(combinedBudget);
   const takeHomeRow = getTakeHomeRow(combinedBudget, grossTotalRow);
   const savingsRow = getSavingsRow(combinedBudget, takeHomeRow);

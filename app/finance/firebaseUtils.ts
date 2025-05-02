@@ -12,11 +12,11 @@ import app from "@firebase";
 const db = getFirestore(app);
 
 export async function fetchActiveBudgets() {
-  return fetchData("activeBudgets", new Date().getFullYear().toString());
+  return await fetchData("activeBudgets", new Date().getFullYear().toString());
 }
 
 export async function fetchBudget(budgetReference: DocumentReference) {
-  return fetchDocument(budgetReference);
+  return await fetchDocument(budgetReference);
 }
 
 export const updateBudget = (

@@ -28,6 +28,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
 export default function Finance() {
   const [emilyBudget, setEmilyBudget] = useState<Budget>({});
   const [brianBudget, setBrianBudget] = useState<Budget>({});
+  const [loading, setLoading] = useState<boolean>(true); // Added loading state
 
   const combinedBudget: CombinedBudget = useMemo(() => {
     if (!emilyBudget || !brianBudget) return {};
@@ -82,15 +83,22 @@ export default function Finance() {
   }, [emilyBudget, brianBudget]);
 
   useEffect(() => {
+    setLoading(true); // Set loading to true before fetching
     fetchActiveBudgets().then(async (document) => {
-      if (!document) return;
+      if (!document) {
+        setLoading(false); // Set loading to false if no document
+        return;
+      }
 
       const emilyB = await fetchBudget(document.emily);
       const brianB = await fetchBudget(document.brian);
-      if (!emilyB) return;
-      if (!brianB) return;
+      if (!emilyB || !brianB) {
+        setLoading(false); // Set loading to false if budgets are missing
+        return;
+      }
       setEmilyBudget(emilyB);
       setBrianBudget(brianB);
+      setLoading(false); // Set loading to false after fetching
     });
   }, []);
 
@@ -101,21 +109,23 @@ export default function Finance() {
       sx={{
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
         height: "100%",
         width: "100%",
+        padding: 2,
       }}
     >
       <Box
         sx={{
-          height: "90%",
-          width: "70%",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <StyledDataGrid
           rows={rows}
           columns={columns}
+          loading={loading}
           rowHeight={30}
+          hideFooterPagination={rows.length <= 25}
           getRowClassName={(params) => {
             if (
               ["savings", "take-home", "gross-total"].includes(
