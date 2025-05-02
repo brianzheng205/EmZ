@@ -1,3 +1,32 @@
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  DocumentReference,
+} from "firebase/firestore";
+import * as R from "ramda";
+
+import app from "@firebase";
+
+// FIREBASE
+const db = getFirestore(app);
+
+export async function fetchData(path: string, ...pathSegments: string[]) {
+  const docRef = doc(db, path, ...pathSegments);
+  return fetchDocument(docRef);
+}
+
+export async function fetchDocument(docRef: DocumentReference) {
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    return docSnap.data();
+  } else {
+    console.error("Document does not exist", docRef.path);
+    return null;
+  }
+}
+
 // DATES
 export const getAdjustedDate = (date: Date) => {
   const timezoneOffset = date.getTimezoneOffset() * 60000;
@@ -18,3 +47,6 @@ export const resizeCanvas = (canvas: HTMLCanvasElement) => {
 
   return { scaleX, scaleY };
 };
+
+// RAMDA
+export const mapIndexed = R.addIndex(R.map);
