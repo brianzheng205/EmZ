@@ -9,13 +9,6 @@ const eslintConfig = [
     extends: ["next/core-web-vitals", "next/typescript", "prettier"],
     rules: {
       "react/no-unescaped-entities": "off",
-      "no-unused-vars": [
-        "warn",
-        {
-          vars: "all",
-          args: "after-used",
-        },
-      ],
       "import/order": [
         "warn",
         {

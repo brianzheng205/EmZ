@@ -3,11 +3,22 @@
 import { Box } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import * as R from "ramda";
+// import { DocumentReference } from "firebase/firestore";
+// import * as R from "ramda";
 import { useEffect, useState, useMemo } from "react";
 
-import { fetchActiveBudgets, fetchBudget } from "./firebaseUtils";
-import { Budget, CombinedBudget, columns, getDataRows } from "./utils";
+import {
+  fetchActiveBudgets,
+  fetchBudget,
+  // updateDocument,
+} from "./firebaseUtils";
+import {
+  Budget,
+  // CombinedBudget,
+  combineBudgets,
+  columns,
+  getDataRows,
+} from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .custom": {
@@ -26,81 +37,72 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
 }));
 
 export default function Finance() {
+  // const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
+  //   null
+  // );
+  // const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
+  //   null
+  // );
   const [emilyBudget, setEmilyBudget] = useState<Budget>({});
   const [brianBudget, setBrianBudget] = useState<Budget>({});
-  const [loading, setLoading] = useState<boolean>(true); // Added loading state
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const combinedBudget: CombinedBudget = useMemo(() => {
-    if (!emilyBudget || !brianBudget) return {};
-
-    return R.pipe(
-      // Get unique sections from both budgets
-      () => R.union(Object.keys(emilyBudget), Object.keys(brianBudget)),
-      // Transform into object with section keys
-      R.reduce(
-        (acc, section) => ({
-          ...acc,
-          [section]: {
-            categories: R.pipe(
-              // Get unique categories from both budgets
-              () =>
-                R.union(
-                  Object.keys(
-                    R.pathOr({}, [section, "categories"], emilyBudget)
-                  ),
-                  Object.keys(
-                    R.pathOr({}, [section, "categories"], brianBudget)
-                  )
-                ),
-              // Transform into object with category keys
-              R.reduce(
-                (catAcc, category) => ({
-                  ...catAcc,
-                  [category]: {
-                    emily: R.pathOr(
-                      { amount: 0, time: "month" },
-                      [section, "categories", category],
-                      emilyBudget
-                    ),
-                    brian: R.pathOr(
-                      { amount: 0, time: "month" },
-                      [section, "categories", category],
-                      brianBudget
-                    ),
-                  },
-                }),
-                {}
-              )
-            )(),
-            isPreTax:
-              R.pathOr(false, [section, "isPreTax"], emilyBudget) ||
-              R.pathOr(false, [section, "isPreTax"], brianBudget),
-          },
-        }),
-        {}
-      )
-    )();
+  const combinedBudget = useMemo(() => {
+    // if (R.isEmpty(emilyBudget) || R.isEmpty(brianBudget)) return {};
+    return combineBudgets(emilyBudget, brianBudget);
   }, [emilyBudget, brianBudget]);
 
   useEffect(() => {
-    setLoading(true); // Set loading to true before fetching
+    setLoading(true);
+
     fetchActiveBudgets().then(async (document) => {
       if (!document) {
-        setLoading(false); // Set loading to false if no document
+        setLoading(false);
         return;
       }
 
       const emilyB = await fetchBudget(document.emily);
       const brianB = await fetchBudget(document.brian);
       if (!emilyB || !brianB) {
-        setLoading(false); // Set loading to false if budgets are missing
+        setLoading(false);
         return;
       }
-      setEmilyBudget(emilyB);
-      setBrianBudget(brianB);
-      setLoading(false); // Set loading to false after fetching
+
+      // setEmilyDocRef(document.emily);
+      // setBrianDocRef(document.brian);
+      setEmilyBudget(emilyB as Budget);
+      setBrianBudget(brianB as Budget);
+      setLoading(false);
     });
   }, []);
+
+  // const handleRowUpdate = async (
+  //   rowId: string,
+  //   updatedData: Record<string, any>,
+  //   person: "emily" | "brian"
+  // ) => {
+  //   const docRef = person === "emily" ? emilyDocRef : brianDocRef;
+  //   if (!docRef) {
+  //     console.error("Document reference is not available.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const updatedRow = {
+  //       type: updatedData.section,
+  //       isPreTax: updatedData.isPreTax,
+  //       items: COLUMN_HEADERS.map((header) => ({
+  //         name: header,
+  //         amount: updatedData[header],
+  //         time: getColumnTime(COLUMN_HEADERS.indexOf(header)),
+  //       })),
+  //     };
+  //     await updateDocument(docRef, { [`rows.${rowId}`]: updatedRow });
+  //     console.log(`Row ${rowId} updated successfully for ${person}.`);
+  //   } catch (error) {
+  //     console.error(`Failed to update row ${rowId} for ${person}:`, error);
+  //   }
+  // };
 
   const rows: GridRowsProp = getDataRows(combinedBudget);
 
@@ -118,6 +120,7 @@ export default function Finance() {
         sx={{
           display: "flex",
           flexDirection: "column",
+          width: "90%",
         }}
       >
         <StyledDataGrid
@@ -135,6 +138,9 @@ export default function Finance() {
               return "custom";
             return "";
           }}
+          // processRowUpdate={(newRow, oldRow) => {
+          //   return newRow;
+          // }}
           showToolbar
           disableRowSelectionOnClick
         />
