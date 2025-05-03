@@ -54,7 +54,7 @@ export type BudgetRow = {
 // TODO make calculated cells not editable
 // TODO create docstrings for all functions
 
-// HELPERS
+// EXPPORTED HELPERS
 export const combineBudgets = (budget1: Budget, budget2: Budget) => {
   const allCategories = R.union(R.keys(budget1), R.keys(budget2));
   const combinedBudget: CombinedBudget = {};
@@ -86,10 +86,36 @@ export const combineBudgets = (budget1: Budget, budget2: Budget) => {
   return combinedBudget;
 };
 
+export const getPersonFromColumnHeader = (
+  header: string,
+  person1Name: string,
+  person2Name: string
+) => {
+  if (header.includes(person1Name)) {
+    return person1Name;
+  } else if (header.includes(person2Name)) {
+    return person2Name;
+  }
+
+  console.error(
+    `getPersonFromColumnHeader: ${header} does not match either ${person1Name} or ${person2Name}`
+  );
+  return "";
+};
+
+export const getUpdatedBudget = (
+  budget: Budget,
+  category: string,
+  name: string,
+  amount: number,
+  time: "month" | "year"
+): Budget => R.assocPath([category, "items", name], { amount, time }, budget);
+
+// INTERNAL HELPERS
 const getPersonFromColumn = (column: number) =>
   column < 4 ? "person1" : "person2";
 
-const getColumnTime = (column: number) =>
+export const getColumnTime = (column: number) =>
   [0, 1, 4, 5].includes(column) ? "month" : "year";
 
 const isPercentColumn = (column: number) => column % 2 === 0;
@@ -145,14 +171,14 @@ export const columns: GridColDef[] = [
     headerName: "Category",
     type: "string",
     flex: 1,
-    editable: true,
+    // editable: true,
   },
   {
     field: "name",
     headerName: "Name",
     type: "string",
     flex: 1,
-    editable: true,
+    // editable: true,
   },
   ...COLUMN_HEADERS.map(
     (header, column) =>
@@ -183,32 +209,36 @@ const getDataRowsHelper = (
 
   R.forEachObjIndexed(
     (category, categoryName: string) =>
-      R.forEachObjIndexed((item, itemName) => {
-        const person1Amount = R.has("person1", item)
-          ? convertCurrency(item.person1, item.person1.time)
-          : 0;
-        const person2Amount = R.has("person2", item)
-          ? convertCurrency(item.person2, item.person2.time)
-          : 0;
-        rows.push({
-          id: `${categoryName}-${itemName}`,
-          category: categoryName,
-          name: itemName,
-          isPreTax: category.isPreTax,
-          ...COLUMN_HEADERS.reduce((acc, columnHeader, column) => {
-            const divider =
-              dividerRow[convertColumnHeaderToCurrency(columnHeader)];
-            const person = getPersonFromColumn(column);
-            const amount = person === "person1" ? person1Amount : person2Amount;
-            acc[columnHeader] = isCurrencyColumn(column)
-              ? amount
-              : divider > 0
-              ? Math.round(amount / divider) * 100
-              : 0;
-            return acc;
-          }, {}),
-        });
-      }, category.items),
+      R.forEachObjIndexed(
+        (item, itemName) =>
+          rows.push({
+            id: `${categoryName}-${itemName}`,
+            category: categoryName,
+            name: itemName,
+            isPreTax: category.isPreTax,
+            ...COLUMN_HEADERS.reduce((acc, columnHeader, column) => {
+              const columnTime = getColumnTime(column);
+              const person1Amount = R.has("person1", item)
+                ? convertCurrency(item.person1, columnTime)
+                : 0;
+              const person2Amount = R.has("person2", item)
+                ? convertCurrency(item.person2, columnTime)
+                : 0;
+              const divider =
+                dividerRow[convertColumnHeaderToCurrency(columnHeader)];
+              const person = getPersonFromColumn(column);
+              const amount =
+                person === "person1" ? person1Amount : person2Amount;
+              acc[columnHeader] = isCurrencyColumn(column)
+                ? amount
+                : divider > 0
+                ? Math.round(amount / divider) * 100
+                : 0;
+              return acc;
+            }, {}),
+          }),
+        category.items
+      ),
     combinedBudget
   );
 
@@ -244,6 +274,7 @@ const getGrossTotalRow = (combinedBudget: CombinedBudget) => {
     id: "gross-total",
     category: "Gross",
     name: "Total",
+    status: "locked",
     ...COLUMN_HEADERS.reduce((acc, columnHeader, column) => {
       acc[columnHeader] = grossTotals[column];
       return acc;
@@ -258,6 +289,7 @@ const getTakeHomeRow = (
   id: "take-home",
   category: "Take Home",
   name: "Total",
+  status: "locked",
   ...COLUMN_HEADERS.reduce((acc, columnHeader, column) => {
     if (isPercentColumn(column)) {
       acc[columnHeader] = 100;
@@ -300,6 +332,7 @@ const getSavingsRow = (
   id: "savings",
   category: "Savings",
   name: "Savings Account",
+  status: "locked",
   ...COLUMN_HEADERS.reduce((acc, columnHeader, column) => {
     const totalTakeHome =
       takeHomeRow[convertColumnHeaderToCurrency(columnHeader)];

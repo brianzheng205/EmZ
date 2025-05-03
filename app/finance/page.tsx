@@ -3,10 +3,21 @@
 import { Box } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import { useEffect, useState, useMemo } from "react";
+import { DocumentReference } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
-import { fetchActiveBudgets, fetchBudget } from "./firebaseUtils";
-import { Budget, combineBudgets, columns, getDataRows } from "./utils";
+import { fetchActiveBudgets, fetchBudget, updateBudget } from "./firebaseUtils";
+import {
+  Budget,
+  BudgetRow,
+  combineBudgets,
+  getUpdatedBudget,
+  getPersonFromColumnHeader,
+  COLUMN_HEADERS,
+  columns,
+  getDataRows,
+  getColumnTime,
+} from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .custom": {
@@ -25,20 +36,16 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
 }));
 
 export default function Finance() {
-  // const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
-  //   null
-  // );
-  // const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
-  //   null
-  // );
+  const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
+    null
+  );
+  const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
+    null
+  );
   const [emilyBudget, setEmilyBudget] = useState<Budget>({});
   const [brianBudget, setBrianBudget] = useState<Budget>({});
   const [loading, setLoading] = useState<boolean>(true);
-
-  const combinedBudget = useMemo(
-    () => combineBudgets(emilyBudget, brianBudget),
-    [emilyBudget, brianBudget]
-  );
+  const [rows, setRows] = useState<GridRowsProp>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -56,58 +63,68 @@ export default function Finance() {
         return;
       }
 
-      // setEmilyDocRef(document.emily);
-      // setBrianDocRef(document.brian);
+      const combinedBudget = combineBudgets(emilyB, brianB);
+      const dataRows = getDataRows(combinedBudget);
+
+      setEmilyDocRef(document.emily);
+      setBrianDocRef(document.brian);
       setEmilyBudget(emilyB);
       setBrianBudget(brianB);
+      setRows(dataRows);
       setLoading(false);
     });
   }, []);
 
-  // const handleProcessRowUpdate = async (
-  //   newRow: BudgetRow,
-  //   oldRow: BudgetRow
-  // ) => {
-  //   const { category, name, ...newValues } = newRow;
-  //   const { ...oldValues } = oldRow;
+  const handleRowUpdate = async (rawNewRow: BudgetRow, oldRow: BudgetRow) => {
+    const { category, name, ...newValues } = rawNewRow;
+    const { ...oldValues } = oldRow;
 
-  //   // Determine whose budget changed
-  //   const personChanged = Object.keys(newValues).find(
-  //     (key) => newValues[key] !== oldValues[key]
-  //   );
+    // Determine whose budget changed
+    const colChanged = Object.keys(newValues).find(
+      (key) => newValues[key] !== oldValues[key]
+    );
 
-  //   if (!personChanged) {
-  //     return newRow; // No changes detected
-  //   }
+    if (!colChanged) {
+      return rawNewRow; // No changes detected
+    }
 
-  //   if (personChanged.startsWith("person1") && emilyDocRef) {
-  //     // Update Emily's budget
-  //     const updatedEmilyBudget = updateBudgetItem(emilyBudget, category, name, {
-  //       [personChanged]: newValues[personChanged],
-  //     });
-  //     setEmilyBudget(updatedEmilyBudget);
+    const colIndexChanged = COLUMN_HEADERS.indexOf(colChanged);
+    const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
+    const amount = newValues[colChanged];
+    const time = getColumnTime(colIndexChanged);
 
-  //     const emilyChanges = {
-  //       [`${category}.items`]: updatedEmilyBudget[category].items,
-  //     };
-  //     await updateBudgetInFirestore(emilyDocRef, emilyChanges);
-  //   } else if (personChanged.startsWith("person2") && brianDocRef) {
-  //     // Update Brian's budget
-  //     const updatedBrianBudget = updateBudgetItem(brianBudget, category, name, {
-  //       [personChanged]: newValues[personChanged],
-  //     });
-  //     setBrianBudget(updatedBrianBudget);
+    if (personChanged === "Em" && emilyDocRef) {
+      // Update Emily's budget
+      const newBudget = getUpdatedBudget(
+        emilyBudget,
+        category,
+        name,
+        amount,
+        time
+      );
+      setEmilyBudget(newBudget);
+      updateBudget(emilyDocRef, category, name, amount, time);
+      const newRows = getDataRows(combineBudgets(newBudget, brianBudget));
+      setRows(newRows);
+      return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
+    } else if (personChanged === "Z" && brianDocRef) {
+      // Update Brian's budget
+      const newBudget = getUpdatedBudget(
+        brianBudget,
+        category,
+        name,
+        amount,
+        time
+      );
+      setBrianBudget(newBudget);
+      updateBudget(brianDocRef, category, name, amount, time);
+      const newRows = getDataRows(combineBudgets(emilyBudget, newBudget));
+      setRows(newRows);
+      return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
+    }
 
-  //     const brianChanges = {
-  //       [`${category}.items`]: updatedBrianBudget[category].items,
-  //     };
-  //     await updateBudgetInFirestore(brianDocRef, brianChanges);
-  //   }
-
-  //   return newRow;
-  // };
-
-  const rows: GridRowsProp = getDataRows(combinedBudget);
+    return rawNewRow;
+  };
 
   return (
     <Box
@@ -141,7 +158,10 @@ export default function Finance() {
               return "custom";
             return "";
           }}
-          // processRowUpdate={handleProcessRowUpdate}
+          isCellEditable={(params) => {
+            return params.row.status !== "locked";
+          }}
+          processRowUpdate={handleRowUpdate}
           showToolbar
           disableRowSelectionOnClick
         />
