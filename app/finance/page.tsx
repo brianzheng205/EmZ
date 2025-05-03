@@ -3,22 +3,10 @@
 import { Box } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-// import { DocumentReference } from "firebase/firestore";
-// import * as R from "ramda";
 import { useEffect, useState, useMemo } from "react";
 
-import {
-  fetchActiveBudgets,
-  fetchBudget,
-  // updateDocument,
-} from "./firebaseUtils";
-import {
-  Budget,
-  // CombinedBudget,
-  combineBudgets,
-  columns,
-  getDataRows,
-} from "./utils";
+import { fetchActiveBudgets, fetchBudget } from "./firebaseUtils";
+import { Budget, combineBudgets, columns, getDataRows } from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .custom": {
@@ -47,10 +35,10 @@ export default function Finance() {
   const [brianBudget, setBrianBudget] = useState<Budget>({});
   const [loading, setLoading] = useState<boolean>(true);
 
-  const combinedBudget = useMemo(() => {
-    // if (R.isEmpty(emilyBudget) || R.isEmpty(brianBudget)) return {};
-    return combineBudgets(emilyBudget, brianBudget);
-  }, [emilyBudget, brianBudget]);
+  const combinedBudget = useMemo(
+    () => combineBudgets(emilyBudget, brianBudget),
+    [emilyBudget, brianBudget]
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -61,8 +49,8 @@ export default function Finance() {
         return;
       }
 
-      const emilyB = await fetchBudget(document.emily);
-      const brianB = await fetchBudget(document.brian);
+      const emilyB: Budget | null = await fetchBudget(document.emily);
+      const brianB: Budget | null = await fetchBudget(document.brian);
       if (!emilyB || !brianB) {
         setLoading(false);
         return;
@@ -70,38 +58,53 @@ export default function Finance() {
 
       // setEmilyDocRef(document.emily);
       // setBrianDocRef(document.brian);
-      setEmilyBudget(emilyB as Budget);
-      setBrianBudget(brianB as Budget);
+      setEmilyBudget(emilyB);
+      setBrianBudget(brianB);
       setLoading(false);
     });
   }, []);
 
-  // const handleRowUpdate = async (
-  //   rowId: string,
-  //   updatedData: Record<string, any>,
-  //   person: "emily" | "brian"
+  // const handleProcessRowUpdate = async (
+  //   newRow: BudgetRow,
+  //   oldRow: BudgetRow
   // ) => {
-  //   const docRef = person === "emily" ? emilyDocRef : brianDocRef;
-  //   if (!docRef) {
-  //     console.error("Document reference is not available.");
-  //     return;
+  //   const { category, name, ...newValues } = newRow;
+  //   const { ...oldValues } = oldRow;
+
+  //   // Determine whose budget changed
+  //   const personChanged = Object.keys(newValues).find(
+  //     (key) => newValues[key] !== oldValues[key]
+  //   );
+
+  //   if (!personChanged) {
+  //     return newRow; // No changes detected
   //   }
 
-  //   try {
-  //     const updatedRow = {
-  //       type: updatedData.section,
-  //       isPreTax: updatedData.isPreTax,
-  //       items: COLUMN_HEADERS.map((header) => ({
-  //         name: header,
-  //         amount: updatedData[header],
-  //         time: getColumnTime(COLUMN_HEADERS.indexOf(header)),
-  //       })),
+  //   if (personChanged.startsWith("person1") && emilyDocRef) {
+  //     // Update Emily's budget
+  //     const updatedEmilyBudget = updateBudgetItem(emilyBudget, category, name, {
+  //       [personChanged]: newValues[personChanged],
+  //     });
+  //     setEmilyBudget(updatedEmilyBudget);
+
+  //     const emilyChanges = {
+  //       [`${category}.items`]: updatedEmilyBudget[category].items,
   //     };
-  //     await updateDocument(docRef, { [`rows.${rowId}`]: updatedRow });
-  //     console.log(`Row ${rowId} updated successfully for ${person}.`);
-  //   } catch (error) {
-  //     console.error(`Failed to update row ${rowId} for ${person}:`, error);
+  //     await updateBudgetInFirestore(emilyDocRef, emilyChanges);
+  //   } else if (personChanged.startsWith("person2") && brianDocRef) {
+  //     // Update Brian's budget
+  //     const updatedBrianBudget = updateBudgetItem(brianBudget, category, name, {
+  //       [personChanged]: newValues[personChanged],
+  //     });
+  //     setBrianBudget(updatedBrianBudget);
+
+  //     const brianChanges = {
+  //       [`${category}.items`]: updatedBrianBudget[category].items,
+  //     };
+  //     await updateBudgetInFirestore(brianDocRef, brianChanges);
   //   }
+
+  //   return newRow;
   // };
 
   const rows: GridRowsProp = getDataRows(combinedBudget);
@@ -138,9 +141,7 @@ export default function Finance() {
               return "custom";
             return "";
           }}
-          // processRowUpdate={(newRow, oldRow) => {
-          //   return newRow;
-          // }}
+          // processRowUpdate={handleProcessRowUpdate}
           showToolbar
           disableRowSelectionOnClick
         />

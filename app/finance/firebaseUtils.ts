@@ -4,10 +4,13 @@ import {
   getDoc,
   DocumentData,
   DocumentReference,
+  updateDoc,
 } from "firebase/firestore";
 
 import { fetchData, fetchDocument } from "@/utils";
 import app from "@firebase";
+
+import { Budget } from "./utils";
 
 const db = getFirestore(app);
 
@@ -27,4 +30,11 @@ export const updateBudget = (
 
   const docRef = doc(db, path.join("/"));
   getDoc(docRef).then((docSnap) => setBudget(docSnap.data() as DocumentData));
+};
+
+export const updateBudgetInFirestore = async (
+  budgetReference: DocumentReference,
+  changes: Partial<Budget>
+): Promise<void> => {
+  await updateDoc(budgetReference, changes);
 };

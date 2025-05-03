@@ -6,47 +6,86 @@ import {
 } from "@mui/x-data-grid";
 import * as R from "ramda";
 
-type BudgetData = {
+type BudgetItem = {
   amount: number;
   time: "month" | "year";
 };
 
-type BudgetItem = BudgetData & {
-  name: string;
+type BudgetItems = {
+  [name: string]: BudgetItem;
 };
 
 type CategoryData = {
   isPreTax: boolean;
-  items: BudgetItem[];
+  items: BudgetItems;
 };
 
 export type Budget = {
   [category: string]: CategoryData;
 };
 
-type BudgetItemPerson = BudgetData & {
-  __owner: "person1" | "person2";
+type CombinedBudgetItem = {
+  person1: BudgetItem;
+  person2: BudgetItem;
 };
 
-type CombinedBudgetItem = {
-  name: string;
-  person1: BudgetData;
-  person2: BudgetData;
+type CombinedBudgetItems = {
+  [name: string]: CombinedBudgetItem;
 };
 
 type CombinedCategoryData = {
   isPreTax: boolean;
-  items: CombinedBudgetItem[];
+  items: CombinedBudgetItems;
 };
 
 type CombinedBudget = {
   [category: string]: CombinedCategoryData;
 };
 
+export type BudgetRow = {
+  id: string;
+  category: string;
+  name: string;
+  isPreTax: boolean;
+} & {
+  [key in (typeof COLUMN_HEADERS)[number]]: number;
+};
+
 // TODO make calculated cells not editable
 // TODO create docstrings for all functions
 
 // HELPERS
+export const combineBudgets = (budget1: Budget, budget2: Budget) => {
+  const allCategories = R.union(R.keys(budget1), R.keys(budget2));
+  const combinedBudget: CombinedBudget = {};
+
+  R.forEach((cat: string) => {
+    const cat1 = budget1[cat] || { isPreTax: false, items: {} };
+    const cat2 = budget2[cat] || { isPreTax: false, items: {} };
+    const itemNames = R.union(R.keys(cat1.items), R.keys(cat2.items));
+
+    const combinedItems: CombinedBudgetItems = {};
+    R.forEach((itemName: string) => {
+      const item1 = cat1.items[itemName] || {
+        amount: 0,
+        time: "month",
+      };
+      const item2 = cat2.items[itemName] || {
+        amount: 0,
+        time: "month",
+      };
+      combinedItems[itemName] = { person1: item1, person2: item2 };
+    }, itemNames);
+
+    combinedBudget[cat] = {
+      isPreTax: cat1.isPreTax || cat2.isPreTax,
+      items: combinedItems,
+    };
+  }, allCategories);
+
+  return combinedBudget;
+};
+
 const getPersonFromColumn = (column: number) =>
   column < 4 ? "person1" : "person2";
 
@@ -56,7 +95,7 @@ const getColumnTime = (column: number) =>
 const isPercentColumn = (column: number) => column % 2 === 0;
 const isCurrencyColumn = (column: number) => column % 2 === 1;
 
-const convertCurrency = (data: BudgetData, targetTime: string) => {
+const convertCurrency = (data: BudgetItem, targetTime: string) => {
   if (!data) return 0;
 
   if (data.time === targetTime) {
@@ -87,16 +126,6 @@ const percentFormatter: GridValueFormatter = (value: number) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value / 100);
-
-export const renameBudgetFields = (budget: Budget) =>
-  R.map(
-    R.evolve({
-      items: R.map((item: BudgetItem) => ({
-        name: item.name,
-      })),
-    }),
-    budget
-  );
 
 // COLUMNS
 export const COLUMN_HEADERS = [
@@ -149,26 +178,26 @@ export const columns: GridColDef[] = [
 const getDataRowsHelper = (
   combinedBudget: CombinedBudget,
   dividerRow: GridValidRowModel
-): GridRowsProp =>
-  R.pipe(
-    R.toPairs,
-    R.map(([categoryName, category]: [string, CombinedCategoryData]) =>
-      R.map((item) => {
+): GridRowsProp => {
+  const rows: GridValidRowModel[] = [];
+
+  R.forEachObjIndexed(
+    (category, categoryName: string) =>
+      R.forEachObjIndexed((item, itemName) => {
         const person1Amount = R.has("person1", item)
           ? convertCurrency(item.person1, item.person1.time)
           : 0;
         const person2Amount = R.has("person2", item)
           ? convertCurrency(item.person2, item.person2.time)
           : 0;
-        return {
-          id: `${categoryName}-${item.name}`,
+        rows.push({
+          id: `${categoryName}-${itemName}`,
           category: categoryName,
-          name: item.name,
+          name: itemName,
           isPreTax: category.isPreTax,
           ...COLUMN_HEADERS.reduce((acc, columnHeader, column) => {
             const divider =
               dividerRow[convertColumnHeaderToCurrency(columnHeader)];
-            console.log(divider);
             const person = getPersonFromColumn(column);
             const amount = person === "person1" ? person1Amount : person2Amount;
             acc[columnHeader] = isCurrencyColumn(column)
@@ -178,11 +207,13 @@ const getDataRowsHelper = (
               : 0;
             return acc;
           }, {}),
-        };
-      }, category.items)
-    ),
-    R.flatten
-  )(combinedBudget);
+        });
+      }, category.items),
+    combinedBudget
+  );
+
+  return rows;
+};
 
 const getGrossTotalRow = (combinedBudget: CombinedBudget) => {
   const grossTotals = COLUMN_HEADERS.map((_, column) => {
@@ -191,18 +222,21 @@ const getGrossTotalRow = (combinedBudget: CombinedBudget) => {
     }
 
     const person = getPersonFromColumn(column);
-    const items: BudgetItemPerson[] = R.pathOr(
-      [],
+    const columnTime = getColumnTime(column);
+    const items: CombinedBudgetItems = R.pathOr(
+      {},
       ["Gross", "items"],
       combinedBudget
     );
-    const amounts = R.map((item) => {
+
+    let total = 0;
+
+    R.forEachObjIndexed((item) => {
       if (R.has(person, item)) {
-        return convertCurrency(item[person], getColumnTime(column));
+        total += convertCurrency(item[person], columnTime);
       }
-      return 0;
     }, items);
-    const total = R.sum(amounts);
+
     return total;
   });
 
@@ -323,108 +357,3 @@ export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {
     grossTotalRow,
   ];
 };
-
-export const combineBudgets = (
-  budget1: Budget,
-  budget2: Budget
-): CombinedBudget => {
-  // Merge categories
-  const allCategories = R.union(R.keys(budget1), R.keys(budget2));
-
-  return R.fromPairs(
-    allCategories.map((cat: string) => {
-      const cat1 = budget1[cat] || { isPreTax: false, items: [] };
-      const cat2 = budget2[cat] || { isPreTax: false, items: [] };
-
-      // Group items by name
-      const groupByName = R.groupBy(R.propOr("", "name"));
-      const grouped = groupByName([
-        ...cat1.items.map((i) => ({ ...i, __owner: "person1" })),
-        ...cat2.items.map((i) => ({ ...i, __owner: "person2" })),
-      ]);
-
-      const mergedItems = R.pipe(
-        R.toPairs,
-        R.map(([name, items]: [string, BudgetItemPerson[]]) => ({
-          name,
-          ...R.fromPairs(
-            items.map((i) => [i.__owner, { amount: i.amount, time: i.time }])
-          ),
-        }))
-      )(grouped);
-
-      return [
-        cat,
-        {
-          isPreTax: cat1.isPreTax || cat2.isPreTax,
-          items: mergedItems,
-        },
-      ];
-    })
-  );
-};
-
-// export const combineBudgets = (
-//   emilyBudget: Budget,
-//   brianBudget: Budget
-// ): CombinedBudget => {
-//   const result: CombinedBudget = {};
-//   const categories = R.union(R.keys(emilyBudget), R.keys(brianBudget));
-
-//   R.forEach((category: string) => {
-//     const emilyCategoryData: CategoryData = R.propOr({}, category, emilyBudget);
-//     const brianCategoryData: CategoryData = R.propOr({}, category, brianBudget);
-//     const isPreTax: boolean =
-//       R.propOr(false, "isPreTax", emilyCategoryData) ||
-//       R.propOr(false, "isPreTax", brianCategoryData);
-
-//     const emilyItems: BudgetItemsPerson = R.pipe(
-//       R.propOr([], "items"),
-//       R.map((item: BudgetItem) => [
-//         item.name,
-//         {
-//           ...item,
-//           person: "emily",
-//         },
-//       ]),
-//       R.fromPairs
-//     )(emilyCategoryData);
-//     console.log(emilyItems);
-//     const brianItems: BudgetItemsPerson = R.pipe(
-//       R.propOr([], "items"),
-//       R.map((item: BudgetItem) => ({
-//         ...item,
-//         person: "brian",
-//       }))
-//     )(brianCategoryData);
-//     const items = emilyItems.concat(brianItems);
-
-//     const combinedItems = R.pipe(
-//       R.groupBy((item: BudgetItem) => item.name),
-//       R.map((items: BudgetItemsPerson[]) => {
-//         const emilyItem = R.find(R.propEq("person", "emily"), items);
-//         const brianItem = R.find(R.propEq("person", "brian"), items);
-
-//         return {
-//           name: emilyItem.name,
-//           emily: {
-//             amount: emilyItem.amount,
-//             time: emilyItem.time,
-//           },
-//           brian: {
-//             amount: brianItem.amount,
-//             time: brianItem.time,
-//           },
-//         };
-//       })
-//     )(items);
-//     console.log(combinedItems);
-
-//     // result[category] = {
-//     //   isPreTax,
-//     //   items:
-//     // };
-//   }, categories);
-
-//   return result;
-// };
