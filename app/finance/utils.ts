@@ -51,7 +51,6 @@ export type BudgetRow = {
   [key in (typeof COLUMN_HEADERS)[number]]: number;
 };
 
-// TODO make calculated cells not editable
 // TODO create docstrings for all functions
 
 // EXPPORTED HELPERS
@@ -105,14 +104,13 @@ export const getUpdatedBudget = (
   oldPath: string[],
   newPath: string[],
   object: object
-): Budget => {
-  if (oldPath === newPath) return R.assocPath(newPath, object, budget);
-
-  return R.pipe(
-    R.dissocPath(oldPath),
-    R.assocPath(newPath, object)
-  )(budget) as Budget;
-};
+): Budget =>
+  oldPath === newPath
+    ? R.assocPath(newPath, object, budget)
+    : (R.pipe(
+        R.dissocPath(oldPath),
+        R.assocPath(newPath, object)
+      )(budget) as Budget);
 
 // INTERNAL HELPERS
 const getPersonFromColumn = (column: number) =>

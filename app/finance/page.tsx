@@ -1,13 +1,22 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Delete } from "@mui/icons-material";
+import { Box, Button } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchActiveBudgets, fetchBudget, updateBudget } from "./firebaseUtils";
+import useDialog from "@/hooks/useDialog";
+
+import AddBudgetRowDialog from "./AddBudgetRowDialog";
+import {
+  deleteBudgetItem,
+  fetchActiveBudgets,
+  fetchBudget,
+  updateBudget,
+} from "./firebaseUtils";
 import {
   Budget,
   BudgetRow,
@@ -46,6 +55,11 @@ export default function Finance() {
   const [emilyBudget, setEmilyBudget] = useState<Budget>({});
   const [brianBudget, setBrianBudget] = useState<Budget>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const {
+    isDialogOpen: isAddRowDialogOpen,
+    openDialog: openAddRowDialog,
+    closeDialog: closeAddRowDialog,
+  } = useDialog();
 
   const rows = useMemo(
     () => getDataRows(combineBudgets(emilyBudget, brianBudget)),
@@ -126,8 +140,6 @@ export default function Finance() {
         brianNewObj
       );
       setEmilyBudget(newEmilyBudget);
-      console.log("newEmilyBudget", newEmilyBudget);
-      console.log("newBrianBudget", newBrianBudget);
       setBrianBudget(newBrianBudget);
       const newRows = getDataRows(
         combineBudgets(newEmilyBudget, newBrianBudget)
@@ -170,7 +182,81 @@ export default function Finance() {
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
-  console.log("rows", rows);
+  const handleDeleteRow = async (rowToDelete: BudgetRow) => {
+    const { category, name } = rowToDelete;
+
+    if (!name || !category) {
+      console.error("Name and category are required to delete a row.");
+      return;
+    }
+
+    const path = [category, "items", name];
+
+    if (!brianDocRef || !emilyDocRef) {
+      console.error("Document references are null.");
+      return;
+    }
+
+    const newEmilyBudget: Budget = R.dissocPath(path, emilyBudget);
+    const newBrianBudget: Budget = R.dissocPath(path, brianBudget);
+    setEmilyBudget(newEmilyBudget);
+    setBrianBudget(newBrianBudget);
+    await deleteBudgetItem(emilyDocRef, path);
+    await deleteBudgetItem(brianDocRef, path);
+  };
+
+  const handleAddRow = async (
+    category: string,
+    name: string,
+    brianItem: object,
+    emilyItem: object
+  ) => {
+    const newPath = [category, "items", name];
+
+    if (brianDocRef) {
+      const newBrianBudget = getUpdatedBudget(
+        brianBudget,
+        [],
+        newPath,
+        brianItem
+      );
+      setBrianBudget(newBrianBudget);
+      await updateBudget(brianDocRef, [], newPath, brianItem);
+    }
+
+    if (emilyDocRef) {
+      const newEmilyBudget = getUpdatedBudget(
+        emilyBudget,
+        [],
+        newPath,
+        emilyItem
+      );
+      setEmilyBudget(newEmilyBudget);
+      await updateBudget(emilyDocRef, [], newPath, emilyItem);
+    }
+
+    closeAddRowDialog();
+  };
+
+  const deleteColumn = {
+    field: "delete",
+    headerName: "",
+    sortable: false,
+    width: 50,
+    renderCell: (params) => {
+      if (["savings", "take-home", "gross-total"].includes(params.row.id)) {
+        return null; // Do not render the delete button for these rows
+      }
+      return (
+        <Button
+          onClick={() => handleDeleteRow(params.row)}
+          sx={{ minWidth: 0, padding: 0 }}
+        >
+          <Delete />
+        </Button>
+      );
+    },
+  };
 
   return (
     <Box
@@ -189,9 +275,16 @@ export default function Finance() {
           width: "90%",
         }}
       >
+        <Button
+          variant="contained"
+          onClick={openAddRowDialog}
+          sx={{ marginBottom: 2 }}
+        >
+          Add Row
+        </Button>
         <StyledDataGrid
           rows={rows}
-          columns={columns}
+          columns={[...columns, deleteColumn]} // Add delete column
           loading={loading}
           rowHeight={30}
           getRowClassName={(params) => {
@@ -213,6 +306,12 @@ export default function Finance() {
           disableColumnSorting
         />
       </Box>
+
+      <AddBudgetRowDialog
+        open={isAddRowDialogOpen}
+        onClose={closeAddRowDialog}
+        onSubmit={handleAddRow}
+      />
     </Box>
   );
 }

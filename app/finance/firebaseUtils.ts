@@ -4,13 +4,11 @@ import { fetchData, fetchDocument } from "@/utils";
 
 const pathToString = (path: string[]) => path.join(".");
 
-export async function fetchActiveBudgets() {
-  return await fetchData("activeBudgets", new Date().getFullYear().toString());
-}
+export const fetchActiveBudgets = async () =>
+  await fetchData("activeBudgets", new Date().getFullYear().toString());
 
-export async function fetchBudget(budgetReference: DocumentReference) {
-  return await fetchDocument(budgetReference);
-}
+export const fetchBudget = async (budgetReference: DocumentReference) =>
+  await fetchDocument(budgetReference);
 
 export const updateBudget = async (
   docRef: DocumentReference,
@@ -20,12 +18,22 @@ export const updateBudget = async (
 ) => {
   const newPathStr = pathToString(newPath);
   const oldPathStr = pathToString(oldPath);
-
   const updates = {
     [newPathStr]: object,
   };
 
-  if (oldPathStr !== newPathStr) updates[oldPathStr] = deleteField();
+  if (oldPathStr !== newPathStr && oldPathStr !== "")
+    updates[oldPathStr] = deleteField();
 
-  return updateDoc(docRef, updates);
+  return await updateDoc(docRef, updates);
+};
+
+export const deleteBudgetItem = async (
+  docRef: DocumentReference,
+  path: string[]
+) => {
+  const pathStr = pathToString(path);
+  return await updateDoc(docRef, {
+    [pathStr]: deleteField(),
+  });
 };
