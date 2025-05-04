@@ -11,8 +11,8 @@ import app from "@firebase";
 // FIREBASE
 const db = getFirestore(app);
 
-export async function fetchData(path: string, ...pathSegments: string[]) {
-  const docRef = doc(db, path, ...pathSegments);
+export async function fetchData(path: string) {
+  const docRef = doc(db, path);
   return await fetchDocument(docRef);
 }
 

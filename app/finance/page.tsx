@@ -75,15 +75,17 @@ export default function Finance() {
         return;
       }
 
-      const emilyB: Budget | null = await fetchBudget(document.emily);
-      const brianB: Budget | null = await fetchBudget(document.brian);
+      const emilyBudgetRef = document.emilyBudget;
+      const brianBudgetRef = document.brianBudget;
+      const emilyB: Budget | null = await fetchBudget(emilyBudgetRef);
+      const brianB: Budget | null = await fetchBudget(brianBudgetRef);
       if (!emilyB || !brianB) {
         setLoading(false);
         return;
       }
 
-      setEmilyDocRef(document.emily);
-      setBrianDocRef(document.brian);
+      setEmilyDocRef(emilyBudgetRef);
+      setBrianDocRef(brianBudgetRef);
       setEmilyBudget(emilyB);
       setBrianBudget(brianB);
       setLoading(false);

@@ -4,8 +4,22 @@ import { fetchData, fetchDocument } from "@/utils";
 
 const pathToString = (path: string[]) => path.join(".");
 
-export const fetchActiveBudgets = async () =>
-  await fetchData("activeBudgets", new Date().getFullYear().toString());
+export const fetchActiveBudgets = async () => {
+  const [emilyBudget, brianBudget] = await Promise.all([
+    fetchData("users/emily"),
+    fetchData("users/brian"),
+  ]);
+
+  if (!emilyBudget || !brianBudget) {
+    console.error("Failed to fetch active budgets for Emily or Brian.");
+    return null;
+  }
+
+  return {
+    emilyBudget: emilyBudget.activeBudget,
+    brianBudget: brianBudget.activeBudget,
+  };
+};
 
 export const fetchBudget = async (budgetReference: DocumentReference) =>
   await fetchDocument(budgetReference);
