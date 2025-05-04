@@ -4,6 +4,7 @@ import { Box } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
+import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchActiveBudgets, fetchBudget, updateBudget } from "./firebaseUtils";
@@ -76,53 +77,100 @@ export default function Finance() {
   }, []);
 
   const handleRowUpdate = async (rawNewRow: BudgetRow, oldRow: BudgetRow) => {
-    const { category, name, ...newValues } = rawNewRow;
-    const { ...oldValues } = oldRow;
+    const { category, name: newName } = rawNewRow;
+    const { name: oldName } = oldRow;
 
     // Determine whose budget changed
-    const colChanged = Object.keys(newValues).find(
-      (key) => newValues[key] !== oldValues[key]
+    const colChanged = Object.keys(rawNewRow).find(
+      (key) => rawNewRow[key] !== oldRow[key]
     );
 
     if (!colChanged) {
       return rawNewRow; // No changes detected
     }
 
-    const colIndexChanged = COLUMN_HEADERS.indexOf(colChanged);
-    const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
-    const amount = newValues[colChanged];
-    const time = getColumnTime(colIndexChanged);
+    if (colChanged === "name") {
+      const oldPath = [category, "items", oldName];
+      const newPath = [category, "items", newName];
+      const existingNames = R.union(
+        R.keys(R.path([category, "items"], emilyBudget) || []),
+        R.keys(R.path([category, "items"], brianBudget) || [])
+      );
 
-    if (personChanged === "Em" && emilyDocRef) {
-      // Update Emily's budget
-      const newBudget = getUpdatedBudget(
+      if (existingNames.includes(newName)) {
+        console.error(`Name "${newName}" already exists in the budget.`);
+        return oldRow;
+      }
+
+      const emilyNewObj = {
+        ...(R.path(oldPath, emilyBudget) as object),
+      };
+      const brianNewObj = {
+        ...(R.path(oldPath, brianBudget) as object),
+      };
+      if (!emilyDocRef || !brianDocRef) {
+        console.error("Document reference is null.");
+        return rawNewRow;
+      }
+
+      const newEmilyBudget = getUpdatedBudget(
         emilyBudget,
-        category,
-        name,
-        amount,
-        time
+        oldPath,
+        newPath,
+        emilyNewObj
       );
-      setEmilyBudget(newBudget);
-      updateBudget(emilyDocRef, category, name, amount, time);
-      const newRows = getDataRows(combineBudgets(newBudget, brianBudget));
-      return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
-    } else if (personChanged === "Z" && brianDocRef) {
-      // Update Brian's budget
-      const newBudget = getUpdatedBudget(
+      const newBrianBudget = getUpdatedBudget(
         brianBudget,
-        category,
-        name,
-        amount,
-        time
+        oldPath,
+        newPath,
+        brianNewObj
       );
-      setBrianBudget(newBudget);
-      updateBudget(brianDocRef, category, name, amount, time);
-      const newRows = getDataRows(combineBudgets(emilyBudget, newBudget));
+      setEmilyBudget(newEmilyBudget);
+      console.log("newEmilyBudget", newEmilyBudget);
+      console.log("newBrianBudget", newBrianBudget);
+      setBrianBudget(newBrianBudget);
+      const newRows = getDataRows(
+        combineBudgets(newEmilyBudget, newBrianBudget)
+      );
+
+      await updateBudget(emilyDocRef, oldPath, newPath, emilyNewObj);
+      await updateBudget(brianDocRef, oldPath, newPath, brianNewObj);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     }
 
-    return rawNewRow;
+    const colIndexChanged = COLUMN_HEADERS.indexOf(colChanged);
+    const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
+    const oldPath = [category, "items", newName];
+    const newPath = [category, "items", newName];
+    const newObj = {
+      amount: rawNewRow[colChanged],
+      time: getColumnTime(colIndexChanged),
+    };
+
+    const budget = personChanged === "Em" ? emilyBudget : brianBudget;
+    const docRef = personChanged === "Em" ? emilyDocRef : brianDocRef;
+    if (!docRef) {
+      console.error(`Document reference for ${personChanged} is null.`);
+      return;
+    }
+
+    const newBudget = getUpdatedBudget(budget, oldPath, newPath, newObj);
+
+    if (personChanged === "Em") {
+      setEmilyBudget(newBudget);
+    } else {
+      setBrianBudget(newBudget);
+    }
+
+    updateBudget(docRef, oldPath, newPath, newObj);
+    const newRows =
+      personChanged === "Em"
+        ? getDataRows(combineBudgets(newBudget, brianBudget))
+        : getDataRows(combineBudgets(emilyBudget, newBudget));
+    return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
+
+  console.log("rows", rows);
 
   return (
     <Box
@@ -146,7 +194,6 @@ export default function Finance() {
           columns={columns}
           loading={loading}
           rowHeight={30}
-          hideFooterPagination={rows.length <= 25}
           getRowClassName={(params) => {
             if (
               ["savings", "take-home", "gross-total"].includes(
@@ -162,6 +209,8 @@ export default function Finance() {
           processRowUpdate={handleRowUpdate}
           showToolbar
           disableRowSelectionOnClick
+          hideFooter
+          disableColumnSorting
         />
       </Box>
     </Box>

@@ -1,8 +1,8 @@
-import { DocumentReference, updateDoc } from "firebase/firestore";
+import { DocumentReference, updateDoc, deleteField } from "firebase/firestore";
 
 import { fetchData, fetchDocument } from "@/utils";
 
-import { Budget } from "./utils";
+const pathToString = (path: string[]) => path.join(".");
 
 export async function fetchActiveBudgets() {
   return await fetchData("activeBudgets", new Date().getFullYear().toString());
@@ -12,28 +12,20 @@ export async function fetchBudget(budgetReference: DocumentReference) {
   return await fetchDocument(budgetReference);
 }
 
-export async function updateBudget(
+export const updateBudget = async (
   docRef: DocumentReference,
-  category: string,
-  name: string,
-  amount: number,
-  time: "month" | "year"
-) {
-  await updateDoc(docRef, {
-    [`${category}.items.${name}`]: {
-      amount: amount,
-      time: time,
-    },
-  });
-}
+  oldPath: string[],
+  newPath: string[],
+  object: object
+) => {
+  const newPathStr = pathToString(newPath);
+  const oldPathStr = pathToString(oldPath);
 
-export const updateBudgetInFirestore = async (
-  budgetReference: DocumentReference,
-  changes: Partial<Budget>
-): Promise<void> => {
-  try {
-    await updateDoc(budgetReference, changes);
-  } catch (error) {
-    console.error("Error updating budget in Firestore:", error);
-  }
+  const updates = {
+    [newPathStr]: object,
+  };
+
+  if (oldPathStr !== newPathStr) updates[oldPathStr] = deleteField();
+
+  return updateDoc(docRef, updates);
 };
