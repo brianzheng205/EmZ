@@ -2,9 +2,9 @@
 
 import { Box } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
-import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { fetchActiveBudgets, fetchBudget, updateBudget } from "./firebaseUtils";
 import {
@@ -45,7 +45,11 @@ export default function Finance() {
   const [emilyBudget, setEmilyBudget] = useState<Budget>({});
   const [brianBudget, setBrianBudget] = useState<Budget>({});
   const [loading, setLoading] = useState<boolean>(true);
-  const [rows, setRows] = useState<GridRowsProp>([]);
+
+  const rows = useMemo(
+    () => getDataRows(combineBudgets(emilyBudget, brianBudget)),
+    [emilyBudget, brianBudget]
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -63,14 +67,10 @@ export default function Finance() {
         return;
       }
 
-      const combinedBudget = combineBudgets(emilyB, brianB);
-      const dataRows = getDataRows(combinedBudget);
-
       setEmilyDocRef(document.emily);
       setBrianDocRef(document.brian);
       setEmilyBudget(emilyB);
       setBrianBudget(brianB);
-      setRows(dataRows);
       setLoading(false);
     });
   }, []);
@@ -105,7 +105,6 @@ export default function Finance() {
       setEmilyBudget(newBudget);
       updateBudget(emilyDocRef, category, name, amount, time);
       const newRows = getDataRows(combineBudgets(newBudget, brianBudget));
-      setRows(newRows);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     } else if (personChanged === "Z" && brianDocRef) {
       // Update Brian's budget
@@ -119,7 +118,6 @@ export default function Finance() {
       setBrianBudget(newBudget);
       updateBudget(brianDocRef, category, name, amount, time);
       const newRows = getDataRows(combineBudgets(emilyBudget, newBudget));
-      setRows(newRows);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     }
 
