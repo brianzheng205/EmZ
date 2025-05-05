@@ -1,8 +1,6 @@
 import { GridColDef, GridRowsProp, GridValueFormatter } from "@mui/x-data-grid";
 import * as R from "ramda";
 
-import { capitalizeFirstLetter } from "@/utils";
-
 type BudgetItem = {
   amount: number;
   time: "month" | "year";
@@ -58,7 +56,7 @@ export type BudgetDataRow = {
 type LabelRow = {
   id: string;
   category: string;
-  status: "locked";
+  status: "label";
 };
 
 // TODO create docstrings for all functions
@@ -127,10 +125,14 @@ export const getUpdatedBudget = (
 export const getChangedCellTime = (columnHeader: string) =>
   columnHeader.toLowerCase().includes("month") ? "month" : "year";
 
-export const isRowProtected = (id: string) =>
-  !["gross", "deductions", "expenses", "savings"].some((category) =>
-    new RegExp(`${category}-\\d+`).test(id)
-  );
+export const isLabelRow = (status: string | undefined) =>
+  status && status.includes("label") ? true : false;
+
+export const isCalculatedRow = (status: string | undefined) =>
+  status && status.includes("calculated") ? true : false;
+
+export const isDataRow = (status: string | undefined) =>
+  status && status.includes("data") ? true : false;
 
 // INTERNAL HELPERS
 const convertCurrency = (
@@ -254,7 +256,8 @@ export const columns: GridColDef[] = [
     headerName: "Category",
     type: "string",
     flex: 2,
-    valueFormatter: capitalizeFirstLetter,
+    valueFormatter: (value, row) =>
+      isLabelRow(row.status) || isCalculatedRow(row.status) ? value : "",
   },
   {
     field: "name",
@@ -298,6 +301,7 @@ const getDataRowsHelper = (
       id += 1;
       rows.push({
         id: `${categoryName}-${id}`,
+        status: "data",
         category: categoryName,
         name: itemName,
         isMonthly:
@@ -347,7 +351,7 @@ const getGrossTotalRow = (
 
   return {
     id: "gross-total",
-    status: "locked",
+    status: "calculated",
     category: "Gross Total",
     name: "Gross Total",
     isMonthly: true,
@@ -391,7 +395,7 @@ const getTakeHomeAndTaxRows = (
   return [
     {
       id: "take-home",
-      status: "locked",
+      status: "calculated",
       category: "Take Home",
       name: "Take Home Total",
       isMonthly: true,
@@ -406,7 +410,7 @@ const getTakeHomeAndTaxRows = (
     },
     {
       id: "tax",
-      status: "locked",
+      status: "calculated",
       category: "Tax",
       name: "Tax",
       isMonthly: true,
@@ -448,7 +452,7 @@ const getSavingsRow = (
 
   return {
     id: "savings",
-    status: "locked",
+    status: "calculated",
     category: "Remaining",
     name: "Savings",
     isMonthly: true,
@@ -466,7 +470,7 @@ const getSavingsRow = (
 const getLabelRow = (category: string): LabelRow => ({
   id: `${category}-label`,
   category,
-  status: "locked",
+  status: "label",
 });
 
 export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {

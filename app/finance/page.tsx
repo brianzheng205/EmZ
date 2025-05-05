@@ -26,11 +26,13 @@ import {
   getPersonFromColumnHeader,
   columns,
   getDataRows,
-  isRowProtected,
+  isLabelRow,
+  isCalculatedRow,
+  isDataRow,
 } from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
-  "& .custom": {
+  "& .calculated": {
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.common.white,
     "&:hover": {
@@ -40,6 +42,18 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
       backgroundColor: theme.palette.primary.main,
       "&:hover": {
         backgroundColor: darken(theme.palette.primary.main, 0.1),
+      },
+    },
+  },
+  "& .label": {
+    backgroundColor: theme.palette.secondary.main,
+    "&:hover": {
+      backgroundColor: darken(theme.palette.secondary.main, 0.1),
+    },
+    "&.Mui-selected": {
+      backgroundColor: theme.palette.secondary.main,
+      "&:hover": {
+        backgroundColor: darken(theme.palette.secondary.main, 0.1),
       },
     },
   },
@@ -242,19 +256,15 @@ export default function Finance() {
     headerName: "",
     sortable: false,
     width: 50,
-    renderCell: (params) => {
-      if (isRowProtected(params.row.id)) {
-        return null; // Do not render the delete button for these rows
-      }
-      return (
+    renderCell: (params) =>
+      isDataRow(params.row.status) && (
         <Button
           onClick={() => handleDeleteRow(params.row)}
           sx={{ minWidth: 0, padding: 0 }}
         >
           <Delete />
         </Button>
-      );
-    },
+      ),
   };
 
   return (
@@ -286,13 +296,14 @@ export default function Finance() {
           columns={[...columns, deleteColumn]}
           loading={loading}
           rowHeight={30}
-          getRowClassName={(params) => {
-            if (isRowProtected(params.row.id)) return "custom";
-            return "";
-          }}
-          isCellEditable={(params) => {
-            return params.row.status !== "locked";
-          }}
+          getRowClassName={(params) =>
+            isLabelRow(params.row.status)
+              ? "label"
+              : isCalculatedRow(params.row.status)
+              ? "calculated"
+              : ""
+          }
+          isCellEditable={(params) => isDataRow(params.row.status)}
           processRowUpdate={handleRowUpdate}
           showToolbar
           disableRowSelectionOnClick
