@@ -26,13 +26,13 @@ import {
   getPersonFromColumnHeader,
   columns,
   getDataRows,
-  isLabelRow,
-  isCalculatedRow,
+  isSumOfSumRow,
+  isSumRow,
   isDataRow,
 } from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
-  "& .calculated": {
+  "& .sumOfSum": {
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.common.white,
     "&:hover": {
@@ -45,7 +45,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
       },
     },
   },
-  "& .label": {
+  "& .sum": {
     backgroundColor: theme.palette.secondary.main,
     "&:hover": {
       backgroundColor: darken(theme.palette.secondary.main, 0.1),
@@ -297,10 +297,10 @@ export default function Finance() {
           loading={loading}
           rowHeight={30}
           getRowClassName={(params) =>
-            isLabelRow(params.row.status)
-              ? "label"
-              : isCalculatedRow(params.row.status)
-              ? "calculated"
+            isSumOfSumRow(params.row.status)
+              ? "sumOfSum"
+              : isSumRow(params.row.status)
+              ? "sum"
               : ""
           }
           isCellEditable={(params) => isDataRow(params.row.status)}
