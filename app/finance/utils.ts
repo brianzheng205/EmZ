@@ -37,10 +37,13 @@ type CombinedBudget = {
   savings: CombinedCategoryItems;
 };
 
-export type BudgetDataRow = {
+export type BudgetDataRow = Required<Pick<BudgetCalculatedRow, "category">> &
+  Omit<BudgetCalculatedRow, "category">;
+
+type BudgetCalculatedRow = {
   id: string;
   status?: string;
-  category: string;
+  category?: string;
   name: string;
   isMonthly: boolean;
   monthlyEmAmount: number;
@@ -332,7 +335,7 @@ const getDataRowsHelper = (
 
 const getGrossTotalRow = (
   grossCategory: CombinedCategoryItems
-): BudgetDataRow => {
+): BudgetCalculatedRow => {
   let person1Monthly = 0;
   let person1Yearly = 0;
   let person2Monthly = 0;
@@ -352,7 +355,6 @@ const getGrossTotalRow = (
   return {
     id: "gross-total",
     status: "calculated",
-    category: "Gross Total",
     name: "Gross Total",
     isMonthly: true,
     monthlyEmAmount: person1Monthly,
@@ -367,9 +369,9 @@ const getGrossTotalRow = (
 };
 
 const getTakeHomeAndTaxRows = (
-  grossTotalRow: BudgetDataRow,
+  grossTotalRow: BudgetCalculatedRow,
   deductions: CombinedCategoryItems
-): [BudgetDataRow, BudgetDataRow] => {
+): [BudgetCalculatedRow, BudgetCalculatedRow] => {
   let monthlyEmTaxable = grossTotalRow.monthlyEmAmount;
   let yearlyEmTaxable = grossTotalRow.yearlyEmAmount;
   let monthlyZTaxable = grossTotalRow.monthlyZAmount;
@@ -427,10 +429,10 @@ const getTakeHomeAndTaxRows = (
 };
 
 const getSavingsRow = (
-  takeHomeRow: BudgetDataRow,
+  takeHomeRow: BudgetCalculatedRow,
   expenses: CombinedCategoryItems,
   savings: CombinedCategoryItems
-): BudgetDataRow => {
+): BudgetCalculatedRow => {
   let monthlyEmSavings = takeHomeRow.monthlyEmAmount;
   let yearlyEmSavings = takeHomeRow.yearlyEmAmount;
   let monthlyZSavings = takeHomeRow.monthlyZAmount;
@@ -453,8 +455,7 @@ const getSavingsRow = (
   return {
     id: "savings",
     status: "calculated",
-    category: "Remaining",
-    name: "Savings",
+    name: "Remaining",
     isMonthly: true,
     monthlyEmAmount: monthlyEmSavings,
     yearlyEmAmount: yearlyEmSavings,
