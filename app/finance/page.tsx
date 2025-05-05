@@ -19,14 +19,13 @@ import {
 } from "./firebaseUtils";
 import {
   Budget,
-  BudgetRow,
-  combineBudgets,
+  BudgetDataRow,
+  getCombineBudgets,
   getUpdatedBudget,
+  getChangedCellTime,
   getPersonFromColumnHeader,
-  COLUMN_HEADERS,
   columns,
   getDataRows,
-  getColumnTime,
 } from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
@@ -45,6 +44,8 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
+const calculatedRowIds = ["savings", "takeHome", "tax", "grossTotal"];
+
 export default function Finance() {
   const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
     null
@@ -52,8 +53,8 @@ export default function Finance() {
   const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
     null
   );
-  const [emilyBudget, setEmilyBudget] = useState<Budget>({});
-  const [brianBudget, setBrianBudget] = useState<Budget>({});
+  const [emilyBudget, setEmilyBudget] = useState<Budget>({} as Budget);
+  const [brianBudget, setBrianBudget] = useState<Budget>({} as Budget);
   const [loading, setLoading] = useState<boolean>(true);
   const {
     isDialogOpen: isAddRowDialogOpen,
@@ -62,7 +63,7 @@ export default function Finance() {
   } = useDialog();
 
   const rows = useMemo(
-    () => getDataRows(combineBudgets(emilyBudget, brianBudget)),
+    () => getDataRows(getCombineBudgets(emilyBudget, brianBudget)),
     [emilyBudget, brianBudget]
   );
 
@@ -77,8 +78,8 @@ export default function Finance() {
 
       const emilyBudgetRef = document.emilyBudget;
       const brianBudgetRef = document.brianBudget;
-      const emilyB: Budget | null = await fetchBudget(emilyBudgetRef);
-      const brianB: Budget | null = await fetchBudget(brianBudgetRef);
+      const emilyB = (await fetchBudget(emilyBudgetRef)) as Budget | null;
+      const brianB = (await fetchBudget(brianBudgetRef)) as Budget | null;
       if (!emilyB || !brianB) {
         setLoading(false);
         return;
@@ -92,7 +93,10 @@ export default function Finance() {
     });
   }, []);
 
-  const handleRowUpdate = async (rawNewRow: BudgetRow, oldRow: BudgetRow) => {
+  const handleRowUpdate = async (
+    rawNewRow: BudgetDataRow,
+    oldRow: BudgetDataRow
+  ) => {
     const { category, name: newName } = rawNewRow;
     const { name: oldName } = oldRow;
 
@@ -106,11 +110,11 @@ export default function Finance() {
     }
 
     if (colChanged === "name") {
-      const oldPath = [category, "items", oldName];
-      const newPath = [category, "items", newName];
-      const existingNames = R.union(
-        R.keys(R.path([category, "items"], emilyBudget) || []),
-        R.keys(R.path([category, "items"], brianBudget) || [])
+      const oldPath = [category, oldName];
+      const newPath = [category, newName];
+      const existingNames: string[] = R.union(
+        R.keys(R.propOr({}, category, emilyBudget) as object),
+        R.keys(R.propOr({}, category, brianBudget) as object)
       );
 
       if (existingNames.includes(newName)) {
@@ -144,7 +148,7 @@ export default function Finance() {
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
       const newRows = getDataRows(
-        combineBudgets(newEmilyBudget, newBrianBudget)
+        getCombineBudgets(newEmilyBudget, newBrianBudget)
       );
 
       await updateBudget(emilyDocRef, oldPath, newPath, emilyNewObj);
@@ -152,13 +156,12 @@ export default function Finance() {
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     }
 
-    const colIndexChanged = COLUMN_HEADERS.indexOf(colChanged);
     const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
-    const oldPath = [category, "items", newName];
-    const newPath = [category, "items", newName];
+    const oldPath = [category, newName];
+    const newPath = [category, newName];
     const newObj = {
       amount: rawNewRow[colChanged],
-      time: getColumnTime(colIndexChanged),
+      time: getChangedCellTime(colChanged),
     };
 
     const budget = personChanged === "Em" ? emilyBudget : brianBudget;
@@ -179,20 +182,15 @@ export default function Finance() {
     updateBudget(docRef, oldPath, newPath, newObj);
     const newRows =
       personChanged === "Em"
-        ? getDataRows(combineBudgets(newBudget, brianBudget))
-        : getDataRows(combineBudgets(emilyBudget, newBudget));
+        ? getDataRows(getCombineBudgets(newBudget, brianBudget))
+        : getDataRows(getCombineBudgets(emilyBudget, newBudget));
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
-  const handleDeleteRow = async (rowToDelete: BudgetRow) => {
+  const handleDeleteRow = async (rowToDelete: BudgetDataRow) => {
     const { category, name } = rowToDelete;
 
-    if (!name || !category) {
-      console.error("Name and category are required to delete a row.");
-      return;
-    }
-
-    const path = [category, "items", name];
+    const path = [category, name];
 
     if (!brianDocRef || !emilyDocRef) {
       console.error("Document references are null.");
@@ -213,7 +211,7 @@ export default function Finance() {
     brianItem: object,
     emilyItem: object
   ) => {
-    const newPath = [category, "items", name];
+    const newPath = [category, name];
 
     if (brianDocRef) {
       const newBrianBudget = getUpdatedBudget(
@@ -246,7 +244,7 @@ export default function Finance() {
     sortable: false,
     width: 50,
     renderCell: (params) => {
-      if (["savings", "take-home", "gross-total"].includes(params.row.id)) {
+      if (calculatedRowIds.includes(params.row.id)) {
         return null; // Do not render the delete button for these rows
       }
       return (
@@ -259,6 +257,8 @@ export default function Finance() {
       );
     },
   };
+
+  console.log("rows", rows);
 
   return (
     <Box
@@ -286,16 +286,11 @@ export default function Finance() {
         </Button>
         <StyledDataGrid
           rows={rows}
-          columns={[...columns, deleteColumn]} // Add delete column
+          columns={[...columns, deleteColumn]}
           loading={loading}
           rowHeight={30}
           getRowClassName={(params) => {
-            if (
-              ["savings", "take-home", "gross-total"].includes(
-                params.id as string
-              )
-            )
-              return "custom";
+            if (calculatedRowIds.includes(params.id as string)) return "custom";
             return "";
           }}
           isCellEditable={(params) => {

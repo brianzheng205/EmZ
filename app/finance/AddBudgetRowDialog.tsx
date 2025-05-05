@@ -12,9 +12,16 @@ import {
   InputLabel,
   Stack,
 } from "@mui/material";
-import React, { useState } from "react";
+import { useState } from "react";
 
-const CATEGORY_OPTIONS = ["Gross", "Deductions", "Expenses", "Savings"];
+import { capitalizeFirstLetter } from "@/utils";
+
+const CATEGORY_OPTIONS = ["gross", "deductions", "expenses", "savings"].map(
+  (option) => ({
+    value: option,
+    label: capitalizeFirstLetter(option),
+  })
+);
 
 interface BudgetItemInputsProps {
   amount: number;
@@ -82,7 +89,7 @@ interface AddBudgetRowDialogProps {
 type Time = "month" | "year";
 
 const DEFAULTS = {
-  category: "Gross",
+  category: "gross",
   name: "",
   amount: 0,
   time: "year" as Time,
@@ -139,9 +146,9 @@ export default function AddBudgetRowDialog({
               label="Category"
               onChange={(e) => setNewRowCategory(e.target.value)}
             >
-              {CATEGORY_OPTIONS.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
+              {CATEGORY_OPTIONS.map(({ value, label }) => (
+                <MenuItem key={value} value={value}>
+                  {label}
                 </MenuItem>
               ))}
             </Select>
