@@ -18,6 +18,9 @@ export type Budget = {
   deductions: CategoryItems;
   expenses: CategoryItems;
   savings: CategoryItems;
+  metadata?: {
+    numMonths?: number;
+  };
 };
 
 type CombinedBudgetItem = {
@@ -55,7 +58,7 @@ export type BudgetDataRow = {
 // TODO create docstrings for all functions
 
 // EXPORTED HELPERS
-export const getCombineBudgets = (budget1: Budget, budget2: Budget) => {
+export const getCombinedBudgets = (budget1: Budget, budget2: Budget) => {
   const combinedBudget: CombinedBudget = {
     gross: {},
     deductions: {},
@@ -122,15 +125,19 @@ export const getColumnTime = (column: number) =>
   [0, 1, 4, 5].includes(column) ? "month" : "year";
 
 // INTERNAL HELPERS
-const convertCurrency = (data: BudgetItem, targetTime: string) => {
-  if (!data) return 0;
-
-  if (data.time === targetTime) {
-    return data.amount;
-  } else if (data.time === "month") {
-    return data.amount * 12;
-  } else if (data.time === "year") {
-    return Math.round(data.amount / 12);
+const convertCurrency = (
+  item: BudgetItem,
+  targetTime: string,
+  numMonths?: number
+) => {
+  if (item.time === targetTime) {
+    return item.amount;
+  } else if (item.time === "month") {
+    return R.propOr(true, "isMonthly", item)
+      ? item.amount * (numMonths || 12)
+      : 0;
+  } else if (item.time === "year") {
+    return Math.round(item.amount / (numMonths || 12));
   }
 
   return 0;
@@ -184,7 +191,7 @@ const getColumnsHeaders = (person: string) =>
   [
     {
       field: `monthly${person}Amount`,
-      headerName: `Monthly ${person} ($)`,
+      headerName: `Monthly ${person}`,
       type: "number",
       flex: 2,
       valueFormatter: currencyFormatter,
@@ -203,7 +210,7 @@ const getColumnsHeaders = (person: string) =>
     },
     {
       field: `yearly${person}Amount`,
-      headerName: `Yearly ${person} ($)`,
+      headerName: `Yearly ${person}`,
       type: "number",
       flex: 2,
       valueFormatter: currencyFormatter,
@@ -271,7 +278,7 @@ const getDataRowsHelper = (
   return R.mapObjIndexed((category, categoryName: string) => {
     const rows: BudgetDataRow[] = [];
 
-    R.forEachObjIndexed((item, itemName: string) => {
+    R.forEachObjIndexed((item: CombinedBudgetItem, itemName: string) => {
       id += 1;
       rows.push({
         id: `${categoryName}-${id}`,
@@ -281,9 +288,7 @@ const getDataRowsHelper = (
           R.pathOr(true, ["person1", "isMonthly"], item) ||
           R.pathOr(true, ["person2", "isMonthly"], item),
         yearlyEmAmount: convertCurrency(item.person1, "year"),
-        monthlyEmAmount: R.propOr(true, "isMonthly", item)
-          ? convertCurrency(item.person1, "month")
-          : 0,
+        monthlyEmAmount: convertCurrency(item.person1, "month"),
         yearlyEmDivider: isTaxable(categoryName)
           ? person1Dividers.yearlyTakeHome
           : person1Dividers.yearlyGross,
@@ -291,9 +296,7 @@ const getDataRowsHelper = (
           ? person1Dividers.monthlyTakeHome
           : person1Dividers.monthlyGross,
         yearlyZAmount: convertCurrency(item.person2, "year"),
-        monthlyZAmount: R.propOr(true, "isMonthly", item)
-          ? convertCurrency(item.person2, "month")
-          : 0,
+        monthlyZAmount: convertCurrency(item.person2, "month"),
         yearlyZDivider: isTaxable(categoryName)
           ? person2Dividers.yearlyTakeHome
           : person2Dividers.yearlyGross,
@@ -329,8 +332,8 @@ const getGrossTotalRow = (
   return {
     id: "grossTotal",
     status: "locked",
-    category: "Gross",
-    name: "Total",
+    category: "Gross Total",
+    name: "Gross Total",
     isMonthly: true,
     monthlyEmAmount: person1Monthly,
     yearlyEmAmount: person1Yearly,
@@ -368,21 +371,22 @@ const getTakeHomeAndTaxRows = (
   const { takeHome: yearlyZTakeHome, tax: yearlyZTax } =
     getTakeHomeAndTax(yearlyZTaxable);
 
+  // TODO fix deductions bug
   return [
     {
       id: "takeHome",
       status: "locked",
       category: "Take Home",
-      name: "Total",
+      name: "Take Home Total",
       isMonthly: true,
       monthlyEmAmount: monthlyEmTakeHome,
       yearlyEmAmount: yearlyEmTakeHome,
-      monthlyEmDivider: monthlyEmTakeHome,
-      yearlyEmDivider: yearlyEmTakeHome,
+      monthlyEmDivider: grossTotalRow.monthlyEmDivider,
+      yearlyEmDivider: grossTotalRow.yearlyEmDivider,
       monthlyZAmount: monthlyZTakeHome,
       yearlyZAmount: yearlyZTakeHome,
-      monthlyZDivider: monthlyZTakeHome,
-      yearlyZDivider: yearlyZTakeHome,
+      monthlyZDivider: grossTotalRow.monthlyZDivider,
+      yearlyZDivider: grossTotalRow.yearlyZDivider,
     },
     {
       id: "tax",
@@ -392,12 +396,12 @@ const getTakeHomeAndTaxRows = (
       isMonthly: true,
       monthlyEmAmount: monthlyEmTax,
       yearlyEmAmount: yearlyEmTax,
-      monthlyEmDivider: monthlyEmTax,
-      yearlyEmDivider: yearlyEmTax,
+      monthlyEmDivider: grossTotalRow.monthlyEmDivider,
+      yearlyEmDivider: grossTotalRow.yearlyEmDivider,
       monthlyZAmount: monthlyZTax,
       yearlyZAmount: yearlyZTax,
-      monthlyZDivider: monthlyZTax,
-      yearlyZDivider: yearlyZTax,
+      monthlyZDivider: grossTotalRow.monthlyZDivider,
+      yearlyZDivider: grossTotalRow.yearlyZDivider,
     },
   ];
 };
@@ -421,7 +425,7 @@ const getSavingsRow = (
   return {
     id: "savings",
     status: "locked",
-    category: "Savings",
+    category: "Remaining",
     name: "Savings",
     isMonthly: true,
     monthlyEmAmount: monthlyEmSavings,
@@ -462,9 +466,9 @@ export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {
   );
 
   return [
+    savingsRow,
     ...processedRows.savings,
     ...processedRows.expenses,
-    savingsRow,
     takeHomeRow,
     taxRow,
     ...processedRows.deductions,

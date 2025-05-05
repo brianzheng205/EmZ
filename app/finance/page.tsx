@@ -20,7 +20,7 @@ import {
 import {
   Budget,
   BudgetDataRow,
-  getCombineBudgets,
+  getCombinedBudgets,
   getUpdatedBudget,
   getChangedCellTime,
   getPersonFromColumnHeader,
@@ -63,7 +63,7 @@ export default function Finance() {
   } = useDialog();
 
   const rows = useMemo(
-    () => getDataRows(getCombineBudgets(emilyBudget, brianBudget)),
+    () => getDataRows(getCombinedBudgets(emilyBudget, brianBudget)),
     [emilyBudget, brianBudget]
   );
 
@@ -148,7 +148,7 @@ export default function Finance() {
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
       const newRows = getDataRows(
-        getCombineBudgets(newEmilyBudget, newBrianBudget)
+        getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
       await updateBudget(emilyDocRef, oldPath, newPath, emilyNewObj);
@@ -182,8 +182,8 @@ export default function Finance() {
     updateBudget(docRef, oldPath, newPath, newObj);
     const newRows =
       personChanged === "Em"
-        ? getDataRows(getCombineBudgets(newBudget, brianBudget))
-        : getDataRows(getCombineBudgets(emilyBudget, newBudget));
+        ? getDataRows(getCombinedBudgets(newBudget, brianBudget))
+        : getDataRows(getCombinedBudgets(emilyBudget, newBudget));
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
