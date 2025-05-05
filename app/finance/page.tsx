@@ -26,6 +26,7 @@ import {
   getPersonFromColumnHeader,
   columns,
   getDataRows,
+  isRowProtected,
 } from "./utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
@@ -43,8 +44,6 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
     },
   },
 }));
-
-const calculatedRowIds = ["savings", "takeHome", "tax", "grossTotal"];
 
 export default function Finance() {
   const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
@@ -244,7 +243,7 @@ export default function Finance() {
     sortable: false,
     width: 50,
     renderCell: (params) => {
-      if (calculatedRowIds.includes(params.row.id)) {
+      if (isRowProtected(params.row.id)) {
         return null; // Do not render the delete button for these rows
       }
       return (
@@ -257,8 +256,6 @@ export default function Finance() {
       );
     },
   };
-
-  console.log("rows", rows);
 
   return (
     <Box
@@ -290,7 +287,7 @@ export default function Finance() {
           loading={loading}
           rowHeight={30}
           getRowClassName={(params) => {
-            if (calculatedRowIds.includes(params.id as string)) return "custom";
+            if (isRowProtected(params.row.id)) return "custom";
             return "";
           }}
           isCellEditable={(params) => {

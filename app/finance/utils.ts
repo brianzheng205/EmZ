@@ -55,6 +55,12 @@ export type BudgetDataRow = {
   yearlyZDivider: number;
 };
 
+type LabelRow = {
+  id: string;
+  category: string;
+  status: "locked";
+};
+
 // TODO create docstrings for all functions
 
 // EXPORTED HELPERS
@@ -121,8 +127,10 @@ export const getUpdatedBudget = (
 export const getChangedCellTime = (columnHeader: string) =>
   columnHeader.toLowerCase().includes("month") ? "month" : "year";
 
-export const getColumnTime = (column: number) =>
-  [0, 1, 4, 5].includes(column) ? "month" : "year";
+export const isRowProtected = (id: string) =>
+  !["gross", "deductions", "expenses", "savings"].some((category) =>
+    new RegExp(`${category}-\\d+`).test(id)
+  );
 
 // INTERNAL HELPERS
 const convertCurrency = (
@@ -144,13 +152,17 @@ const convertCurrency = (
 };
 
 // TODO use API to get tax rates (including state and local)
-// currently using 2025 federal tax brackets (single)
+// currently using 2025 federal tax brackets (single) + aggregate marginal tax rate for our tax brackets
 const getTakeHomeAndTax = (taxableIncome: number) => {
-  const brackets = [
+  if (taxableIncome <= 0) {
+    return { takeHome: 0, tax: 0 };
+  }
+
+  const federalBrackets = [
     { rate: 0.1, cap: 11925 },
     { rate: 0.12, cap: 48475 },
     { rate: 0.22, cap: 103350 },
-    { rate: 0.24, cap: 197300 },
+    { rate: 0.41, cap: 197300 },
     { rate: 0.32, cap: 250525 },
     { rate: 0.35, cap: 626350 },
     { rate: 0.37, cap: Infinity },
@@ -158,7 +170,7 @@ const getTakeHomeAndTax = (taxableIncome: number) => {
 
   let marginalRate = 0;
 
-  for (const bracket of brackets) {
+  for (const bracket of federalBrackets) {
     if (taxableIncome <= bracket.cap) {
       marginalRate = bracket.rate;
       break;
@@ -172,20 +184,24 @@ const getTakeHomeAndTax = (taxableIncome: number) => {
 const isTaxable = (category: string) =>
   ["expenses", "savings"].includes(category);
 
-const currencyFormatter: GridValueFormatter = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+const currencyFormatter: GridValueFormatter = (value: number, row) =>
+  row.id.includes("label")
+    ? ""
+    : new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
 
-const percentFormatter: GridValueFormatter = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "percent",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+const percentFormatter: GridValueFormatter = (value: number, row) =>
+  row.id.includes("label")
+    ? ""
+    : new Intl.NumberFormat("en-US", {
+        style: "percent",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
 
 const getColumnsHeaders = (person: string) =>
   [
@@ -330,7 +346,7 @@ const getGrossTotalRow = (
   }, grossCategory);
 
   return {
-    id: "grossTotal",
+    id: "gross-total",
     status: "locked",
     category: "Gross Total",
     name: "Gross Total",
@@ -348,7 +364,7 @@ const getGrossTotalRow = (
 
 const getTakeHomeAndTaxRows = (
   grossTotalRow: BudgetDataRow,
-  expenses: CombinedCategoryItems
+  deductions: CombinedCategoryItems
 ): [BudgetDataRow, BudgetDataRow] => {
   let monthlyEmTaxable = grossTotalRow.monthlyEmAmount;
   let yearlyEmTaxable = grossTotalRow.yearlyEmAmount;
@@ -360,7 +376,7 @@ const getTakeHomeAndTaxRows = (
     yearlyEmTaxable -= convertCurrency(item.person1, "year");
     monthlyZTaxable -= convertCurrency(item.person2, "month");
     yearlyZTaxable -= convertCurrency(item.person2, "year");
-  }, expenses);
+  }, deductions);
 
   const { takeHome: monthlyEmTakeHome, tax: monthlyEmTax } =
     getTakeHomeAndTax(monthlyEmTaxable);
@@ -371,10 +387,10 @@ const getTakeHomeAndTaxRows = (
   const { takeHome: yearlyZTakeHome, tax: yearlyZTax } =
     getTakeHomeAndTax(yearlyZTaxable);
 
-  // TODO fix deductions bug
+  // TODO fix tax bug with deductions (should use taxable income after deductions)
   return [
     {
-      id: "takeHome",
+      id: "take-home",
       status: "locked",
       category: "Take Home",
       name: "Take Home Total",
@@ -408,7 +424,8 @@ const getTakeHomeAndTaxRows = (
 
 const getSavingsRow = (
   takeHomeRow: BudgetDataRow,
-  expenses: CombinedCategoryItems
+  expenses: CombinedCategoryItems,
+  savings: CombinedCategoryItems
 ): BudgetDataRow => {
   let monthlyEmSavings = takeHomeRow.monthlyEmAmount;
   let yearlyEmSavings = takeHomeRow.yearlyEmAmount;
@@ -422,6 +439,13 @@ const getSavingsRow = (
     yearlyZSavings -= convertCurrency(item.person2, "year");
   }, expenses);
 
+  R.forEachObjIndexed((item: CombinedBudgetItem) => {
+    monthlyEmSavings -= convertCurrency(item.person1, "month");
+    yearlyEmSavings -= convertCurrency(item.person1, "year");
+    monthlyZSavings -= convertCurrency(item.person2, "month");
+    yearlyZSavings -= convertCurrency(item.person2, "year");
+  }, savings);
+
   return {
     id: "savings",
     status: "locked",
@@ -430,33 +454,43 @@ const getSavingsRow = (
     isMonthly: true,
     monthlyEmAmount: monthlyEmSavings,
     yearlyEmAmount: yearlyEmSavings,
-    monthlyEmDivider: monthlyEmSavings,
-    yearlyEmDivider: yearlyEmSavings,
+    monthlyEmDivider: takeHomeRow.monthlyEmAmount,
+    yearlyEmDivider: takeHomeRow.yearlyEmAmount,
     monthlyZAmount: monthlyZSavings,
     yearlyZAmount: yearlyZSavings,
-    monthlyZDivider: monthlyZSavings,
-    yearlyZDivider: yearlyZSavings,
+    monthlyZDivider: takeHomeRow.monthlyZAmount,
+    yearlyZDivider: takeHomeRow.yearlyZAmount,
   };
 };
+
+const getLabelRow = (category: string): LabelRow => ({
+  id: `${category}-label`,
+  category,
+  status: "locked",
+});
 
 export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {
   const grossTotalRow = getGrossTotalRow(combinedBudget.gross);
   const [takeHomeRow, taxRow] = getTakeHomeAndTaxRows(
     grossTotalRow,
-    combinedBudget.expenses
+    combinedBudget.deductions
   );
-  const savingsRow = getSavingsRow(takeHomeRow, combinedBudget.expenses);
+  const savingsRow = getSavingsRow(
+    takeHomeRow,
+    combinedBudget.expenses,
+    combinedBudget.savings
+  );
   const EmDividers: Dividers = {
-    monthlyGross: grossTotalRow.monthlyEmDivider,
-    yearlyGross: grossTotalRow.yearlyEmDivider,
-    monthlyTakeHome: takeHomeRow.monthlyEmDivider,
-    yearlyTakeHome: takeHomeRow.yearlyEmDivider,
+    monthlyGross: grossTotalRow.monthlyEmAmount,
+    yearlyGross: grossTotalRow.yearlyEmAmount,
+    monthlyTakeHome: takeHomeRow.monthlyEmAmount,
+    yearlyTakeHome: takeHomeRow.yearlyEmAmount,
   };
   const ZDividers: Dividers = {
-    monthlyGross: grossTotalRow.monthlyZDivider,
-    yearlyGross: grossTotalRow.yearlyZDivider,
-    monthlyTakeHome: takeHomeRow.monthlyZDivider,
-    yearlyTakeHome: takeHomeRow.yearlyZDivider,
+    monthlyGross: grossTotalRow.monthlyZAmount,
+    yearlyGross: grossTotalRow.yearlyZAmount,
+    monthlyTakeHome: takeHomeRow.monthlyZAmount,
+    yearlyTakeHome: takeHomeRow.yearlyZAmount,
   };
 
   const processedRows = getDataRowsHelper(
@@ -466,12 +500,16 @@ export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {
   );
 
   return [
-    savingsRow,
+    getLabelRow("Savings"),
     ...processedRows.savings,
+    savingsRow,
+    getLabelRow("Expenses"),
     ...processedRows.expenses,
     takeHomeRow,
     taxRow,
+    getLabelRow("Deductions"),
     ...processedRows.deductions,
+    getLabelRow("Gross"),
     ...processedRows.gross,
     grossTotalRow,
   ];
