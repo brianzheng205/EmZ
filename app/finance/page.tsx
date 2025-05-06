@@ -218,6 +218,8 @@ export default function Finance() {
     await deleteBudgetItem(brianDocRef, path);
   };
 
+  console.log("rows", rows);
+
   const handleAddRow = async (
     category: string,
     name: string,

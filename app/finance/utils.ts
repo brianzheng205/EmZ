@@ -394,7 +394,7 @@ const getDataRowsHelper = (
       });
     }, category);
 
-    return rows;
+    return R.sortBy(R.prop("name"), rows);
   }, combinedBudget);
 };
 
