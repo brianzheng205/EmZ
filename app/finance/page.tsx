@@ -1,7 +1,7 @@
 "use client";
 
-import { Delete } from "@mui/icons-material";
-import { Box, Button } from "@mui/material";
+import { Delete, Edit } from "@mui/icons-material";
+import { Button, Stack } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import useDialog from "@/hooks/useDialog";
 
 import AddBudgetRowDialog from "./AddBudgetRowDialog";
+import EditBudgetDialog from "./EditBudgetDialog";
 import {
   deleteBudgetItem,
   fetchActiveBudgets,
@@ -20,6 +21,7 @@ import {
 import {
   Budget,
   BudgetDataRow,
+  CombinedMetadata,
   getCombinedBudgets,
   getUpdatedBudget,
   getChangedCellTime,
@@ -73,6 +75,11 @@ export default function Finance() {
     isDialogOpen: isAddRowDialogOpen,
     openDialog: openAddRowDialog,
     closeDialog: closeAddRowDialog,
+  } = useDialog();
+  const {
+    isDialogOpen: isEditBudgetDialogopen,
+    openDialog: openEditBudgetDialog,
+    closeDialog: closeEditBudgetDialog,
   } = useDialog();
 
   const rows = useMemo(
@@ -218,8 +225,6 @@ export default function Finance() {
     await deleteBudgetItem(brianDocRef, path);
   };
 
-  console.log("rows", rows);
-
   const handleAddRow = async (
     category: string,
     name: string,
@@ -253,6 +258,35 @@ export default function Finance() {
     closeAddRowDialog();
   };
 
+  const handleEditBudgetMetadata = (newMetadata: CombinedMetadata) => {
+    const newEmilyMetadata = newMetadata.emily;
+    const newBrianMetadata = newMetadata.brian;
+
+    if (
+      emilyDocRef &&
+      !R.equals(newEmilyMetadata, emilyBudget.metadata || {})
+    ) {
+      setEmilyBudget((prev) => ({
+        ...prev,
+        metadata: newEmilyMetadata,
+      }));
+      updateBudget(emilyDocRef, ["metadata"], ["metadata"], newEmilyMetadata);
+    }
+
+    if (
+      brianDocRef &&
+      !R.equals(newBrianMetadata, brianBudget.metadata || {})
+    ) {
+      setBrianBudget((prev) => ({
+        ...prev,
+        metadata: newBrianMetadata,
+      }));
+      updateBudget(brianDocRef, ["metadata"], ["metadata"], newBrianMetadata);
+    }
+
+    closeEditBudgetDialog();
+  };
+
   const deleteColumn = {
     field: "delete",
     headerName: "",
@@ -270,29 +304,37 @@ export default function Finance() {
   };
 
   return (
-    <Box
+    <Stack
       sx={{
-        display: "flex",
-        justifyContent: "center",
+        alignItems: "center",
         height: "100%",
         width: "100%",
         padding: 2,
       }}
     >
-      <Box
+      <Stack
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          width: "90%",
+          width: 1200,
+          gap: 1,
         }}
       >
-        <Button
-          variant="contained"
-          onClick={openAddRowDialog}
-          sx={{ marginBottom: 2 }}
+        <Stack
+          sx={{
+            flexDirection: "row-reverse",
+            gap: 1,
+          }}
         >
-          Add Row
-        </Button>
+          <Button variant="contained" onClick={openAddRowDialog}>
+            Add Row
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Edit />}
+            onClick={() => openEditBudgetDialog()}
+          >
+            Edit
+          </Button>
+        </Stack>
         <StyledDataGrid
           rows={rows}
           columns={[...columns, deleteColumn]}
@@ -312,13 +354,21 @@ export default function Finance() {
           hideFooter
           disableColumnSorting
         />
-      </Box>
+      </Stack>
 
       <AddBudgetRowDialog
         open={isAddRowDialogOpen}
         onClose={closeAddRowDialog}
         onSubmit={handleAddRow}
       />
-    </Box>
+
+      <EditBudgetDialog
+        open={isEditBudgetDialogopen}
+        onClose={closeEditBudgetDialog}
+        onSubmit={handleEditBudgetMetadata}
+        emilyBudget={emilyBudget}
+        brianBudget={brianBudget}
+      />
+    </Stack>
   );
 }
