@@ -395,7 +395,7 @@ const getDataRowsHelper = (
       id += 1;
       rows.push({
         id: `${categoryName}-${id}`,
-        status: itemName === "Base" ? "base" : "data",
+        status: "data",
         category: categoryName,
         name: itemName,
         isMonthly:
