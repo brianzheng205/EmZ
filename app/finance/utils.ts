@@ -360,7 +360,7 @@ export const columns: GridColDef[] = [
     headerName: "Monthly?",
     type: "boolean",
     flex: 1,
-    // editable: true,
+    editable: true,
   },
   ...R.pipe(R.map(getColumnsHeaders), R.flatten)(PEOPLE),
 ];

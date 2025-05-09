@@ -22,7 +22,6 @@ interface CountdownEventCardProps {
   event: CountdownEvent;
   onEdit: EditEventFn;
   onDelete: DeleteEventFn;
-  // eslint-disable-next-line no-unused-vars
   formatCountdown: (id: string, isCustomId?: boolean) => string;
   existingCustomIds: string[];
 }
