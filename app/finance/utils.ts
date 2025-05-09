@@ -1,6 +1,8 @@
 import { GridColDef, GridRowsProp, GridValueFormatter } from "@mui/x-data-grid";
 import * as R from "ramda";
 
+import { capitalizeFirstLetter } from "@/utils";
+
 type BudgetItem = {
   amount: number;
   time: "month" | "year";
@@ -11,23 +13,30 @@ type CategoryItems = {
   [name: string]: BudgetItem;
 };
 
+export type Metadata = {
+  numMonths: number;
+};
+
 export type Budget = {
   gross: CategoryItems;
   deductions: CategoryItems;
   expenses: CategoryItems;
   savings: CategoryItems;
-  metadata?: {
-    numMonths?: number;
-  };
+  metadata?: Metadata;
 };
 
 type CombinedBudgetItem = {
-  person1: BudgetItem;
-  person2: BudgetItem;
+  emily: BudgetItem;
+  brian: BudgetItem;
 };
 
 type CombinedCategoryItems = {
   [name: string]: CombinedBudgetItem;
+};
+
+export type CombinedMetadata = {
+  emily: Metadata;
+  brian: Metadata;
 };
 
 type CombinedBudget = {
@@ -35,6 +44,13 @@ type CombinedBudget = {
   deductions: CombinedCategoryItems;
   expenses: CombinedCategoryItems;
   savings: CombinedCategoryItems;
+};
+
+type CombinedBudgetWithMetadata = CombinedBudget & {
+  metadata: {
+    brian: Metadata;
+    emily: Metadata;
+  };
 };
 
 export type BudgetDataRow = Required<Pick<BudgetCalculatedRow, "category">> &
@@ -56,16 +72,19 @@ type BudgetCalculatedRow = {
   yearlyZDivider: number;
 };
 
-type LabelRow = {
-  id: string;
-  category: string;
-  status: "label";
-};
-
 // TODO create docstrings for all functions
 
 // EXPORTED HELPERS
-export const getCombinedBudgets = (budget1: Budget, budget2: Budget) => {
+
+/**
+ * Combines two budgets into one, merging the items in each category
+ * to create CombinedBudgetItem, which holds a BudgetItem for each person.
+ * Each budget should have the same structure as stored in Firestore.
+ */
+export const getCombinedBudgets = (
+  budget1: Budget,
+  budget2: Budget
+): CombinedBudgetWithMetadata => {
   const combinedBudget: CombinedBudget = {
     gross: {},
     deductions: {},
@@ -90,28 +109,55 @@ export const getCombinedBudgets = (budget1: Budget, budget2: Budget) => {
         time: R.pathOr("month", [item, "time"], cat2),
         isMonthly: R.pathOr(true, [item, "isMonthly"], cat2),
       };
-      combinedItems[item] = { person1: item1, person2: item2 };
+      combinedItems[item] = { emily: item1, brian: item2 };
     }, itemNames);
     combinedBudget[category] = combinedItems;
   }, R.keys(combinedBudget));
 
-  return combinedBudget;
+  return {
+    ...combinedBudget,
+    metadata: {
+      emily: { ...budget1?.metadata } as Metadata,
+      brian: { ...budget2?.metadata } as Metadata,
+    },
+  };
 };
 
+/**
+ * Searches for `emilyName` or `brianName` in the header.
+ * If found, returns the corresponding name.
+ * If neither name is found, returns an empty string.
+ */
 export const getPersonFromColumnHeader = (
   header: string,
-  person1Name: string,
-  person2Name: string
+  emilyName: string,
+  brianName: string
 ) => {
-  if (header.includes(person1Name)) {
-    return person1Name;
-  } else if (header.includes(person2Name)) {
-    return person2Name;
+  if (header.includes(emilyName)) {
+    return emilyName;
+  } else if (header.includes(brianName)) {
+    return brianName;
   }
 
   return "";
 };
 
+/**
+ * Creates a new budget by removing the old path and adding the new path with the given object.
+ * If the old path and new path are the same, it simply updates the value at that path.
+ *
+ * @example
+ *
+ * const budget = { gross: { item1: { amount: 1, time: "year" }, item2: { amount: 2, time: "year" } }, deductions: {}, expenses: {}, savings: {} };
+ *
+ * // creating a new budget by setting item1's amount to 3
+ * getUpdatedBudget(budget, ["gross", "item1"], ["gross", "item1"], { amount: 3, time: "year" });
+ * //=> { gross: { item1: { amount: 3, time: "year" }, item2: { amount: 2, time: "year" } }, ... };
+ *
+ * // creating a new budget by renaming item1 to item3
+ * getUpdatedBudget(budget, ["gross", "item1"], ["gross", "item3"], { amount: 1, time: "year" });
+ * //=> { gross: { item1: { amount: 1, time: "year" }, item3: { amount: 2, time: "year" } }, ... };
+ */
 export const getUpdatedBudget = (
   budget: Budget,
   oldPath: string[],
@@ -125,39 +171,76 @@ export const getUpdatedBudget = (
         R.assocPath(newPath, object)
       )(budget) as Budget);
 
-export const getChangedCellTime = (columnHeader: string) =>
-  columnHeader.toLowerCase().includes("month") ? "month" : "year";
+/**
+ * Returns the time unit for the changed cell based on the header.
+ */
+export const getChangedCellTime = (header: string) =>
+  header.toLowerCase().includes("month") ? "month" : "year";
 
-export const isLabelRow = (status: string | undefined) =>
-  status && status.includes("label") ? true : false;
+/**
+ * Returns if the row is a sum of sums based on the row status.
+ */
+export const isSumOfSumRow = (status: string | undefined) =>
+  status && status.includes("sumOfSum") ? true : false;
 
-export const isCalculatedRow = (status: string | undefined) =>
-  status && status.includes("calculated") ? true : false;
+/**
+ * Returns if the row is a sum row based on the row status.
+ */
+export const isSumRow = (status: string | undefined) =>
+  status && status.includes("sum") ? true : false;
 
+/**
+ * Returns if the row is a data row (row stored in Firebase) based on the row status.
+ */
 export const isDataRow = (status: string | undefined) =>
   status && status.includes("data") ? true : false;
 
 // INTERNAL HELPERS
+/**
+ * Returns the amount of the item in the target time unit `targetTime`.
+ *
+ * When converting from month to year or year to month, it uses the default
+ * number of months (12) unless specified.
+ *
+ * @example
+ *
+ * const item = { amount: 1200, time: "month", isMonthly: true };
+ * const numMonths = 6;
+ *
+ * convertCurrency(item, "year"); //=> 14400
+ * convertCurrency(item, "year", numMonths); //=> 7200
+ * convertCurrency(item, "month"); //=> 1200
+ */
 const convertCurrency = (
   item: BudgetItem,
   targetTime: string,
-  numMonths?: number
+  numMonths: number = 12
 ) => {
   if (item.time === targetTime) {
     return item.amount;
   } else if (item.time === "month") {
-    return R.propOr(true, "isMonthly", item)
-      ? item.amount * (numMonths || 12)
-      : 0;
+    return R.propOr(true, "isMonthly", item) ? item.amount * numMonths : 0;
   } else if (item.time === "year") {
-    return Math.round(item.amount / (numMonths || 12));
+    return Math.round(item.amount / 12);
   }
 
   return 0;
 };
 
-// TODO use API to get tax rates (including state and local)
-// currently using 2025 federal tax brackets (single) + aggregate marginal tax rate for our tax brackets
+const convertSalaryProrated = (salary: number, numMonths: number) =>
+  salary * (numMonths / 12);
+
+/**
+ * Calculates the take-home pay and tax based using the marginal tax
+ * rate as the withholding rate.
+ *
+ * The tax brackets are based on the 2025 federal tax brackets for a single filer
+ * with the exception of the 24% bracket, which is replaced with an estimate of
+ * the aggregate marginal tax rate for a salary of around $140,000.
+ *
+ * TODO: use API to get tax rates (including state and local) based on location, year,
+ * and filing status.
+ */
 const getTakeHomeAndTax = (taxableIncome: number) => {
   if (taxableIncome <= 0) {
     return { takeHome: 0, tax: 0 };
@@ -186,7 +269,10 @@ const getTakeHomeAndTax = (taxableIncome: number) => {
   return { takeHome: taxableIncome - tax, tax };
 };
 
-const isTaxable = (category: string) =>
+/**
+ * Returns if the category is taxable.
+ */
+const isTaxable = (category: keyof CombinedBudget) =>
   ["expenses", "savings"].includes(category);
 
 const currencyFormatter: GridValueFormatter = (value: number, row) =>
@@ -259,8 +345,8 @@ export const columns: GridColDef[] = [
     headerName: "Category",
     type: "string",
     flex: 2,
-    valueFormatter: (value, row) =>
-      isLabelRow(row.status) || isCalculatedRow(row.status) ? value : "",
+    valueFormatter: (value: string | undefined, row) =>
+      value && isSumRow(row.status) ? capitalizeFirstLetter(value) : "",
   },
   {
     field: "name",
@@ -280,8 +366,6 @@ export const columns: GridColDef[] = [
 ];
 
 // ROWS
-// TODO calculate currency column based on text of column rather than index
-// TODO divide by 6 or 5 depending on start date
 
 type Dividers = {
   monthlyGross: number;
@@ -290,14 +374,21 @@ type Dividers = {
   yearlyTakeHome: number;
 };
 
+/**
+ * Converts a combined budget into a format that can be used by the data grid.
+ *
+ * The rows returned are grouped by category and represent the data stored in Firebase.
+ */
 const getDataRowsHelper = (
-  combinedBudget: CombinedBudget,
-  person1Dividers: Dividers,
-  person2Dividers: Dividers
+  combinedBudget: CombinedBudgetWithMetadata,
+  emilyDividers: Dividers,
+  brianDividers: Dividers
 ) => {
+  const emilyNumMonths = combinedBudget.metadata.emily.numMonths;
+  const brianNumMonths = combinedBudget.metadata.brian.numMonths;
   let id = 0;
 
-  return R.mapObjIndexed((category, categoryName: string) => {
+  return R.mapObjIndexed((category, categoryName) => {
     const rows: BudgetDataRow[] = [];
 
     R.forEachObjIndexed((item: CombinedBudgetItem, itemName: string) => {
@@ -308,98 +399,109 @@ const getDataRowsHelper = (
         category: categoryName,
         name: itemName,
         isMonthly:
-          R.pathOr(true, ["person1", "isMonthly"], item) ||
-          R.pathOr(true, ["person2", "isMonthly"], item),
-        yearlyEmAmount: convertCurrency(item.person1, "year"),
-        monthlyEmAmount: convertCurrency(item.person1, "month"),
+          R.pathOr(true, ["emily", "isMonthly"], item) ||
+          R.pathOr(true, ["brian", "isMonthly"], item),
+        yearlyEmAmount: convertCurrency(item.emily, "year", emilyNumMonths),
+        monthlyEmAmount: convertCurrency(item.emily, "month", emilyNumMonths),
         yearlyEmDivider: isTaxable(categoryName)
-          ? person1Dividers.yearlyTakeHome
-          : person1Dividers.yearlyGross,
+          ? emilyDividers.yearlyTakeHome
+          : emilyDividers.yearlyGross,
         monthlyEmDivider: isTaxable(categoryName)
-          ? person1Dividers.monthlyTakeHome
-          : person1Dividers.monthlyGross,
-        yearlyZAmount: convertCurrency(item.person2, "year"),
-        monthlyZAmount: convertCurrency(item.person2, "month"),
+          ? emilyDividers.monthlyTakeHome
+          : emilyDividers.monthlyGross,
+        yearlyZAmount: convertCurrency(item.brian, "year", brianNumMonths),
+        monthlyZAmount: convertCurrency(item.brian, "month", brianNumMonths),
         yearlyZDivider: isTaxable(categoryName)
-          ? person2Dividers.yearlyTakeHome
-          : person2Dividers.yearlyGross,
+          ? brianDividers.yearlyTakeHome
+          : brianDividers.yearlyGross,
         monthlyZDivider: isTaxable(categoryName)
-          ? person2Dividers.monthlyTakeHome
-          : person2Dividers.monthlyGross,
+          ? brianDividers.monthlyTakeHome
+          : brianDividers.monthlyGross,
       });
     }, category);
 
-    return rows;
-  }, combinedBudget);
+    return R.sortBy(R.prop("name"), rows);
+  }, R.dissoc("metadata", combinedBudget) as CombinedBudget);
 };
 
-const getGrossTotalRow = (
-  grossCategory: CombinedCategoryItems
+/**
+ * Returns the gross sum row, which is the sum of all items in the gross category.
+ */
+const getGrossSumRow = (
+  grossCategory: CombinedCategoryItems,
+  emilyNumMonths: number,
+  brianNumMonths: number
 ): BudgetCalculatedRow => {
-  let person1Monthly = 0;
-  let person1Yearly = 0;
-  let person2Monthly = 0;
-  let person2Yearly = 0;
+  const emilyGross = convertSalaryProrated(
+    R.pathOr(0, ["Base", "emily", "amount"], grossCategory),
+    emilyNumMonths
+  );
+  let emilyMonthly = Math.round(emilyGross / emilyNumMonths);
+  let emilyYearly = emilyGross;
+  const brianGross = convertSalaryProrated(
+    R.pathOr(0, ["Base", "brian", "amount"], grossCategory),
+    brianNumMonths
+  );
+  let brianMonthly = Math.round(brianGross / brianNumMonths);
+  let brianYearly = brianGross;
 
-  R.forEachObjIndexed((item) => {
-    person1Monthly += R.propOr(true, "isMonthly", item)
-      ? convertCurrency(item["person1"], "month")
-      : 0;
-    person1Yearly += convertCurrency(item["person1"], "year");
-    person2Monthly += R.propOr(true, "isMonthly", item)
-      ? convertCurrency(item["person2"], "month")
-      : 0;
-    person2Yearly += convertCurrency(item["person2"], "year");
+  R.forEachObjIndexed((item, itemName: string) => {
+    if (itemName === "Base") return;
+
+    emilyMonthly += convertCurrency(item.emily, "month", emilyNumMonths);
+    emilyYearly += convertCurrency(item.emily, "year", emilyNumMonths);
+    brianMonthly += convertCurrency(item.brian, "month", brianNumMonths);
+    brianYearly += convertCurrency(item.brian, "year", brianNumMonths);
   }, grossCategory);
 
   return {
     id: "gross-total",
-    status: "calculated",
-    name: "Gross Total",
+    status: "sumOfSum",
+    category: "Gross",
+    name: "Total",
     isMonthly: true,
-    monthlyEmAmount: person1Monthly,
-    yearlyEmAmount: person1Yearly,
-    monthlyEmDivider: person1Monthly,
-    yearlyEmDivider: person1Yearly,
-    monthlyZAmount: person2Monthly,
-    yearlyZAmount: person2Yearly,
-    monthlyZDivider: person2Monthly,
-    yearlyZDivider: person2Yearly,
+    monthlyEmAmount: emilyMonthly,
+    yearlyEmAmount: emilyYearly,
+    monthlyEmDivider: emilyMonthly,
+    yearlyEmDivider: emilyYearly,
+    monthlyZAmount: brianMonthly,
+    yearlyZAmount: brianYearly,
+    monthlyZDivider: brianMonthly,
+    yearlyZDivider: brianYearly,
   };
 };
 
-const getTakeHomeAndTaxRows = (
+/**
+ * Returns the take-home and tax total rows, which are calculated based on the gross total row
+ * and the deductions.
+ */
+const getTakeHomeAndTaxTotalRows = (
   grossTotalRow: BudgetCalculatedRow,
   deductions: CombinedCategoryItems
 ): [BudgetCalculatedRow, BudgetCalculatedRow] => {
-  let monthlyEmTaxable = grossTotalRow.monthlyEmAmount;
   let yearlyEmTaxable = grossTotalRow.yearlyEmAmount;
-  let monthlyZTaxable = grossTotalRow.monthlyZAmount;
   let yearlyZTaxable = grossTotalRow.yearlyZAmount;
 
   R.forEachObjIndexed((item: CombinedBudgetItem) => {
-    monthlyEmTaxable -= convertCurrency(item.person1, "month");
-    yearlyEmTaxable -= convertCurrency(item.person1, "year");
-    monthlyZTaxable -= convertCurrency(item.person2, "month");
-    yearlyZTaxable -= convertCurrency(item.person2, "year");
+    yearlyEmTaxable -= convertCurrency(item.emily, "year");
+    yearlyZTaxable -= convertCurrency(item.brian, "year");
   }, deductions);
 
-  const { takeHome: monthlyEmTakeHome, tax: monthlyEmTax } =
-    getTakeHomeAndTax(monthlyEmTaxable);
   const { takeHome: yearlyEmTakeHome, tax: yearlyEmTax } =
     getTakeHomeAndTax(yearlyEmTaxable);
-  const { takeHome: monthlyZTakeHome, tax: monthlyZTax } =
-    getTakeHomeAndTax(monthlyZTaxable);
+  const monthlyEmTakeHome = yearlyEmTakeHome / 12;
+  const monthlyEmTax = yearlyEmTax / 12;
   const { takeHome: yearlyZTakeHome, tax: yearlyZTax } =
     getTakeHomeAndTax(yearlyZTaxable);
+  const monthlyZTakeHome = yearlyZTakeHome / 12;
+  const monthlyZTax = yearlyZTax / 12;
 
-  // TODO fix tax bug with deductions (should use taxable income after deductions)
   return [
     {
       id: "take-home",
-      status: "calculated",
+      status: "sumOfSum",
       category: "Take Home",
-      name: "Take Home Total",
+      name: "Total",
       isMonthly: true,
       monthlyEmAmount: monthlyEmTakeHome,
       yearlyEmAmount: yearlyEmTakeHome,
@@ -412,9 +514,9 @@ const getTakeHomeAndTaxRows = (
     },
     {
       id: "tax",
-      status: "calculated",
+      status: "sum",
       category: "Tax",
-      name: "Tax",
+      name: "Total",
       isMonthly: true,
       monthlyEmAmount: monthlyEmTax,
       yearlyEmAmount: yearlyEmTax,
@@ -428,6 +530,10 @@ const getTakeHomeAndTaxRows = (
   ];
 };
 
+/**
+ * Returns the remaining savings row, which is calculated by subtracting
+ * expenses and other savings from the take-home row.
+ */
 const getSavingsRow = (
   takeHomeRow: BudgetCalculatedRow,
   expenses: CombinedCategoryItems,
@@ -438,23 +544,19 @@ const getSavingsRow = (
   let monthlyZSavings = takeHomeRow.monthlyZAmount;
   let yearlyZSavings = takeHomeRow.yearlyZAmount;
 
-  R.forEachObjIndexed((item: CombinedBudgetItem) => {
-    monthlyEmSavings -= convertCurrency(item.person1, "month");
-    yearlyEmSavings -= convertCurrency(item.person1, "year");
-    monthlyZSavings -= convertCurrency(item.person2, "month");
-    yearlyZSavings -= convertCurrency(item.person2, "year");
-  }, expenses);
-
-  R.forEachObjIndexed((item: CombinedBudgetItem) => {
-    monthlyEmSavings -= convertCurrency(item.person1, "month");
-    yearlyEmSavings -= convertCurrency(item.person1, "year");
-    monthlyZSavings -= convertCurrency(item.person2, "month");
-    yearlyZSavings -= convertCurrency(item.person2, "year");
-  }, savings);
+  R.forEach(
+    R.forEachObjIndexed((item: CombinedBudgetItem) => {
+      monthlyEmSavings -= convertCurrency(item.emily, "month");
+      yearlyEmSavings -= convertCurrency(item.emily, "year");
+      monthlyZSavings -= convertCurrency(item.brian, "month");
+      yearlyZSavings -= convertCurrency(item.brian, "year");
+    }),
+    [expenses, savings]
+  );
 
   return {
     id: "savings",
-    status: "calculated",
+    category: "savings",
     name: "Remaining",
     isMonthly: true,
     monthlyEmAmount: monthlyEmSavings,
@@ -468,15 +570,129 @@ const getSavingsRow = (
   };
 };
 
-const getLabelRow = (category: string): LabelRow => ({
-  id: `${category}-label`,
-  category,
-  status: "label",
+/**
+ * Returns the category sum label row.
+ */
+const getCategorySumLabelRow = (
+  id: string,
+  category: keyof CombinedBudget,
+  combinedBudget: CombinedBudget,
+  emilyDividers: Dividers,
+  brianDividers: Dividers
+): BudgetCalculatedRow => {
+  let monthlyEmExpenses = 0;
+  let yearlyEmExpenses = 0;
+  let monthlyZExpenses = 0;
+  let yearlyZExpenses = 0;
+
+  R.forEachObjIndexed((item) => {
+    monthlyEmExpenses += convertCurrency(item.emily, "month");
+    yearlyEmExpenses += convertCurrency(item.emily, "year");
+    monthlyZExpenses += convertCurrency(item.brian, "month");
+    yearlyZExpenses += convertCurrency(item.brian, "year");
+  }, combinedBudget[category]);
+
+  return {
+    id,
+    status: "sum",
+    category,
+    name: "Total",
+    isMonthly: true,
+    monthlyEmAmount: monthlyEmExpenses,
+    yearlyEmAmount: yearlyEmExpenses,
+    monthlyEmDivider: isTaxable(category)
+      ? emilyDividers.monthlyTakeHome
+      : emilyDividers.monthlyGross,
+    yearlyEmDivider: isTaxable(category)
+      ? emilyDividers.yearlyTakeHome
+      : emilyDividers.yearlyGross,
+    monthlyZAmount: monthlyZExpenses,
+    yearlyZAmount: yearlyZExpenses,
+    monthlyZDivider: isTaxable(category)
+      ? brianDividers.monthlyTakeHome
+      : brianDividers.monthlyGross,
+    yearlyZDivider: isTaxable(category)
+      ? brianDividers.yearlyTakeHome
+      : brianDividers.yearlyGross,
+  };
+};
+
+/**
+ * Returns the category sum label rows for expenses and deductions.
+ */
+const getAllCategorySumLabelRows = (
+  combinedBudget: CombinedBudget,
+  emilyDividers: Dividers,
+  brianDividers: Dividers
+) => ({
+  expenses: getCategorySumLabelRow(
+    "expenses-total",
+    "expenses",
+    combinedBudget,
+    emilyDividers,
+    brianDividers
+  ),
+  deductions: getCategorySumLabelRow(
+    "deductions-total",
+    "deductions",
+    combinedBudget,
+    emilyDividers,
+    brianDividers
+  ),
 });
 
-export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {
-  const grossTotalRow = getGrossTotalRow(combinedBudget.gross);
-  const [takeHomeRow, taxRow] = getTakeHomeAndTaxRows(
+/**
+ * Returns the savings sum row, which is the sum of all items in the savings category.
+ */
+const getSavingsSumRow = (
+  savings: CombinedCategoryItems,
+  savingsRow: BudgetCalculatedRow,
+  emilyDividers: Dividers,
+  brianDividers: Dividers
+): BudgetCalculatedRow => {
+  let monthlyEmSavings = savingsRow.monthlyEmAmount;
+  let yearlyEmSavings = savingsRow.yearlyEmAmount;
+  let monthlyZSavings = savingsRow.monthlyZAmount;
+  let yearlyZSavings = savingsRow.yearlyZAmount;
+
+  R.forEachObjIndexed((item: CombinedBudgetItem) => {
+    monthlyEmSavings += convertCurrency(item.emily, "month");
+    yearlyEmSavings += convertCurrency(item.emily, "year");
+    monthlyZSavings += convertCurrency(item.brian, "month");
+    yearlyZSavings += convertCurrency(item.brian, "year");
+  }, savings);
+
+  return {
+    id: "savings-total",
+    status: "sum",
+    category: "savings",
+    name: "Total",
+    isMonthly: true,
+    monthlyEmAmount: monthlyEmSavings,
+    yearlyEmAmount: yearlyEmSavings,
+    monthlyZAmount: monthlyZSavings,
+    yearlyZAmount: yearlyZSavings,
+    monthlyEmDivider: emilyDividers.monthlyTakeHome,
+    yearlyEmDivider: emilyDividers.yearlyTakeHome,
+    monthlyZDivider: brianDividers.monthlyTakeHome,
+    yearlyZDivider: brianDividers.yearlyTakeHome,
+  };
+};
+
+/**
+ * Returns the data rows for MUI's DataGrid.
+ *
+ * The rows are calculated based on the combined budget.
+ */
+export const getDataRows = (
+  combinedBudget: CombinedBudgetWithMetadata
+): GridRowsProp => {
+  const grossTotalRow = getGrossSumRow(
+    combinedBudget.gross,
+    combinedBudget.metadata.emily.numMonths,
+    combinedBudget.metadata.brian.numMonths
+  );
+  const [takeHomeRow, taxRow] = getTakeHomeAndTaxTotalRows(
     grossTotalRow,
     combinedBudget.deductions
   );
@@ -498,24 +714,34 @@ export const getDataRows = (combinedBudget: CombinedBudget): GridRowsProp => {
     yearlyTakeHome: takeHomeRow.yearlyZAmount,
   };
 
+  const combinedBudgetWithoutMetadata: CombinedBudget = R.dissoc(
+    "metadata",
+    combinedBudget
+  );
+
   const processedRows = getDataRowsHelper(
     combinedBudget,
     EmDividers,
     ZDividers
   );
 
+  const categorySumLabelRows = getAllCategorySumLabelRows(
+    combinedBudgetWithoutMetadata,
+    EmDividers,
+    ZDividers
+  );
+
   return [
-    getLabelRow("Savings"),
+    ...processedRows.expenses,
+    categorySumLabelRows.expenses,
     ...processedRows.savings,
     savingsRow,
-    getLabelRow("Expenses"),
-    ...processedRows.expenses,
+    getSavingsSumRow(combinedBudget.savings, savingsRow, EmDividers, ZDividers),
     takeHomeRow,
     taxRow,
-    getLabelRow("Deductions"),
     ...processedRows.deductions,
-    getLabelRow("Gross"),
-    ...processedRows.gross,
+    categorySumLabelRows.deductions,
     grossTotalRow,
+    ...processedRows.gross,
   ];
 };
