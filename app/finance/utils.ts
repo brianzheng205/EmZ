@@ -2,6 +2,9 @@ import { GridColDef, GridRowsProp, GridValueFormatter } from "@mui/x-data-grid";
 import * as R from "ramda";
 
 import { capitalizeFirstLetter } from "@/utils";
+import { noSSR } from "next/dynamic";
+import { YoutubeSearchedFor } from "@mui/icons-material";
+import { rowHeightWarning } from "@mui/x-data-grid/hooks/features/rows/gridRowsUtils";
 
 type BudgetItem = {
   amount: number;
@@ -218,15 +221,14 @@ const convertCurrency = (
 ) => {
   if (item.time === targetTime) {
     return item.amount;
-  } else if (item.time === "month") {
-    return R.propOr(true, "isMonthly", item) ? item.amount * numMonths : 0;
-  } else if (item.time === "year") {
-    return Math.round(item.amount / 12);
+  } else if (targetTime === "month") {
+    return R.propOr(true, "isMonthly", item) ? item.amount / numMonths : 0;
+    } else if (targetTime === "year") {
+    return item.amount * numMonths
   }
 
   return 0;
 };
-
 const convertSalaryProrated = (salary: number, numMonths: number) =>
   salary * (numMonths / 12);
 
@@ -576,7 +578,7 @@ const getSavingsRow = (
 const getCategorySumLabelRow = (
   id: string,
   category: keyof CombinedBudget,
-  combinedBudget: CombinedBudget,
+  combinedBudget: CombinedBudgetWithMetadata,
   emilyDividers: Dividers,
   brianDividers: Dividers
 ): BudgetCalculatedRow => {
@@ -586,10 +588,10 @@ const getCategorySumLabelRow = (
   let yearlyZExpenses = 0;
 
   R.forEachObjIndexed((item) => {
-    monthlyEmExpenses += convertCurrency(item.emily, "month");
-    yearlyEmExpenses += convertCurrency(item.emily, "year");
-    monthlyZExpenses += convertCurrency(item.brian, "month");
-    yearlyZExpenses += convertCurrency(item.brian, "year");
+    monthlyEmExpenses += convertCurrency(item.emily, "month", combinedBudget.metadata.emily.numMonths);
+    yearlyEmExpenses += convertCurrency(item.emily, "year", combinedBudget.metadata.emily.numMonths);
+    monthlyZExpenses += convertCurrency(item.brian, "month", combinedBudget.metadata.brian.numMonths);
+    yearlyZExpenses += convertCurrency(item.brian, "year", combinedBudget.metadata.brian.numMonths);
   }, combinedBudget[category]);
 
   return {
@@ -621,7 +623,7 @@ const getCategorySumLabelRow = (
  * Returns the category sum label rows for expenses and deductions.
  */
 const getAllCategorySumLabelRows = (
-  combinedBudget: CombinedBudget,
+  combinedBudget: CombinedBudgetWithMetadata,
   emilyDividers: Dividers,
   brianDividers: Dividers
 ) => ({
@@ -726,7 +728,7 @@ export const getDataRows = (
   );
 
   const categorySumLabelRows = getAllCategorySumLabelRows(
-    combinedBudgetWithoutMetadata,
+    combinedBudget,
     EmDividers,
     ZDividers
   );
