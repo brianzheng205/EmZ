@@ -2,9 +2,6 @@ import { GridColDef, GridRowsProp, GridValueFormatter } from "@mui/x-data-grid";
 import * as R from "ramda";
 
 import { capitalizeFirstLetter } from "@/utils";
-import { noSSR } from "next/dynamic";
-import { YoutubeSearchedFor } from "@mui/icons-material";
-import { rowHeightWarning } from "@mui/x-data-grid/hooks/features/rows/gridRowsUtils";
 
 type BudgetItem = {
   amount: number;
@@ -715,11 +712,6 @@ export const getDataRows = (
     monthlyTakeHome: takeHomeRow.monthlyZAmount,
     yearlyTakeHome: takeHomeRow.yearlyZAmount,
   };
-
-  const combinedBudgetWithoutMetadata: CombinedBudget = R.dissoc(
-    "metadata",
-    combinedBudget
-  );
 
   const processedRows = getDataRowsHelper(
     combinedBudget,
