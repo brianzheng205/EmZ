@@ -11,7 +11,6 @@ import present from "public/specialOccasions/2025/brianbday/present.png";
 
 import CharacterCanvas from "./CharacterCanvas";
 import text from "./data";
-
 import "./styles.css";
 
 const stardewTheme = createTheme({
@@ -73,26 +72,23 @@ export default function ZBirthday() {
       setTimeout(() => setArrowLocation(i), i * 1000);
     }
 
-    setTimeout(
-      () => {
-        if (target % 2 === mod) {
-          if (numPresents === 1) setWonFirstGamble(true);
-          setOverlayTextKey(
-            numPresents === 1
-              ? "gpuWin"
-              : wonFirstGamble
-                ? "mealWinWin"
-                : "mealWinLose"
-          );
-        } else {
-          setOverlayTextKey(numPresents === 1 ? "gpuLose" : "mealLose");
-        }
+    setTimeout(() => {
+      if (target % 2 === mod) {
+        if (numPresents === 1) setWonFirstGamble(true);
+        setOverlayTextKey(
+          numPresents === 1
+            ? "gpuWin"
+            : wonFirstGamble
+            ? "mealWinWin"
+            : "mealWinLose"
+        );
+      } else {
+        setOverlayTextKey(numPresents === 1 ? "gpuLose" : "mealLose");
+      }
 
-        setArrowLocation(-1);
-        setOverlayTextIndex(0);
-      },
-      (target + 2) * 1000
-    );
+      setArrowLocation(-1);
+      setOverlayTextIndex(0);
+    }, (target + 2) * 1000);
   };
 
   const onPresentClick = () => {

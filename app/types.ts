@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-
 // COUNTDOWN
 export interface CountdownEvent {
   id: string; // date string like "1-6-2024" or custom text

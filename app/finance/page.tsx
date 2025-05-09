@@ -169,6 +169,45 @@ export default function Finance() {
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     }
 
+    if (colChanged === "isMonthly") {
+      const path = [category, oldName];
+
+      const emilyNewObj = {
+        ...(R.path(path, emilyBudget) as object),
+        isMonthly: rawNewRow.isMonthly,
+      };
+      const brianNewObj = {
+        ...(R.path(path, brianBudget) as object),
+        isMonthly: rawNewRow.isMonthly,
+      };
+      if (!emilyDocRef || !brianDocRef) {
+        console.error("Document reference is null.");
+        return rawNewRow;
+      }
+
+      const newEmilyBudget = getUpdatedBudget(
+        emilyBudget,
+        path,
+        path,
+        emilyNewObj
+      );
+      const newBrianBudget = getUpdatedBudget(
+        brianBudget,
+        path,
+        path,
+        brianNewObj
+      );
+      setEmilyBudget(newEmilyBudget);
+      setBrianBudget(newBrianBudget);
+      const newRows = getDataRows(
+        getCombinedBudgets(newEmilyBudget, newBrianBudget)
+      );
+
+      await updateBudget(emilyDocRef, path, path, emilyNewObj);
+      await updateBudget(brianDocRef, path, path, brianNewObj);
+      return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
+    }
+
     const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
     const oldPath = [category, newName];
     const newPath = [category, newName];

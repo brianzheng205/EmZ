@@ -21,9 +21,7 @@ import { CountdownEventDialogProps } from "../types"; // Import the base props t
 interface CountdownDialogInputsProps {
   id: string;
   description: string;
-  // eslint-disable-next-line no-unused-vars
   onIdChange: (id: string, isCustom: boolean) => void;
-  // eslint-disable-next-line no-unused-vars
   onDescriptionChange: (description: string) => void;
   handleSubmit: () => void;
   existingCustomIds: string[];
