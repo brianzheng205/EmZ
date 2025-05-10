@@ -59,7 +59,7 @@ function BudgetItemInputs({
         onChange={(e) => setAmount(Number(e.target.value))}
       />
       <FormControl fullWidth margin="dense" variant="outlined">
-        <InputLabel id={labelId}>Brian Time</InputLabel>
+        <InputLabel id={labelId}>{personName} Time</InputLabel>
         <Select
           labelId={labelId}
           id={id}
