@@ -381,7 +381,7 @@ const getColumnsHeaders = (person: string) =>
 // COLUMNS
 const PEOPLE = ["Em", "Z"];
 
-export const columns: GridColDef[] = [
+export const columns: GridColDef[] = R.flatten([
   {
     field: "category",
     headerName: "Category",
@@ -404,8 +404,8 @@ export const columns: GridColDef[] = [
     flex: 2,
     editable: true,
   },
-  ...R.pipe(R.map(getColumnsHeaders), R.flatten)(PEOPLE),
-];
+  R.map(getColumnsHeaders, PEOPLE),
+]) as GridColDef[];
 
 // ROWS
 

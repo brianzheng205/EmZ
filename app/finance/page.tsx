@@ -1,6 +1,6 @@
 "use client";
 
-import { Delete, Edit, Refresh } from "@mui/icons-material";
+import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
 import { Button, Stack } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
@@ -373,17 +373,21 @@ export default function Finance() {
           }}
         >
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<Refresh />}
             onClick={fetchBudgets}
           >
             Refresh
           </Button>
-          <Button variant="contained" onClick={openAddRowDialog}>
-            Add Row
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={openAddRowDialog}
+          >
+            Add
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<Edit />}
             onClick={() => openEditBudgetDialog()}
           >
@@ -404,10 +408,11 @@ export default function Finance() {
           }
           isCellEditable={(params) => isDataRow(params.row.status)}
           processRowUpdate={handleRowUpdate}
-          showToolbar
           disableRowSelectionOnClick
           hideFooter
+          disableColumnMenu
           disableColumnSorting
+          disableColumnResize
         />
       </Stack>
 
