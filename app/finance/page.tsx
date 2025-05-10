@@ -183,9 +183,7 @@ export default function Finance() {
       await updateBudget(emilyDocRef, oldPath, newPath, emilyNewObj);
       await updateBudget(brianDocRef, oldPath, newPath, brianNewObj);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
-    }
-
-    if (colChanged === "isRecurring") {
+    } else if (colChanged === "isRecurring") {
       const path = [category, oldName];
 
       const emilyNewObj = {
@@ -230,6 +228,7 @@ export default function Finance() {
     const newObj = {
       amount: rawNewRow[colChanged],
       time: getChangedCellTime(colChanged),
+      isRecurring: rawNewRow.isRecurring,
     };
 
     const budget = personChanged === "Em" ? emilyBudget : brianBudget;

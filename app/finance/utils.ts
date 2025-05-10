@@ -286,11 +286,15 @@ const getTaxesFromBracket = (taxableIncome: number, brackets: TaxBracket[]) => {
  * It withholds bonuses separately at a flat rate of 22%.
  */
 const getMonthlyTakeHomeAndTax = async (
-  taxableIncome: number,
+  monthlyTaxableIncome: number,
   stateTaxBrackets: TaxBracket[],
   localTaxBrackets?: TaxBracket[]
 ) => {
-  if (taxableIncome <= 0) {
+  // Annualize the monthly amounts to get the yearly amounts
+  // which assumes you work all 12 months and get the same monthly pay
+  const yearlyTaxableIncome = monthlyTaxableIncome * NUM_MONTHS;
+
+  if (yearlyTaxableIncome <= 0) {
     return { takeHome: 0, tax: 0 };
   }
 
@@ -299,14 +303,14 @@ const getMonthlyTakeHomeAndTax = async (
   );
 
   const tax =
-    getTaxesFromBracket(taxableIncome, federalTaxBrackets) +
-    getTaxesFromBracket(taxableIncome, stateTaxBrackets) +
+    getTaxesFromBracket(yearlyTaxableIncome, federalTaxBrackets) +
+    getTaxesFromBracket(yearlyTaxableIncome, stateTaxBrackets) +
     (localTaxBrackets
-      ? getTaxesFromBracket(taxableIncome, localTaxBrackets)
+      ? getTaxesFromBracket(yearlyTaxableIncome, localTaxBrackets)
       : 0);
 
   return {
-    takeHome: (taxableIncome - tax) / NUM_MONTHS,
+    takeHome: (yearlyTaxableIncome - tax) / NUM_MONTHS,
     tax: tax / NUM_MONTHS,
   };
 };
@@ -552,14 +556,11 @@ const getTakeHomeAndTaxTotalRows = async (
 
   // Subtract total monthly deductions from monthly gross income
   R.forEachObjIndexed((item: CombinedBudgetItem) => {
-    monthyEmTaxable -= convertCurrency(item.emily, "month", numMonthsEm);
-    monthlyZTaxable -= convertCurrency(item.brian, "month", numMonthsZ);
+    if (R.propOr(true, "isRecurring", item.emily)) {
+      monthyEmTaxable -= convertCurrency(item.emily, "month", numMonthsEm);
+      monthlyZTaxable -= convertCurrency(item.brian, "month", numMonthsZ);
+    }
   }, combinedBudget.deductions);
-
-  // Annualize the monthly amounts to get the yearly amounts
-  // which assumes you work all 12 months and get the same monthly pay
-  const yearlyEmTaxable = monthyEmTaxable * NUM_MONTHS;
-  const yearlyZTaxable = monthlyZTaxable * NUM_MONTHS;
 
   // Calculate the yearly bonus amounts for Emily and Brian to add back later
   // (only to yearly take-home) with a standard 22% withholding rate
@@ -593,14 +594,14 @@ const getTakeHomeAndTaxTotalRows = async (
   // Calculate monthly taxes
   let { takeHome: monthlyEmTakeHome, tax: monthlyEmTax } =
     await getMonthlyTakeHomeAndTax(
-      yearlyEmTaxable,
+      monthyEmTaxable,
       emStateTaxBrackets,
       emLocalTaxBrackets
     );
   let { takeHome: monthlyZTakeHome, tax: monthlyZTax } =
-    await getMonthlyTakeHomeAndTax(yearlyZTaxable, zStateTaxBrackets);
+    await getMonthlyTakeHomeAndTax(monthlyZTaxable, zStateTaxBrackets);
 
-  // Add monthly FICA taxes
+  // Subtract monthly FICA taxes
   monthlyEmTakeHome -= ficaMonthlyEm;
   monthlyEmTax += ficaMonthlyEm;
   monthlyZTakeHome -= ficaMonthlyZ;
@@ -723,15 +724,15 @@ export const getRows = async (
     yearlyTakeHome: takeHomeRow.yearlyZAmount,
   };
 
-  const { itemRows: expenses, sumsRow: expensesSums } = getCategoryRows(
-    combinedBudget,
-    "expenses",
-    EmDividers,
-    ZDividers
-  );
   const { itemRows: savings, sumsRow: savingsSums } = getCategoryRows(
     combinedBudget,
     "savings",
+    EmDividers,
+    ZDividers
+  );
+  const { itemRows: expenses, sumsRow: expensesSums } = getCategoryRows(
+    combinedBudget,
+    "expenses",
     EmDividers,
     ZDividers
   );
@@ -759,17 +760,21 @@ export const getRows = async (
       savingsSums.yearlyZAmount + remainingSavingsRow.yearlyZAmount,
   };
 
-  return [
-    ...expenses,
-    expensesSums,
-    ...savings,
+  const allSavingsRows = [
     remainingSavingsRow,
+    ...savings,
     savingsSumWithRemaining,
+  ];
+  const allExpensesRows = [...expenses, expensesSums];
+  const allDeductionsRows = [...deductions, deductionsSums];
+  const allGrossRows = [grossSums, ...gross];
+
+  return [
+    ...allSavingsRows,
+    ...allExpensesRows,
     takeHomeRow,
     taxRow,
-    ...deductions,
-    deductionsSums,
-    grossSums,
-    ...gross,
+    ...allDeductionsRows,
+    ...allGrossRows,
   ];
 };
