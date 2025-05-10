@@ -85,9 +85,16 @@ type Dividers = {
 };
 
 type TaxBracket = {
+  cap: number | "Infinity";
+  rate: number;
+};
+
+type TaxBracketFinite = {
   cap: number;
   rate: number;
 };
+
+const NUM_MONTHS = 12;
 
 // EXPORTED HELPERS
 
@@ -212,7 +219,7 @@ export const isDataRow = (status: string | undefined) =>
 
 // INTERNAL HELPERS
 
-const loadTaxTaxBrackets = async (url: string) => {
+const loadTaxBrackets = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to load config: ${res.status}`);
   return await res.json();
@@ -236,7 +243,7 @@ const loadTaxTaxBrackets = async (url: string) => {
 const convertCurrency = (
   item: BudgetItem,
   targetTime: "month" | "year",
-  numMonths: number = 12
+  numMonths: number = NUM_MONTHS
 ) => {
   if (item.time === targetTime) {
     return item.amount;
@@ -250,17 +257,20 @@ const convertCurrency = (
 };
 
 const getProratedSalary = (salary: number, numMonths: number) =>
-  salary * (numMonths / 12);
+  salary * (numMonths / NUM_MONTHS);
 
 const getTaxesFromBracket = (taxableIncome: number, brackets: TaxBracket[]) => {
   let tax = 0;
-  let prev: TaxBracket = { cap: 0, rate: 0 };
+  let prev: TaxBracketFinite = { cap: 0, rate: 0 };
 
   for (const bracket of brackets) {
-    if (taxableIncome > prev.cap) {
+    if (bracket.cap === "Infinity") {
+      tax += (taxableIncome - prev.cap) * bracket.rate;
+      break;
+    } else if (taxableIncome > prev.cap) {
       const taxable = Math.min(taxableIncome, bracket.cap) - prev.cap;
       tax += taxable * bracket.rate;
-      prev = bracket;
+      prev = bracket as TaxBracketFinite;
     } else {
       break;
     }
@@ -277,14 +287,14 @@ const getTaxesFromBracket = (taxableIncome: number, brackets: TaxBracket[]) => {
  */
 const getMonthlyTakeHomeAndTax = async (
   taxableIncome: number,
-  stateTaxBrackets: { cap: number; rate: number }[],
-  localTaxBrackets?: { cap: number; rate: number }[]
+  stateTaxBrackets: TaxBracket[],
+  localTaxBrackets?: TaxBracket[]
 ) => {
   if (taxableIncome <= 0) {
     return { takeHome: 0, tax: 0 };
   }
 
-  const federalTaxBrackets = await loadTaxTaxBrackets(
+  const federalTaxBrackets = await loadTaxBrackets(
     `/data/${new Date().getFullYear()}/federal.json`
   );
 
@@ -295,7 +305,10 @@ const getMonthlyTakeHomeAndTax = async (
       ? getTaxesFromBracket(taxableIncome, localTaxBrackets)
       : 0);
 
-  return { takeHome: (taxableIncome - tax) / 12, tax: tax / 12 };
+  return {
+    takeHome: (taxableIncome - tax) / NUM_MONTHS,
+    tax: tax / NUM_MONTHS,
+  };
 };
 
 /**
@@ -532,7 +545,6 @@ const getTakeHomeAndTaxTotalRows = async (
 ): Promise<{ takeHomeRow: BudgetSumsRow; taxRow: BudgetSumsRow }> => {
   const numMonthsEm = combinedBudget.metadata.emily.numMonths;
   const numMonthsZ = combinedBudget.metadata.brian.numMonths;
-  const NUM_MONTHS = 12;
 
   // Assume that you earn this monthly amount for the whole year even if you don't
   let monthyEmTaxable = grossTotalRow.monthlyEmAmount;
@@ -568,13 +580,13 @@ const getTakeHomeAndTaxTotalRows = async (
   const ficaMonthlyZ = ficaTaxRate * grossTotalRow.monthlyZAmount;
 
   // Load in state and local tax brackets
-  const emStateTaxBrackets = await loadTaxTaxBrackets(
+  const emStateTaxBrackets = await loadTaxBrackets(
     `/data/${new Date().getFullYear()}/state/NY.json`
   );
-  const emLocalTaxBrackets = await loadTaxTaxBrackets(
+  const emLocalTaxBrackets = await loadTaxBrackets(
     `/data/${new Date().getFullYear()}/local/NY/NYC.json`
   );
-  const zStateTaxBrackets = await loadTaxTaxBrackets(
+  const zStateTaxBrackets = await loadTaxBrackets(
     `/data/${new Date().getFullYear()}/state/VA.json`
   );
 
