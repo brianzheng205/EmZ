@@ -3,6 +3,8 @@ import * as R from "ramda";
 
 import { capitalizeFirstLetter } from "@/utils";
 
+// TYPES
+
 type BudgetItem = {
   amount: number;
   time: "month" | "year";
@@ -82,7 +84,10 @@ type Dividers = {
   yearlyTakeHome: number;
 };
 
-// TODO create docstrings for all functions
+type TaxBracket = {
+  cap: number;
+  rate: number;
+};
 
 // EXPORTED HELPERS
 
@@ -206,6 +211,13 @@ export const isDataRow = (status: string | undefined) =>
   status && status.includes("data") ? true : false;
 
 // INTERNAL HELPERS
+
+const loadTaxTaxBrackets = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load config: ${res.status}`);
+  return await res.json();
+};
+
 /**
  * Returns the amount of the item in the target time unit `targetTime`.
  *
@@ -236,46 +248,54 @@ const convertCurrency = (
 
   return 0;
 };
+
 const getProratedSalary = (salary: number, numMonths: number) =>
   salary * (numMonths / 12);
 
-/**
- * Calculates the take-home pay and tax based using the marginal tax
- * rate as the withholding rate.
- *
- * The tax brackets are based on the 2025 federal tax brackets for a single filer
- * with the exception of the 24% bracket, which is replaced with an estimate of
- * the aggregate marginal tax rate for a salary of around $140,000.
- *
- * TODO: use API to get tax rates (including state and local) based on location, year,
- * and filing status.
- */
-const getTakeHomeAndTax = (taxableIncome: number) => {
-  if (taxableIncome <= 0) {
-    return { takeHome: 0, tax: 0 };
-  }
+const getTaxesFromBracket = (taxableIncome: number, brackets: TaxBracket[]) => {
+  let tax = 0;
+  let prev: TaxBracket = { cap: 0, rate: 0 };
 
-  const federalBrackets = [
-    { rate: 0.1, cap: 11925 },
-    { rate: 0.12, cap: 48475 },
-    { rate: 0.22, cap: 103350 },
-    { rate: 0.41, cap: 197300 },
-    { rate: 0.32, cap: 250525 },
-    { rate: 0.35, cap: 626350 },
-    { rate: 0.37, cap: Infinity },
-  ];
-
-  let marginalRate = 0;
-
-  for (const bracket of federalBrackets) {
-    if (taxableIncome <= bracket.cap) {
-      marginalRate = bracket.rate;
+  for (const bracket of brackets) {
+    if (taxableIncome > prev.cap) {
+      const taxable = Math.min(taxableIncome, bracket.cap) - prev.cap;
+      tax += taxable * bracket.rate;
+      prev = bracket;
+    } else {
       break;
     }
   }
 
-  const tax = taxableIncome * marginalRate;
-  return { takeHome: taxableIncome - tax, tax };
+  return tax;
+};
+
+/**
+ * Calculates the take-home pay and tax for a given taxable income and
+ * state and local tax brackets.
+ *
+ * It withholds bonuses separately at a flat rate of 22%.
+ */
+const getMonthlyTakeHomeAndTax = async (
+  taxableIncome: number,
+  stateTaxBrackets: { cap: number; rate: number }[],
+  localTaxBrackets?: { cap: number; rate: number }[]
+) => {
+  if (taxableIncome <= 0) {
+    return { takeHome: 0, tax: 0 };
+  }
+
+  const federalTaxBrackets = await loadTaxTaxBrackets(
+    `/data/${new Date().getFullYear()}/federal.json`
+  );
+
+  const tax =
+    getTaxesFromBracket(taxableIncome, federalTaxBrackets) +
+    getTaxesFromBracket(taxableIncome, stateTaxBrackets) +
+    (localTaxBrackets
+      ? getTaxesFromBracket(taxableIncome, localTaxBrackets)
+      : 0);
+
+  return { takeHome: (taxableIncome - tax) / 12, tax: tax / 12 };
 };
 
 /**
@@ -506,26 +526,84 @@ const getCategoryRows = (
  * Returns the take-home and tax total rows, which are calculated based on the gross total row
  * and the deductions.
  */
-const getTakeHomeAndTaxTotalRows = (
+const getTakeHomeAndTaxTotalRows = async (
   grossTotalRow: BudgetSumsRow,
-  deductions: CombinedCategoryItems
-): { takeHomeRow: BudgetSumsRow; taxRow: BudgetSumsRow } => {
-  let yearlyEmTaxable = grossTotalRow.yearlyEmAmount;
-  let yearlyZTaxable = grossTotalRow.yearlyZAmount;
+  combinedBudget: CombinedBudgetWithMetadata
+): Promise<{ takeHomeRow: BudgetSumsRow; taxRow: BudgetSumsRow }> => {
+  const numMonthsEm = combinedBudget.metadata.emily.numMonths;
+  const numMonthsZ = combinedBudget.metadata.brian.numMonths;
+  const NUM_MONTHS = 12;
+
+  // Assume that you earn this monthly amount for the whole year even if you don't
+  let monthyEmTaxable = grossTotalRow.monthlyEmAmount;
+  let monthlyZTaxable = grossTotalRow.monthlyZAmount;
+
+  // Subtract total monthly deductions from monthly gross income
+  R.forEachObjIndexed((item: CombinedBudgetItem) => {
+    monthyEmTaxable -= convertCurrency(item.emily, "month", numMonthsEm);
+    monthlyZTaxable -= convertCurrency(item.brian, "month", numMonthsZ);
+  }, combinedBudget.deductions);
+
+  // Annualize the monthly amounts to get the yearly amounts
+  // which assumes you work all 12 months and get the same monthly pay
+  const yearlyEmTaxable = monthyEmTaxable * NUM_MONTHS;
+  const yearlyZTaxable = monthlyZTaxable * NUM_MONTHS;
+
+  // Calculate the yearly bonus amounts for Emily and Brian to add back later
+  // (only to yearly take-home) with a standard 22% withholding rate
+  const BONUS_WITHHOLDING_RATE = 0.22;
+  let bonusEm = 0;
+  let bonusZ = 0;
 
   R.forEachObjIndexed((item: CombinedBudgetItem) => {
-    yearlyEmTaxable -= convertCurrency(item.emily, "year");
-    yearlyZTaxable -= convertCurrency(item.brian, "year");
-  }, deductions);
+    if (!R.propOr(true, "isMonthly", item.emily)) {
+      bonusEm += convertCurrency(item.emily, "year");
+      bonusZ += convertCurrency(item.brian, "year");
+    }
+  }, combinedBudget.gross);
 
-  const { takeHome: yearlyEmTakeHome, tax: yearlyEmTax } =
-    getTakeHomeAndTax(yearlyEmTaxable);
-  const monthlyEmTakeHome = yearlyEmTakeHome / 12;
-  const monthlyEmTax = yearlyEmTax / 12;
-  const { takeHome: yearlyZTakeHome, tax: yearlyZTax } =
-    getTakeHomeAndTax(yearlyZTaxable);
-  const monthlyZTakeHome = yearlyZTakeHome / 12;
-  const monthlyZTax = yearlyZTax / 12;
+  // Calculate monthly FICA tax based on monthly gross income
+  const ficaTaxRate = 0.0765;
+  const ficaMonthlyEm = ficaTaxRate * grossTotalRow.monthlyEmAmount;
+  const ficaMonthlyZ = ficaTaxRate * grossTotalRow.monthlyZAmount;
+
+  // Load in state and local tax brackets
+  const emStateTaxBrackets = await loadTaxTaxBrackets(
+    `/data/${new Date().getFullYear()}/state/NY.json`
+  );
+  const emLocalTaxBrackets = await loadTaxTaxBrackets(
+    `/data/${new Date().getFullYear()}/local/NY/NYC.json`
+  );
+  const zStateTaxBrackets = await loadTaxTaxBrackets(
+    `/data/${new Date().getFullYear()}/state/VA.json`
+  );
+
+  // Calculate monthly taxes
+  let { takeHome: monthlyEmTakeHome, tax: monthlyEmTax } =
+    await getMonthlyTakeHomeAndTax(
+      yearlyEmTaxable,
+      emStateTaxBrackets,
+      emLocalTaxBrackets
+    );
+  let { takeHome: monthlyZTakeHome, tax: monthlyZTax } =
+    await getMonthlyTakeHomeAndTax(yearlyZTaxable, zStateTaxBrackets);
+
+  // Add monthly FICA taxes
+  monthlyEmTakeHome -= ficaMonthlyEm;
+  monthlyEmTax += ficaMonthlyEm;
+  monthlyZTakeHome -= ficaMonthlyZ;
+  monthlyZTax += ficaMonthlyZ;
+
+  // Add bonus amounts to the yearly take-home and tax amounts
+  // Calculates yearly based on the actual number of months worked
+  const bonusEmTax = bonusEm * BONUS_WITHHOLDING_RATE;
+  const yearlyEmTakeHome =
+    monthlyEmTakeHome * numMonthsEm + bonusEm - bonusEmTax;
+  const yearlyEmTax = monthlyEmTax * numMonthsEm + bonusEmTax;
+
+  const bonusZTax = bonusZ * BONUS_WITHHOLDING_RATE;
+  const yearlyZTakeHome = monthlyZTakeHome * numMonthsZ + bonusZ - bonusZTax;
+  const yearlyZTax = monthlyZTax * numMonthsZ + bonusZTax;
 
   return {
     takeHomeRow: {
@@ -546,7 +624,7 @@ const getTakeHomeAndTaxTotalRows = (
     taxRow: {
       id: "tax",
       status: "sum",
-      category: "Tax",
+      category: "Taxes",
       name: "Total",
       isMonthly: true,
       monthlyEmAmount: monthlyEmTax,
@@ -608,17 +686,17 @@ const getRemainingSavingsRow = (
  *
  * The rows are calculated based on the combined budget.
  */
-export const getRows = (
+export const getRows = async (
   combinedBudget: CombinedBudgetWithMetadata
-): (BudgetItemRow | BudgetSumsRow)[] => {
+): Promise<(BudgetItemRow | BudgetSumsRow)[]> => {
   const { itemRows: gross, sumsRow: grossSums } = getCategoryRows(
     combinedBudget,
     "gross"
   );
 
-  const { takeHomeRow, taxRow } = getTakeHomeAndTaxTotalRows(
+  const { takeHomeRow, taxRow } = await getTakeHomeAndTaxTotalRows(
     grossSums,
-    combinedBudget.deductions
+    combinedBudget
   );
   const EmDividers: Dividers = {
     monthlyGross: grossSums.monthlyEmAmount,

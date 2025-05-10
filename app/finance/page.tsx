@@ -1,12 +1,12 @@
 "use client";
 
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Refresh } from "@mui/icons-material";
 import { Button, Stack } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
 import * as R from "ramda";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import useDialog from "@/hooks/useDialog";
 
@@ -82,12 +82,21 @@ export default function Finance() {
     closeDialog: closeEditBudgetDialog,
   } = useDialog();
 
-  const rows = useMemo(
-    () => getRows(getCombinedBudgets(emilyBudget, brianBudget)),
-    [emilyBudget, brianBudget]
-  );
+  const [rows, setRows] = useState<GridRowsProp>([]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
+    };
+
+    fetchData();
+  }, [emilyBudget, brianBudget]);
+
+  useEffect(() => {
+    fetchBudgets();
+  }, []);
+
+  const fetchBudgets = async () => {
     setLoading(true);
 
     fetchActiveBudgets().then(async (document) => {
@@ -111,7 +120,7 @@ export default function Finance() {
       setBrianBudget(brianB);
       setLoading(false);
     });
-  }, []);
+  };
 
   const handleRowUpdate = async (
     rawNewRow: BudgetItemRow,
@@ -167,7 +176,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = getRows(
+      const newRows = await getRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -206,7 +215,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = getRows(
+      const newRows = await getRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -241,8 +250,8 @@ export default function Finance() {
     updateBudget(docRef, oldPath, newPath, newObj);
     const newRows =
       personChanged === "Em"
-        ? getRows(getCombinedBudgets(newBudget, brianBudget))
-        : getRows(getCombinedBudgets(emilyBudget, newBudget));
+        ? await getRows(getCombinedBudgets(newBudget, brianBudget))
+        : await getRows(getCombinedBudgets(emilyBudget, newBudget));
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
@@ -363,6 +372,13 @@ export default function Finance() {
             gap: 1,
           }}
         >
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={fetchBudgets}
+          >
+            Refresh
+          </Button>
           <Button variant="contained" onClick={openAddRowDialog}>
             Add Row
           </Button>
