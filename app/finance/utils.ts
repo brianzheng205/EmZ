@@ -196,6 +196,13 @@ export const isDataRow = (status: string | undefined) =>
   status && status.includes("data") ? true : false;
 
 // INTERNAL HELPERS
+
+const loadTaxConfig =  async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load config: ${res.status}`);
+  return await res.json();
+}
+
 /**
  * Returns the amount of the item in the target time unit `targetTime`.
  *
@@ -240,31 +247,60 @@ const convertSalaryProrated = (salary: number, numMonths: number) =>
  * TODO: use API to get tax rates (including state and local) based on location, year,
  * and filing status.
  */
-const getTakeHomeAndTax = (taxableIncome: number) => {
+const getTakeHomeAndTax = async (taxableIncome: number, stateConfig: { cap: number; rate: number }[], localConfig?: { cap: number; rate: number }[]) => {
   if (taxableIncome <= 0) {
     return { takeHome: 0, tax: 0 };
   }
 
-  const federalBrackets = [
-    { rate: 0.1, cap: 11925 },
-    { rate: 0.12, cap: 48475 },
-    { rate: 0.22, cap: 103350 },
-    { rate: 0.41, cap: 197300 },
-    { rate: 0.32, cap: 250525 },
-    { rate: 0.35, cap: 626350 },
-    { rate: 0.37, cap: Infinity },
-  ];
+  const federalConfig = await loadTaxConfig(`/data/${new Date().getFullYear()}/federal.json`);
 
-  let marginalRate = 0;
-
-  for (const bracket of federalBrackets) {
-    if (taxableIncome <= bracket.cap) {
-      marginalRate = bracket.rate;
-      break;
+  let tax = 0
+  let federalTax = 0
+  let prev = {"cap": 0, rate: 0};
+  for (const bracket of federalConfig) {
+    if (taxableIncome > prev.cap) {
+      const taxable = Math.min(taxableIncome, bracket.cap) - prev.cap;
+      federalTax += taxable * bracket.rate;
+      prev = bracket;
+    } else {
+      break
     }
   }
 
-  const tax = taxableIncome * marginalRate;
+  tax += federalTax;
+  let stateTax = 0
+  prev = {"cap": 0, rate: 0};
+  for (const bracket of stateConfig) {
+    if (taxableIncome > prev.cap) {
+      const taxable = Math.min(taxableIncome, bracket.cap) - prev.cap;
+      stateTax += taxable * bracket.rate;
+      prev = bracket;
+    } else {
+      break
+    }
+  }
+  
+  tax += stateTax;
+
+  if (localConfig) {
+    let localTax = 0
+    prev = {"cap": 0, rate: 0};
+    for (const bracket of localConfig) {
+      if (taxableIncome > prev.cap) {
+        const taxable = Math.min(taxableIncome, bracket.cap) - prev.cap;
+        localTax += taxable * bracket.rate;
+        prev = bracket;
+      } else {
+        break
+      }
+    }
+    tax += localTax;
+  }
+
+  console.log("taxable income", taxableIncome)
+  console.log("federal", federalTax)
+  console.log("state", stateTax)
+  console.log("local", localConfig ? tax - federalTax - stateTax : 0) // tax - federalTax - stateTax + (localConfig ? tax - stateMarginalRate : 0)
   return { takeHome: taxableIncome - tax, tax };
 };
 
@@ -474,10 +510,10 @@ const getGrossSumRow = (
  * Returns the take-home and tax total rows, which are calculated based on the gross total row
  * and the deductions.
  */
-const getTakeHomeAndTaxTotalRows = (
+const getTakeHomeAndTaxTotalRows =  async (
   grossTotalRow: BudgetCalculatedRow,
   deductions: CombinedCategoryItems
-): [BudgetCalculatedRow, BudgetCalculatedRow] => {
+): Promise<[BudgetCalculatedRow, BudgetCalculatedRow]> => {
   let yearlyEmTaxable = grossTotalRow.yearlyEmAmount;
   let yearlyZTaxable = grossTotalRow.yearlyZAmount;
 
@@ -486,12 +522,24 @@ const getTakeHomeAndTaxTotalRows = (
     yearlyZTaxable -= convertCurrency(item.brian, "year");
   }, deductions);
 
-  const { takeHome: yearlyEmTakeHome, tax: yearlyEmTax } =
-    getTakeHomeAndTax(yearlyEmTaxable);
+  const ficaTax = 0.0765;
+  const ficaEm = ficaTax * grossTotalRow.yearlyEmAmount;
+  const ficaZ = ficaTax * grossTotalRow.yearlyZAmount;
+
+  const emStateConfig = await loadTaxConfig(`/data/${new Date().getFullYear()}/state/NY.json`);
+  const emLocalConfig = await loadTaxConfig(`/data/${new Date().getFullYear()}/local/NY/NYC.json`);
+  const zStateConfig = await loadTaxConfig(`/data/${new Date().getFullYear()}/state/VA.json`);
+
+  let { takeHome: yearlyEmTakeHome, tax: yearlyEmTax } =
+    await getTakeHomeAndTax(yearlyEmTaxable, emStateConfig, emLocalConfig);
+  yearlyEmTax += ficaEm;
+  yearlyEmTakeHome -= ficaEm;
   const monthlyEmTakeHome = yearlyEmTakeHome / 12;
   const monthlyEmTax = yearlyEmTax / 12;
-  const { takeHome: yearlyZTakeHome, tax: yearlyZTax } =
-    getTakeHomeAndTax(yearlyZTaxable);
+  let { takeHome: yearlyZTakeHome, tax: yearlyZTax } =
+    await getTakeHomeAndTax(yearlyZTaxable, zStateConfig);
+  yearlyZTax += ficaZ;
+  yearlyZTakeHome -= ficaZ;
   const monthlyZTakeHome = yearlyZTakeHome / 12;
   const monthlyZTax = yearlyZTax / 12;
 
@@ -683,15 +731,15 @@ const getSavingsSumRow = (
  *
  * The rows are calculated based on the combined budget.
  */
-export const getDataRows = (
+export const getDataRows = async (
   combinedBudget: CombinedBudgetWithMetadata
-): GridRowsProp => {
+): Promise<GridRowsProp> => {
   const grossTotalRow = getGrossSumRow(
     combinedBudget.gross,
     combinedBudget.metadata.emily.numMonths,
     combinedBudget.metadata.brian.numMonths
   );
-  const [takeHomeRow, taxRow] = getTakeHomeAndTaxTotalRows(
+  const [takeHomeRow, taxRow] = await getTakeHomeAndTaxTotalRows(
     grossTotalRow,
     combinedBudget.deductions
   );

@@ -3,10 +3,10 @@
 import { Delete, Edit } from "@mui/icons-material";
 import { Button, Stack } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
 import * as R from "ramda";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import useDialog from "@/hooks/useDialog";
 
@@ -82,10 +82,15 @@ export default function Finance() {
     closeDialog: closeEditBudgetDialog,
   } = useDialog();
 
-  const rows = useMemo(
-    () => getDataRows(getCombinedBudgets(emilyBudget, brianBudget)),
-    [emilyBudget, brianBudget]
-  );
+  const [rows, setRows] = useState<GridRowsProp>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setRows(await getDataRows(getCombinedBudgets(emilyBudget, brianBudget)));
+    };
+
+    fetchData();
+  }, [emilyBudget, brianBudget]);
 
   useEffect(() => {
     setLoading(true);
@@ -167,7 +172,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = getDataRows(
+      const newRows = await getDataRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -206,7 +211,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = getDataRows(
+      const newRows = await getDataRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -241,8 +246,8 @@ export default function Finance() {
     updateBudget(docRef, oldPath, newPath, newObj);
     const newRows =
       personChanged === "Em"
-        ? getDataRows(getCombinedBudgets(newBudget, brianBudget))
-        : getDataRows(getCombinedBudgets(emilyBudget, newBudget));
+        ? await getDataRows(getCombinedBudgets(newBudget, brianBudget))
+        : await getDataRows(getCombinedBudgets(emilyBudget, newBudget));
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
