@@ -20,14 +20,14 @@ import {
 } from "./firebaseUtils";
 import {
   Budget,
-  BudgetDataRow,
+  BudgetItemRow,
   CombinedMetadata,
   getCombinedBudgets,
   getUpdatedBudget,
   getChangedCellTime,
   getPersonFromColumnHeader,
   columns,
-  getDataRows,
+  getRows,
   isSumOfSumRow,
   isSumRow,
   isDataRow,
@@ -83,7 +83,7 @@ export default function Finance() {
   } = useDialog();
 
   const rows = useMemo(
-    () => getDataRows(getCombinedBudgets(emilyBudget, brianBudget)),
+    () => getRows(getCombinedBudgets(emilyBudget, brianBudget)),
     [emilyBudget, brianBudget]
   );
 
@@ -114,8 +114,8 @@ export default function Finance() {
   }, []);
 
   const handleRowUpdate = async (
-    rawNewRow: BudgetDataRow,
-    oldRow: BudgetDataRow
+    rawNewRow: BudgetItemRow,
+    oldRow: BudgetItemRow
   ) => {
     const { category, name: newName } = rawNewRow;
     const { name: oldName } = oldRow;
@@ -167,7 +167,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = getDataRows(
+      const newRows = getRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -206,7 +206,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = getDataRows(
+      const newRows = getRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -241,12 +241,12 @@ export default function Finance() {
     updateBudget(docRef, oldPath, newPath, newObj);
     const newRows =
       personChanged === "Em"
-        ? getDataRows(getCombinedBudgets(newBudget, brianBudget))
-        : getDataRows(getCombinedBudgets(emilyBudget, newBudget));
+        ? getRows(getCombinedBudgets(newBudget, brianBudget))
+        : getRows(getCombinedBudgets(emilyBudget, newBudget));
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
-  const handleDeleteRow = async (rowToDelete: BudgetDataRow) => {
+  const handleDeleteRow = async (rowToDelete: BudgetItemRow) => {
     const { category, name } = rowToDelete;
 
     const path = [category, name];
