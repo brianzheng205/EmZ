@@ -417,22 +417,17 @@ const getCategoryRows = (
       );
       monthlyZ = Math.round(grossZ / brianNumMonths);
       yearlyZ = grossZ;
-
-      monthlyEmSum += monthlyEm;
-      yearlyEmSum += yearlyEm;
-      monthlyZSum += monthlyZ;
-      yearlyZSum += yearlyZ;
     } else {
       monthlyEm = convertCurrency(item.emily, "month", emilyNumMonths);
       yearlyEm = convertCurrency(item.emily, "year", emilyNumMonths);
       monthlyZ = convertCurrency(item.brian, "month", brianNumMonths);
       yearlyZ = convertCurrency(item.brian, "year", brianNumMonths);
-
-      monthlyEmSum += monthlyEm;
-      yearlyEmSum += yearlyEm;
-      monthlyZSum += monthlyZ;
-      yearlyZSum += yearlyZ;
     }
+
+    monthlyEmSum += monthlyEm;
+    yearlyEmSum += yearlyEm;
+    monthlyZSum += monthlyZ;
+    yearlyZSum += yearlyZ;
 
     rows.push({
       id: `${category}-${id}`,
