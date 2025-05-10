@@ -185,16 +185,16 @@ export default function Finance() {
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     }
 
-    if (colChanged === "isMonthly") {
+    if (colChanged === "isRecurring") {
       const path = [category, oldName];
 
       const emilyNewObj = {
         ...(R.path(path, emilyBudget) as object),
-        isMonthly: rawNewRow.isMonthly,
+        isRecurring: rawNewRow.isRecurring,
       };
       const brianNewObj = {
         ...(R.path(path, brianBudget) as object),
-        isMonthly: rawNewRow.isMonthly,
+        isRecurring: rawNewRow.isRecurring,
       };
       if (!emilyDocRef || !brianDocRef) {
         console.error("Document reference is null.");

@@ -8,7 +8,7 @@ import { capitalizeFirstLetter } from "@/utils";
 type BudgetItem = {
   amount: number;
   time: "month" | "year";
-  isMonthly?: boolean;
+  isRecurring?: boolean;
 };
 
 type CategoryItems = {
@@ -60,7 +60,7 @@ type BudgetItemRowWithoutDividers = {
   status?: string;
   category?: string;
   name: string;
-  isMonthly: boolean;
+  isRecurring: boolean;
   monthlyEmAmount: number;
   yearlyEmAmount: number;
   monthlyZAmount: number;
@@ -124,12 +124,12 @@ export const getCombinedBudgets = (
       const item1: BudgetItem = {
         amount: R.pathOr(0, [item, "amount"], cat1),
         time: R.pathOr("month", [item, "time"], cat1),
-        isMonthly: R.pathOr(true, [item, "isMonthly"], cat1),
+        isRecurring: R.pathOr(true, [item, "isRecurring"], cat1),
       };
       const item2: BudgetItem = {
         amount: R.pathOr(0, [item, "amount"], cat2),
         time: R.pathOr("month", [item, "time"], cat2),
-        isMonthly: R.pathOr(true, [item, "isMonthly"], cat2),
+        isRecurring: R.pathOr(true, [item, "isRecurring"], cat2),
       };
       combinedItems[item] = { emily: item1, brian: item2 };
     }, itemNames);
@@ -233,7 +233,7 @@ const loadTaxBrackets = async (url: string) => {
  *
  * @example
  *
- * const item = { amount: 1200, time: "month", isMonthly: true };
+ * const item = { amount: 1200, time: "month", isRecurring: true };
  * const numMonths = 6;
  *
  * convertCurrency(item, "year"); //=> 14400
@@ -248,7 +248,7 @@ const convertCurrency = (
   if (item.time === targetTime) {
     return item.amount;
   } else if (targetTime === "month") {
-    return R.propOr(true, "isMonthly", item) ? item.amount / numMonths : 0;
+    return R.propOr(true, "isRecurring", item) ? item.amount / numMonths : 0;
   } else if (targetTime === "year") {
     return item.amount * numMonths;
   }
@@ -398,10 +398,10 @@ export const columns: GridColDef[] = [
     editable: true,
   },
   {
-    field: "isMonthly",
-    headerName: "Monthly?",
+    field: "isRecurring",
+    headerName: "Recurring?",
     type: "boolean",
-    flex: 1,
+    flex: 2,
     editable: true,
   },
   ...R.pipe(R.map(getColumnsHeaders), R.flatten)(PEOPLE),
@@ -467,9 +467,9 @@ const getCategoryRows = (
       status: "data",
       category,
       name: itemName,
-      isMonthly:
-        R.pathOr(true, ["emily", "isMonthly"], item) ||
-        R.pathOr(true, ["brian", "isMonthly"], item),
+      isRecurring:
+        R.pathOr(true, ["emily", "isRecurring"], item) ||
+        R.pathOr(true, ["brian", "isRecurring"], item),
       yearlyEmAmount: yearlyEm,
       monthlyEmAmount: monthlyEm,
       yearlyZAmount: yearlyZ,
@@ -518,7 +518,7 @@ const getCategoryRows = (
     status: category === "gross" ? "sumOfSum" : "sum",
     category: capitalizeFirstLetter(category),
     name: "Total",
-    isMonthly: true,
+    isRecurring: true,
     monthlyEmAmount: monthlyEmSum,
     yearlyEmAmount: yearlyEmSum,
     monthlyEmDivider,
@@ -568,7 +568,7 @@ const getTakeHomeAndTaxTotalRows = async (
   let bonusZ = 0;
 
   R.forEachObjIndexed((item: CombinedBudgetItem) => {
-    if (!R.propOr(true, "isMonthly", item.emily)) {
+    if (!R.propOr(true, "isRecurring", item.emily)) {
       bonusEm += convertCurrency(item.emily, "year");
       bonusZ += convertCurrency(item.brian, "year");
     }
@@ -623,7 +623,7 @@ const getTakeHomeAndTaxTotalRows = async (
       status: "sumOfSum",
       category: "Take Home",
       name: "Total",
-      isMonthly: true,
+      isRecurring: true,
       monthlyEmAmount: monthlyEmTakeHome,
       yearlyEmAmount: yearlyEmTakeHome,
       monthlyEmDivider: grossTotalRow.monthlyEmDivider,
@@ -638,7 +638,7 @@ const getTakeHomeAndTaxTotalRows = async (
       status: "sum",
       category: "Taxes",
       name: "Total",
-      isMonthly: true,
+      isRecurring: true,
       monthlyEmAmount: monthlyEmTax,
       yearlyEmAmount: yearlyEmTax,
       monthlyEmDivider: grossTotalRow.monthlyEmDivider,
@@ -681,7 +681,7 @@ const getRemainingSavingsRow = (
     id: "savings",
     category: "savings",
     name: "Remaining",
-    isMonthly: true,
+    isRecurring: true,
     monthlyEmAmount: monthlyEmSavings,
     yearlyEmAmount: yearlyEmSavings,
     monthlyEmDivider: takeHomeRow.monthlyEmAmount,
