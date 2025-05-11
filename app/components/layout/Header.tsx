@@ -1,42 +1,17 @@
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+"use client";
+
+import { AppBar, IconButton, Stack, Toolbar, Typography } from "@mui/material";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import React from "react";
 import { IoArrowBackOutline } from "react-icons/io5";
-import {
-  TbLayoutSidebarLeftCollapseFilled,
-  TbLayoutSidebarLeftExpand,
-} from "react-icons/tb";
-
-interface ToggleSideBarButtonProps {
-  isOpen: boolean;
-  onClick: () => void;
-}
-
-function ToggleSideBarButton({ isOpen, onClick }: ToggleSideBarButtonProps) {
-  return (
-    <IconButton color="inherit" onClick={onClick}>
-      {isOpen ? (
-        <TbLayoutSidebarLeftCollapseFilled />
-      ) : (
-        <TbLayoutSidebarLeftExpand />
-      )}
-    </IconButton>
-  );
-}
+import { TbLayoutSidebarLeftExpand } from "react-icons/tb";
 
 interface HeaderProps {
-  isSideBarOpen: boolean;
-  setIsSideBarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function Header({
-  isSideBarOpen,
-  setIsSideBarOpen,
-}: HeaderProps) {
+export default function Header({ setIsSidebarOpen }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -53,17 +28,16 @@ export default function Header({
   return (
     <AppBar position="static">
       <Toolbar>
-        <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-          <ToggleSideBarButton
-            isOpen={isSideBarOpen}
-            onClick={() => setIsSideBarOpen((prev) => !prev)}
-          />
+        <Stack sx={{ alignItems: "center", flexDirection: "row", flexGrow: 1 }}>
+          <IconButton color="inherit" onClick={() => setIsSidebarOpen(true)}>
+            <TbLayoutSidebarLeftExpand />
+          </IconButton>
           {showBackButton && (
             <IconButton color="inherit" onClick={handleBack}>
               <IoArrowBackOutline />
             </IconButton>
           )}
-        </Box>
+        </Stack>
         <Typography
           variant="h6"
           component="div"
@@ -79,7 +53,6 @@ export default function Header({
             EmZ
           </Link>
         </Typography>
-        <Box sx={{ flexGrow: 1 }} />
       </Toolbar>
     </AppBar>
   );
