@@ -16,8 +16,7 @@ import { MdOutlineTimer } from "react-icons/md";
 import { Route } from "../pages/RoutePage";
 import StyledLink from "../StyledLink";
 
-export const ROUTES: Route[] = [
-  { route: "/", label: "Home", icon: <FiHome /> },
+export const ROUTES_WITHOUT_HOME: Route[] = [
   {
     route: "/finance",
     label: "Finance",
@@ -35,13 +34,18 @@ export const ROUTES: Route[] = [
   },
 ];
 
+export const ROUTES: Route[] = [
+  { route: "/", label: "Home", icon: <FiHome /> },
+  ...ROUTES_WITHOUT_HOME,
+];
+
 const BORDER_RADIUS = "16px";
 
 interface SideBarProps {
-  isOpen: boolean;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function SideBar({ isOpen }: SideBarProps) {
+export default function SideBar({ setIsSidebarOpen }: SideBarProps) {
   const pathname = usePathname();
 
   return (
@@ -49,11 +53,7 @@ export default function SideBar({ isOpen }: SideBarProps) {
       sx={{
         bgcolor: "primary.main",
         color: "white",
-        transition: "all 500ms",
-        overflow: "hidden",
-        minWidth: isOpen ? 230 : 0,
-        maxWidth: isOpen ? 230 : 0,
-        opacity: isOpen ? 1 : 0.3,
+        height: "100%",
       }}
     >
       <List sx={{ p: 2 }}>
@@ -69,6 +69,7 @@ export default function SideBar({ isOpen }: SideBarProps) {
                 color: "inherit",
               }}
               disablePadding
+              onClick={() => setIsSidebarOpen(false)}
             >
               <ListItemButton sx={{ borderRadius: BORDER_RADIUS }}>
                 <ListItemIcon sx={{ minWidth: 24, color: "white" }}>

@@ -1,77 +1,10 @@
-"use client";
-
-import { CssBaseline, Box, Stack } from "@mui/material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { useState } from "react";
-
-import Header from "./components/layout/Header";
-import SideBar from "./components/layout/SideBar";
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#904C77",
-    },
-    secondary: {
-      main: "#E49AB0",
-    },
-    background: {
-      default: "#ECCFC3",
-      paper: "#ECBBA5",
-    },
-  },
-  typography: {
-    fontFamily: "Quicksand, Arial, sans-serif",
-  },
-  components: {
-    MuiDialogTitle: {
-      styleOverrides: {
-        root: {
-          fontSize: "1.75rem",
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiTextField: {
-      defaultProps: {
-        InputLabelProps: {
-          shrink: true,
-        },
-      },
-    },
-    MuiLink: {
-      styleOverrides: {
-        root: {
-          textDecoration: "none",
-          color: "inherit",
-        },
-      },
-    },
-    MuiCssBaseline: {
-      styleOverrides: {
-        "input[type=number]": {
-          MozAppearance: "textfield",
-        },
-        "input[type=number]::-webkit-outer-spin-button": {
-          WebkitAppearance: "none",
-          margin: 0,
-        },
-        "input[type=number]::-webkit-inner-spin-button": {
-          WebkitAppearance: "none",
-          margin: 0,
-        },
-      },
-    },
-  },
-});
+import ThemeProviderWrapper from "@/components/layout/ThemeProviderWrapper";
 
 interface RootLayoutProps {
   children: React.ReactNode;
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
-  const [isSideBarOpen, setIsSideBarOpen] = useState(false);
-
   return (
     <html lang="en">
       <head>
@@ -89,21 +22,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         />
       </head>
       <body>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Header
-            isSideBarOpen={isSideBarOpen}
-            setIsSideBarOpen={setIsSideBarOpen}
-          />
-          <Stack
-            direction="row"
-            spacing={0}
-            sx={{ height: "calc(100vh - 64px)" }}
-          >
-            <SideBar isOpen={isSideBarOpen} />
-            <Box sx={{ flex: 1, overflowY: "auto" }}>{children}</Box>
-          </Stack>
-        </ThemeProvider>
+        <ThemeProviderWrapper>{children}</ThemeProviderWrapper>
       </body>
     </html>
   );
