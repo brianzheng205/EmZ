@@ -1,4 +1,9 @@
-import { GridColDef, GridValueFormatter } from "@mui/x-data-grid";
+import {
+  GridColDef,
+  GridValueFormatter,
+  GridRenderEditCellParams,
+  GridEditInputCell,
+} from "@mui/x-data-grid";
 import * as R from "ramda";
 
 import { capitalizeFirstLetter } from "@/utils";
@@ -65,6 +70,8 @@ type BudgetItemRowWithoutDividers = {
   yearlyEmAmount: number;
   monthlyZAmount: number;
   yearlyZAmount: number;
+  yearlySalaryEm?: number;
+  yearlySalaryZ?: number;
 };
 
 export type BudgetItemRow = Required<Pick<BudgetSumsRow, "category">> &
@@ -215,7 +222,7 @@ export const isSumRow = (status: string | undefined) =>
  * Returns if the row is a data row (row stored in Firebase) based on the row status.
  */
 export const isDataRow = (status: string | undefined) =>
-  status && status.includes("data") ? true : false;
+  status && status.includes("item") ? true : false;
 
 // INTERNAL HELPERS
 
@@ -340,8 +347,27 @@ const percentFormatter: GridValueFormatter = (value: number, row) =>
         maximumFractionDigits: 0,
       }).format(value);
 
-const getColumnsHeaders = (person: string) =>
-  [
+const getColumnsHeaders = (person: string) => {
+  const GetCustomEditCell = (targetTime: "month" | "year") => {
+    const CustomEditCell = (params: GridRenderEditCellParams) => {
+      if (R.isNil(params.row[`yearlySalary${person}`])) {
+        return <GridEditInputCell {...params} />;
+      }
+
+      const modifiedParams = {
+        ...params,
+        value: Math.round(
+          params.row[`yearlySalary${person}`] /
+            (targetTime === "month" ? NUM_MONTHS : 1)
+        ),
+      };
+      return <GridEditInputCell {...modifiedParams} />;
+    };
+
+    return CustomEditCell;
+  };
+
+  return [
     {
       field: `monthly${person}Amount`,
       headerName: `Monthly ${person}`,
@@ -349,6 +375,7 @@ const getColumnsHeaders = (person: string) =>
       flex: 2,
       valueFormatter: currencyFormatter,
       editable: true,
+      renderEditCell: GetCustomEditCell("month"),
     },
     {
       field: `monthly${person}Percent`,
@@ -356,7 +383,7 @@ const getColumnsHeaders = (person: string) =>
       type: "number",
       flex: 1,
       valueGetter: (_, row) =>
-        row[`monthly${person}Divider`]
+        row[`monthly${person}Divider`] !== 0
           ? row[`monthly${person}Amount`] / row[`monthly${person}Divider`]
           : 0,
       valueFormatter: percentFormatter,
@@ -368,6 +395,7 @@ const getColumnsHeaders = (person: string) =>
       flex: 2,
       valueFormatter: currencyFormatter,
       editable: true,
+      renderEditCell: GetCustomEditCell("year"),
     },
     {
       field: `yearly${person}Percent`,
@@ -375,12 +403,13 @@ const getColumnsHeaders = (person: string) =>
       type: "number",
       flex: 1,
       valueGetter: (_, row) =>
-        row[`yearly${person}Divider`]
+        row[`yearly${person}Divider`] !== 0
           ? row[`yearly${person}Amount`] / row[`yearly${person}Divider`]
           : 0,
       valueFormatter: percentFormatter,
     },
   ] as GridColDef[];
+};
 
 // COLUMNS
 const PEOPLE = ["Em", "Z"];
@@ -440,6 +469,8 @@ const getCategoryRows = (
     let yearlyEm = 0;
     let monthlyZ = 0;
     let yearlyZ = 0;
+    let yearlySalaryEm: number | undefined = undefined;
+    let yearlySalaryZ: number | undefined = undefined;
 
     if (category === "gross" && itemName === "Base") {
       const grossEm = getProratedSalary(
@@ -454,6 +485,16 @@ const getCategoryRows = (
       );
       monthlyZ = Math.round(grossZ / brianNumMonths);
       yearlyZ = grossZ;
+      yearlySalaryEm = R.pathOr(
+        0,
+        ["Base", "emily", "amount"],
+        combinedBudget.gross
+      );
+      yearlySalaryZ = R.pathOr(
+        0,
+        ["Base", "brian", "amount"],
+        combinedBudget.gross
+      );
     } else {
       monthlyEm = convertCurrency(item.emily, "month", emilyNumMonths);
       yearlyEm = convertCurrency(item.emily, "year", emilyNumMonths);
@@ -468,7 +509,7 @@ const getCategoryRows = (
 
     rows.push({
       id: `${category}-${id}`,
-      status: "data",
+      status: "item",
       category,
       name: itemName,
       isRecurring:
@@ -478,6 +519,8 @@ const getCategoryRows = (
       monthlyEmAmount: monthlyEm,
       yearlyZAmount: yearlyZ,
       monthlyZAmount: monthlyZ,
+      yearlySalaryEm,
+      yearlySalaryZ,
     });
   }, combinedBudget[category]);
 
