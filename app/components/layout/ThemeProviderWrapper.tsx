@@ -62,6 +62,19 @@ const theme = createTheme({
         },
       },
     },
+    MuiContainer: {
+      defaultProps: {
+        maxWidth: "lg",
+        sx: {
+          py: 4,
+        },
+      },
+    },
+    MuiButton: {
+      defaultProps: {
+        variant: "contained",
+      },
+    },
   },
 });
 

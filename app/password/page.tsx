@@ -61,13 +61,7 @@ export default function PasswordPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 2 }}
-          >
+          <Button type="submit" color="primary" fullWidth sx={{ mt: 2 }}>
             Submit
           </Button>
         </Box>

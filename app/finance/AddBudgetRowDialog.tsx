@@ -178,9 +178,7 @@ export default function AddBudgetRowDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          Add
-        </Button>
+        <Button onClick={handleSubmit}>Add</Button>
       </DialogActions>
     </Dialog>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
-import { Button, Stack } from "@mui/material";
+import { Button, Stack, Container } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
@@ -342,6 +342,7 @@ export default function Finance() {
     renderCell: (params) =>
       isDataRow(params.row.status) && (
         <Button
+          variant="text"
           onClick={() => handleDeleteRow(params.row)}
           sx={{ minWidth: 0, padding: 0 }}
         >
@@ -351,17 +352,9 @@ export default function Finance() {
   };
 
   return (
-    <Stack
-      sx={{
-        alignItems: "center",
-        height: "100%",
-        width: "100%",
-        padding: 2,
-      }}
-    >
+    <Container>
       <Stack
         sx={{
-          width: 1200,
           gap: 1,
         }}
       >
@@ -371,29 +364,18 @@ export default function Finance() {
             gap: 1,
           }}
         >
-          <Button
-            variant="contained"
-            startIcon={<Refresh />}
-            onClick={fetchBudgets}
-          >
+          <Button startIcon={<Refresh />} onClick={fetchBudgets}>
             Refresh
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={openAddRowDialog}
-          >
+          <Button startIcon={<Add />} onClick={openAddRowDialog}>
             Add
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<Edit />}
-            onClick={() => openEditBudgetDialog()}
-          >
+          <Button startIcon={<Edit />} onClick={() => openEditBudgetDialog()}>
             Edit
           </Button>
         </Stack>
         <StyledDataGrid
+          sx={{ width: "100%" }}
           rows={rows}
           columns={[...columns, deleteColumn]}
           loading={loading}
@@ -414,13 +396,11 @@ export default function Finance() {
           disableColumnResize
         />
       </Stack>
-
       <AddBudgetRowDialog
         open={isAddRowDialogOpen}
         onClose={closeAddRowDialog}
         onSubmit={handleAddRow}
       />
-
       <EditBudgetDialog
         open={isEditBudgetDialogopen}
         onClose={closeEditBudgetDialog}
@@ -428,6 +408,6 @@ export default function Finance() {
         emilyBudget={emilyBudget}
         brianBudget={brianBudget}
       />
-    </Stack>
+    </Container>
   );
 }

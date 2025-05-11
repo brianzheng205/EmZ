@@ -1,13 +1,7 @@
 "use client";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import {
-  Button,
-  Container,
-  Stack,
-  IconButton,
-  Snackbar,
-  Grid2 as Grid,
-} from "@mui/material";
+
+import { Add } from "@mui/icons-material";
+import { Button, Container, Stack, Grid2 as Grid } from "@mui/material";
 import {
   getFirestore,
   collection,
@@ -22,10 +16,9 @@ import {
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 
+import { CountdownEvent, SubmitEventFn, EditEventFn } from "@/types";
+import { getAdjustedDate } from "@/utils";
 import app from "@firebase";
-
-import { CountdownEvent, SubmitEventFn, EditEventFn } from "../types";
-import { getAdjustedDate } from "../utils";
 
 import AddCountdownDialog from "./AddCountdownDialog";
 import CountdownEventCard from "./CountdownEventCard";
@@ -43,7 +36,6 @@ const db = getFirestore(app);
 export default function Countdown() {
   const [events, setEvents] = useState<CountdownEvent[]>([]);
   const [isAddingCountdown, setIsAddingCountdown] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -218,49 +210,22 @@ export default function Countdown() {
     return events.filter((event) => event.isCustomId).map((event) => event.id);
   };
 
-  const formatMarkdown = (events: CountdownEvent[]) => {
-    return events
-      .map((event) => {
-        const countdown = formatCountdown(event.id, event.isCustomId);
-        return `# **${countdown}**\n${event.descriptions
-          .map((desc) => `- ${desc}`)
-          .join("\n")}`;
-      })
-      .join("\n");
-  };
-
-  const copyToClipboard = async () => {
-    const markdown = formatMarkdown(events);
-    try {
-      await navigator.clipboard.writeText(markdown);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
-
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack spacing={3}>
+    <Container>
+      <Stack sx={{ gap: 3 }}>
         <Stack
-          direction="row"
-          spacing={2}
-          sx={{ justifyContent: "space-between", alignItems: "center" }}
+          sx={{
+            flexDirection: "row-reverse",
+            gap: 2,
+            alignItems: "center",
+          }}
         >
           <Button
-            variant="contained"
+            startIcon={<Add />}
             onClick={() => setIsAddingCountdown(true)}
           >
-            Add Countdown
+            Add
           </Button>
-          <IconButton
-            onClick={copyToClipboard}
-            color="primary"
-            aria-label="copy as markdown"
-          >
-            <ContentCopyIcon />
-          </IconButton>
         </Stack>
 
         <Grid container spacing={2}>
@@ -282,13 +247,6 @@ export default function Countdown() {
           onClose={() => setIsAddingCountdown(false)}
           onSubmit={addEvent}
           existingCustomIds={getExistingCustomIds()}
-        />
-
-        <Snackbar
-          open={copySuccess}
-          autoHideDuration={2000}
-          message="Copied to clipboard!"
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         />
       </Stack>
     </Container>

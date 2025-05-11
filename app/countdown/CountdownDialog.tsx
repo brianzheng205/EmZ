@@ -223,11 +223,7 @@ export default function CountdownDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={!id || !description}
-        >
+        <Button onClick={handleSubmit} disabled={!id || !description}>
           {submitText}
         </Button>
       </DialogActions>

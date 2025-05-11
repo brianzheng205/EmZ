@@ -131,7 +131,6 @@ export default function EditBudgetDialog({
         <Button onClick={onClose}>Cancel</Button>
         <Button
           onClick={handleSubmit}
-          variant="contained"
           disabled={!areAllMetadataValid(metadata)}
         >
           Save
