@@ -3,7 +3,6 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import {
-  Box,
   Card,
   CardHeader,
   CardContent,
@@ -48,36 +47,58 @@ export default function CountdownEventCard({
 
   return (
     <>
-      <Card sx={{ position: "relative" }}>
+      <Card
+        sx={{
+          height: 200,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <CardHeader
           title={formatCountdown(event.id, event.isCustomId)}
           subheader={event.isCustomId ? event.id : event.id.replace(/-/g, "/")}
         />
-        <CardContent>
+        <CardContent
+          sx={{
+            overflowY: "auto",
+          }}
+        >
           {event.descriptions.map((description, index) => (
             <Stack
               key={index}
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
+              sx={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: 1,
+              }}
             >
-              <Typography variant="body1" gutterBottom>
+              <Typography
+                variant="body1"
+                gutterBottom
+                sx={{
+                  overflow: "hidden",
+                  wordBreak: "break-word",
+                }}
+              >
                 {description}
               </Typography>
-              <Box>
+              <Stack sx={{ flexDirection: "row" }}>
                 <IconButton
                   aria-label="edit"
                   onClick={() => handleEditClick(description)}
+                  sx={{ padding: "4px" }}
                 >
                   <EditIcon fontSize="small" />
                 </IconButton>
                 <IconButton
                   aria-label="delete"
                   onClick={() => handleDeleteClick(description)}
+                  sx={{ padding: "4px" }}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
-              </Box>
+              </Stack>
             </Stack>
           ))}
         </CardContent>

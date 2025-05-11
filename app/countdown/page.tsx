@@ -228,7 +228,7 @@ export default function Countdown() {
           </Button>
         </Stack>
 
-        <Grid container spacing={2}>
+        <Grid container rowSpacing={1} columnSpacing={2}>
           {events.map((event) => (
             <Grid key={event.id} size={4}>
               <CountdownEventCard

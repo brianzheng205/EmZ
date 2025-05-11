@@ -128,7 +128,9 @@ export default function EditBudgetDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} color="error">
+          Cancel
+        </Button>
         <Button
           onClick={handleSubmit}
           disabled={!areAllMetadataValid(metadata)}
