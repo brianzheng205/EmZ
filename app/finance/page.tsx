@@ -1,6 +1,6 @@
 "use client";
 
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
 import { Button, Stack } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
@@ -20,14 +20,14 @@ import {
 } from "./firebaseUtils";
 import {
   Budget,
-  BudgetDataRow,
+  BudgetItemRow,
   CombinedMetadata,
   getCombinedBudgets,
   getUpdatedBudget,
   getChangedCellTime,
   getPersonFromColumnHeader,
   columns,
-  getDataRows,
+  getRows,
   isSumOfSumRow,
   isSumRow,
   isDataRow,
@@ -86,13 +86,17 @@ export default function Finance() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setRows(await getDataRows(getCombinedBudgets(emilyBudget, brianBudget)));
+      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
     };
 
     fetchData();
   }, [emilyBudget, brianBudget]);
 
   useEffect(() => {
+    fetchBudgets();
+  }, []);
+
+  const fetchBudgets = async () => {
     setLoading(true);
 
     fetchActiveBudgets().then(async (document) => {
@@ -116,11 +120,11 @@ export default function Finance() {
       setBrianBudget(brianB);
       setLoading(false);
     });
-  }, []);
+  };
 
   const handleRowUpdate = async (
-    rawNewRow: BudgetDataRow,
-    oldRow: BudgetDataRow
+    rawNewRow: BudgetItemRow,
+    oldRow: BudgetItemRow
   ) => {
     const { category, name: newName } = rawNewRow;
     const { name: oldName } = oldRow;
@@ -172,25 +176,23 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = await getDataRows(
+      const newRows = await getRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
       await updateBudget(emilyDocRef, oldPath, newPath, emilyNewObj);
       await updateBudget(brianDocRef, oldPath, newPath, brianNewObj);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
-    }
-
-    if (colChanged === "isMonthly") {
+    } else if (colChanged === "isRecurring") {
       const path = [category, oldName];
 
       const emilyNewObj = {
         ...(R.path(path, emilyBudget) as object),
-        isMonthly: rawNewRow.isMonthly,
+        isRecurring: rawNewRow.isRecurring,
       };
       const brianNewObj = {
         ...(R.path(path, brianBudget) as object),
-        isMonthly: rawNewRow.isMonthly,
+        isRecurring: rawNewRow.isRecurring,
       };
       if (!emilyDocRef || !brianDocRef) {
         console.error("Document reference is null.");
@@ -211,7 +213,7 @@ export default function Finance() {
       );
       setEmilyBudget(newEmilyBudget);
       setBrianBudget(newBrianBudget);
-      const newRows = await getDataRows(
+      const newRows = await getRows(
         getCombinedBudgets(newEmilyBudget, newBrianBudget)
       );
 
@@ -226,6 +228,7 @@ export default function Finance() {
     const newObj = {
       amount: rawNewRow[colChanged],
       time: getChangedCellTime(colChanged),
+      isRecurring: rawNewRow.isRecurring,
     };
 
     const budget = personChanged === "Em" ? emilyBudget : brianBudget;
@@ -246,12 +249,12 @@ export default function Finance() {
     updateBudget(docRef, oldPath, newPath, newObj);
     const newRows =
       personChanged === "Em"
-        ? await getDataRows(getCombinedBudgets(newBudget, brianBudget))
-        : await getDataRows(getCombinedBudgets(emilyBudget, newBudget));
+        ? await getRows(getCombinedBudgets(newBudget, brianBudget))
+        : await getRows(getCombinedBudgets(emilyBudget, newBudget));
     return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
   };
 
-  const handleDeleteRow = async (rowToDelete: BudgetDataRow) => {
+  const handleDeleteRow = async (rowToDelete: BudgetItemRow) => {
     const { category, name } = rowToDelete;
 
     const path = [category, name];
@@ -368,11 +371,22 @@ export default function Finance() {
             gap: 1,
           }}
         >
-          <Button variant="contained" onClick={openAddRowDialog}>
-            Add Row
+          <Button
+            variant="contained"
+            startIcon={<Refresh />}
+            onClick={fetchBudgets}
+          >
+            Refresh
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
+            startIcon={<Add />}
+            onClick={openAddRowDialog}
+          >
+            Add
+          </Button>
+          <Button
+            variant="contained"
             startIcon={<Edit />}
             onClick={() => openEditBudgetDialog()}
           >
@@ -393,10 +407,11 @@ export default function Finance() {
           }
           isCellEditable={(params) => isDataRow(params.row.status)}
           processRowUpdate={handleRowUpdate}
-          showToolbar
           disableRowSelectionOnClick
           hideFooter
+          disableColumnMenu
           disableColumnSorting
+          disableColumnResize
         />
       </Stack>
 
