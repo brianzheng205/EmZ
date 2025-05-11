@@ -1,173 +1,433 @@
-// "use client";
+"use client";
 
-// import { getFirestore, doc, getDoc, DocumentData } from "firebase/firestore";
-// import { useEffect, useState } from "react";
+import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
+import { Button, Stack } from "@mui/material";
+import { styled, Theme, darken } from "@mui/material/styles";
+import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
+import { DocumentReference } from "firebase/firestore";
+import * as R from "ramda";
+import { useEffect, useState } from "react";
 
-// import app from "../../firebase/client";
+import useDialog from "@/hooks/useDialog";
 
-// TODO: Get rid of the math.max thing after 2025
-// const fetchData = async () => {
-//   const db = getFirestore(app);
-//   const docRef = doc(
-//     db,
-//     "activeBudgets",
-//     Math.max(new Date().getFullYear(), 2025).toString()
-//   );
-//   const docSnap = await getDoc(docRef);
-//   return docSnap.data() as DocumentData;
-// };
+import AddBudgetRowDialog from "./AddBudgetRowDialog";
+import EditBudgetDialog from "./EditBudgetDialog";
+import {
+  deleteBudgetItem,
+  fetchActiveBudgets,
+  fetchBudget,
+  updateBudget,
+} from "./firebaseUtils";
+import {
+  Budget,
+  BudgetItemRow,
+  CombinedMetadata,
+  getCombinedBudgets,
+  getUpdatedBudget,
+  getChangedCellTime,
+  getPersonFromColumnHeader,
+  columns,
+  getRows,
+  isSumOfSumRow,
+  isSumRow,
+  isDataRow,
+} from "./utils";
 
-// const fetchBudgets = async (path: string) => {
-//   if (path === undefined || path.length === 0) {
-//     return {};
-//   }
-//   const db = getFirestore(app);
-//   const docRef = doc(db, path);
-//   const docSnap = await getDoc(docRef);
-//   return docSnap.data() as DocumentData;
-// };
-
-// const fetchTaxBrackets = async (path: string) => {
-//   if (path === undefined || path.length === 0) {
-//     return {};
-//   }
-//   const db = getFirestore(app);
-//   const docRef = doc(db, path);
-//   const docSnap = await getDoc(docRef);
-//   return docSnap.data() as DocumentData;
-// };
-
-// import "../globals.css";
-// import EditableCell from "./EditableCell";
-// import PostTax, { PreTax, calculateGross } from "./table";
+const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
+  "& .sumOfSum": {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    "&:hover": {
+      backgroundColor: darken(theme.palette.primary.main, 0.1),
+    },
+    "&.Mui-selected": {
+      backgroundColor: theme.palette.primary.main,
+      "&:hover": {
+        backgroundColor: darken(theme.palette.primary.main, 0.1),
+      },
+    },
+  },
+  "& .sum": {
+    backgroundColor: theme.palette.secondary.main,
+    "&:hover": {
+      backgroundColor: darken(theme.palette.secondary.main, 0.1),
+    },
+    "&.Mui-selected": {
+      backgroundColor: theme.palette.secondary.main,
+      "&:hover": {
+        backgroundColor: darken(theme.palette.secondary.main, 0.1),
+      },
+    },
+  },
+}));
 
 export default function Finance() {
-  // const headers = [
-  //   "Monthly Em (%)",
-  //   "Monthly Em ($)",
-  //   "Yearly Em (%)",
-  //   "Yearly Em ($)",
-  //   "Monthly Z (%)",
-  //   "Monthly Z ($)",
-  //   "Yearly Z (%)",
-  //   "Yearly Z ($)",
-  // ];
+  const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
+    null
+  );
+  const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
+    null
+  );
+  const [emilyBudget, setEmilyBudget] = useState<Budget>({} as Budget);
+  const [brianBudget, setBrianBudget] = useState<Budget>({} as Budget);
+  const [loading, setLoading] = useState<boolean>(true);
+  const {
+    isDialogOpen: isAddRowDialogOpen,
+    openDialog: openAddRowDialog,
+    closeDialog: closeAddRowDialog,
+  } = useDialog();
+  const {
+    isDialogOpen: isEditBudgetDialogopen,
+    openDialog: openEditBudgetDialog,
+    closeDialog: closeEditBudgetDialog,
+  } = useDialog();
 
-  // const [emilyBudgetPath, setEmilyBudgetPath] = useState<string[]>([]);
-  // const [brianBudgetPath, setBrianBudgetPath] = useState<string[]>([]);
-  // const [emilyBudget, setEmilyBudget] = useState<DocumentData>({});
-  // const [brianBudget, setBrianBudget] = useState<DocumentData>({});
+  const [rows, setRows] = useState<GridRowsProp>([]);
 
-  // useEffect(() => {
-  //   fetchData().then((document) => {
-  //     setEmilyBudgetPath(
-  //       document?.emily?._key.path.segments.slice(
-  //         document?.emily?._key.path.offset
-  //       )
-  //     );
-  //     setBrianBudgetPath(
-  //       document?.brian?._key.path.segments.slice(
-  //         document?.brian?._key.path.offset
-  //       )
-  //     );
-  //   });
-  // }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
+    };
 
-  // useEffect(() => {
-  //   fetchBudgets(emilyBudgetPath?.join("/")).then((document) => {
-  //     setEmilyBudget(document);
-  //   });
-  // }, [emilyBudgetPath]);
+    fetchData();
+  }, [emilyBudget, brianBudget]);
 
-  // useEffect(() => {
-  //   fetchBudgets(brianBudgetPath?.join("/")).then((document) => {
-  //     setBrianBudget(document);
-  //   });
-  // }, [brianBudgetPath]);
+  useEffect(() => {
+    fetchBudgets();
+  }, []);
 
-  // const posttax = new Set([
-  //   ...Object.keys(emilyBudget?.postTax || {}),
-  //   ...Object.keys(brianBudget?.postTax || {}),
-  // ]);
+  const fetchBudgets = async () => {
+    setLoading(true);
 
-  // const pretax = new Set([
-  //   ...Object.keys(emilyBudget?.preTax || {}),
-  //   ...Object.keys(brianBudget?.preTax || {}),
-  // ]);
+    fetchActiveBudgets().then(async (document) => {
+      if (!document) {
+        setLoading(false);
+        return;
+      }
 
-  return <></>;
+      const emilyBudgetRef = document.emilyBudget;
+      const brianBudgetRef = document.brianBudget;
+      const emilyB = (await fetchBudget(emilyBudgetRef)) as Budget | null;
+      const brianB = (await fetchBudget(brianBudgetRef)) as Budget | null;
+      if (!emilyB || !brianB) {
+        setLoading(false);
+        return;
+      }
 
-  // return (
-  //   <div>
-  //     <table className="border-collapse border border-black">
-  //       <thead>
-  //         <tr>
-  //           <th></th>
-  //           <th className="border-collapse border border-black">Category</th>
-  //           {headers.map((header, index) => (
-  //             <th
-  //               className="border-collapse border border-black"
-  //               key={`header-${index}`}
-  //             >
-  //               {header}
-  //             </th>
-  //           ))}
-  //         </tr>
-  //       </thead>
-  //       <tbody>
-  //         {[...posttax].map((category, index) => (
-  //           <tr
-  //             key={`post-tax-${index}`}
-  //             className="border-collapse border border-black"
-  //           >
-  //             {index === 0 && (
-  //               <td
-  //                 className="border-collapse border border-black"
-  //                 rowSpan={posttax.size}
-  //               >
-  //                 Post-Tax
-  //               </td>
-  //             )}
-  //             <td className="border-collapse border border-black">
-  //               {category}
-  //             </td>
-  //             <PostTax category={category} person={emilyBudget} />
-  //             <PostTax category={category} person={brianBudget} />
-  //           </tr>
-  //         ))}
-  //         {[...pretax].map((category, index) => (
-  //           <tr
-  //             key={`pre-tax-${index}`}
-  //             className="border-collapse border border-black"
-  //           >
-  //             {index === 0 && (
-  //               <td
-  //                 className="border-collapse border border-black"
-  //                 rowSpan={pretax.size + 1}
-  //               >
-  //                 Pre-Tax
-  //               </td>
-  //             )}
-  //             <td className="border-collapse border border-black">
-  //               {category}
-  //             </td>
-  //             <PreTax category={category} person={emilyBudget} />
-  //             <PreTax category={category} person={brianBudget} />
-  //           </tr>
-  //         ))}
-  //         <tr>
-  //           <td className="border-collapse border border-black">Gross</td>{" "}
-  //           <td className="border-collapse border border-black">100%</td>
-  //           <td className="border-collapse border border-black">
-  //             ${(calculateGross(emilyBudget) / 6).toFixed(0)}
-  //           </td>
-  //           <td className="border-collapse border border-black">100%</td>
-  //           <td className="border-collapse border border-black">
-  //             ${calculateGross(emilyBudget)}
-  //           </td>
-  //         </tr>
-  //       </tbody>
-  //     </table>
-  //   </div>
-  // );
+      setEmilyDocRef(emilyBudgetRef);
+      setBrianDocRef(brianBudgetRef);
+      setEmilyBudget(emilyB);
+      setBrianBudget(brianB);
+      setLoading(false);
+    });
+  };
+
+  const handleRowUpdate = async (
+    rawNewRow: BudgetItemRow,
+    oldRow: BudgetItemRow
+  ) => {
+    const { category, name: newName } = rawNewRow;
+    const { name: oldName } = oldRow;
+
+    // Determine whose budget changed
+    const colChanged = Object.keys(rawNewRow).find(
+      (key) => rawNewRow[key] !== oldRow[key]
+    );
+
+    if (!colChanged) {
+      return rawNewRow; // No changes detected
+    }
+
+    if (colChanged === "name") {
+      const oldPath = [category, oldName];
+      const newPath = [category, newName];
+      const existingNames: string[] = R.union(
+        R.keys(R.propOr({}, category, emilyBudget) as object),
+        R.keys(R.propOr({}, category, brianBudget) as object)
+      );
+
+      if (existingNames.includes(newName)) {
+        console.error(`Name "${newName}" already exists in the budget.`);
+        return oldRow;
+      }
+
+      const emilyNewObj = {
+        ...(R.path(oldPath, emilyBudget) as object),
+      };
+      const brianNewObj = {
+        ...(R.path(oldPath, brianBudget) as object),
+      };
+      if (!emilyDocRef || !brianDocRef) {
+        console.error("Document reference is null.");
+        return rawNewRow;
+      }
+
+      const newEmilyBudget = getUpdatedBudget(
+        emilyBudget,
+        oldPath,
+        newPath,
+        emilyNewObj
+      );
+      const newBrianBudget = getUpdatedBudget(
+        brianBudget,
+        oldPath,
+        newPath,
+        brianNewObj
+      );
+      setEmilyBudget(newEmilyBudget);
+      setBrianBudget(newBrianBudget);
+      const newRows = await getRows(
+        getCombinedBudgets(newEmilyBudget, newBrianBudget)
+      );
+
+      await updateBudget(emilyDocRef, oldPath, newPath, emilyNewObj);
+      await updateBudget(brianDocRef, oldPath, newPath, brianNewObj);
+      return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
+    } else if (colChanged === "isRecurring") {
+      const path = [category, oldName];
+
+      const emilyNewObj = {
+        ...(R.path(path, emilyBudget) as object),
+        isRecurring: rawNewRow.isRecurring,
+      };
+      const brianNewObj = {
+        ...(R.path(path, brianBudget) as object),
+        isRecurring: rawNewRow.isRecurring,
+      };
+      if (!emilyDocRef || !brianDocRef) {
+        console.error("Document reference is null.");
+        return rawNewRow;
+      }
+
+      const newEmilyBudget = getUpdatedBudget(
+        emilyBudget,
+        path,
+        path,
+        emilyNewObj
+      );
+      const newBrianBudget = getUpdatedBudget(
+        brianBudget,
+        path,
+        path,
+        brianNewObj
+      );
+      setEmilyBudget(newEmilyBudget);
+      setBrianBudget(newBrianBudget);
+      const newRows = await getRows(
+        getCombinedBudgets(newEmilyBudget, newBrianBudget)
+      );
+
+      await updateBudget(emilyDocRef, path, path, emilyNewObj);
+      await updateBudget(brianDocRef, path, path, brianNewObj);
+      return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
+    }
+
+    const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
+    const oldPath = [category, newName];
+    const newPath = [category, newName];
+    const newObj = {
+      amount: rawNewRow[colChanged],
+      time: getChangedCellTime(colChanged),
+      isRecurring: rawNewRow.isRecurring,
+    };
+
+    const budget = personChanged === "Em" ? emilyBudget : brianBudget;
+    const docRef = personChanged === "Em" ? emilyDocRef : brianDocRef;
+    if (!docRef) {
+      console.error(`Document reference for ${personChanged} is null.`);
+      return;
+    }
+
+    const newBudget = getUpdatedBudget(budget, oldPath, newPath, newObj);
+
+    if (personChanged === "Em") {
+      setEmilyBudget(newBudget);
+    } else {
+      setBrianBudget(newBudget);
+    }
+
+    updateBudget(docRef, oldPath, newPath, newObj);
+    const newRows =
+      personChanged === "Em"
+        ? await getRows(getCombinedBudgets(newBudget, brianBudget))
+        : await getRows(getCombinedBudgets(emilyBudget, newBudget));
+    return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
+  };
+
+  const handleDeleteRow = async (rowToDelete: BudgetItemRow) => {
+    const { category, name } = rowToDelete;
+
+    const path = [category, name];
+
+    if (!brianDocRef || !emilyDocRef) {
+      console.error("Document references are null.");
+      return;
+    }
+
+    const newEmilyBudget: Budget = R.dissocPath(path, emilyBudget);
+    const newBrianBudget: Budget = R.dissocPath(path, brianBudget);
+    setEmilyBudget(newEmilyBudget);
+    setBrianBudget(newBrianBudget);
+    await deleteBudgetItem(emilyDocRef, path);
+    await deleteBudgetItem(brianDocRef, path);
+  };
+
+  const handleAddRow = async (
+    category: string,
+    name: string,
+    brianItem: object,
+    emilyItem: object
+  ) => {
+    const newPath = [category, name];
+
+    if (brianDocRef) {
+      const newBrianBudget = getUpdatedBudget(
+        brianBudget,
+        [],
+        newPath,
+        brianItem
+      );
+      setBrianBudget(newBrianBudget);
+      await updateBudget(brianDocRef, [], newPath, brianItem);
+    }
+
+    if (emilyDocRef) {
+      const newEmilyBudget = getUpdatedBudget(
+        emilyBudget,
+        [],
+        newPath,
+        emilyItem
+      );
+      setEmilyBudget(newEmilyBudget);
+      await updateBudget(emilyDocRef, [], newPath, emilyItem);
+    }
+
+    closeAddRowDialog();
+  };
+
+  const handleEditBudgetMetadata = (newMetadata: CombinedMetadata) => {
+    const newEmilyMetadata = newMetadata.emily;
+    const newBrianMetadata = newMetadata.brian;
+
+    if (
+      emilyDocRef &&
+      !R.equals(newEmilyMetadata, emilyBudget.metadata || {})
+    ) {
+      setEmilyBudget((prev) => ({
+        ...prev,
+        metadata: newEmilyMetadata,
+      }));
+      updateBudget(emilyDocRef, ["metadata"], ["metadata"], newEmilyMetadata);
+    }
+
+    if (
+      brianDocRef &&
+      !R.equals(newBrianMetadata, brianBudget.metadata || {})
+    ) {
+      setBrianBudget((prev) => ({
+        ...prev,
+        metadata: newBrianMetadata,
+      }));
+      updateBudget(brianDocRef, ["metadata"], ["metadata"], newBrianMetadata);
+    }
+
+    closeEditBudgetDialog();
+  };
+
+  const deleteColumn = {
+    field: "delete",
+    headerName: "",
+    sortable: false,
+    width: 50,
+    renderCell: (params) =>
+      isDataRow(params.row.status) && (
+        <Button
+          onClick={() => handleDeleteRow(params.row)}
+          sx={{ minWidth: 0, padding: 0 }}
+        >
+          <Delete />
+        </Button>
+      ),
+  };
+
+  return (
+    <Stack
+      sx={{
+        alignItems: "center",
+        height: "100%",
+        width: "100%",
+        padding: 2,
+      }}
+    >
+      <Stack
+        sx={{
+          width: 1200,
+          gap: 1,
+        }}
+      >
+        <Stack
+          sx={{
+            flexDirection: "row-reverse",
+            gap: 1,
+          }}
+        >
+          <Button
+            variant="contained"
+            startIcon={<Refresh />}
+            onClick={fetchBudgets}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={openAddRowDialog}
+          >
+            Add
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Edit />}
+            onClick={() => openEditBudgetDialog()}
+          >
+            Edit
+          </Button>
+        </Stack>
+        <StyledDataGrid
+          rows={rows}
+          columns={[...columns, deleteColumn]}
+          loading={loading}
+          rowHeight={30}
+          getRowClassName={(params) =>
+            isSumOfSumRow(params.row.status)
+              ? "sumOfSum"
+              : isSumRow(params.row.status)
+              ? "sum"
+              : ""
+          }
+          isCellEditable={(params) => isDataRow(params.row.status)}
+          processRowUpdate={handleRowUpdate}
+          disableRowSelectionOnClick
+          hideFooter
+          disableColumnMenu
+          disableColumnSorting
+          disableColumnResize
+        />
+      </Stack>
+
+      <AddBudgetRowDialog
+        open={isAddRowDialogOpen}
+        onClose={closeAddRowDialog}
+        onSubmit={handleAddRow}
+      />
+
+      <EditBudgetDialog
+        open={isEditBudgetDialogopen}
+        onClose={closeEditBudgetDialog}
+        onSubmit={handleEditBudgetMetadata}
+        emilyBudget={emilyBudget}
+        brianBudget={brianBudget}
+      />
+    </Stack>
+  );
 }

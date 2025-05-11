@@ -132,7 +132,6 @@ function AutoPlayIndicator(props: {
 
 function ProgressSlider(props: {
   currentPicIndex: number;
-  // eslint-disable-next-line no-unused-vars
   onChange: (event: Event, value: number | number[]) => void;
 }) {
   const progress = (props.currentPicIndex / (pictures.length - 1)) * 100;
