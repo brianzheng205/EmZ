@@ -94,19 +94,13 @@ export default function Valentines() {
       </Typography>
       <Box display="flex" gap={2}>
         {onVictoryScreen ? (
-          <Button
-            onClick={restartClick}
-            variant="contained"
-            color="primary"
-            sx={{ width: 128 }}
-          >
+          <Button onClick={restartClick} color="primary" sx={{ width: 128 }}>
             Restart
           </Button>
         ) : (
           <>
             <Button
               onClick={noVisible ? () => changePrompt("No") : () => {}}
-              variant="contained"
               color="error"
               sx={{
                 width: 80,
@@ -120,7 +114,6 @@ export default function Valentines() {
             </Button>
             <Button
               onClick={() => changePrompt("Yes")}
-              variant="contained"
               color="primary"
               sx={{ width: 80 }}
             >
