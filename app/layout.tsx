@@ -1,8 +1,18 @@
+import { Metadata } from "next";
+
 import ThemeProviderWrapper from "@/components/layout/ThemeProviderWrapper";
 
 interface RootLayoutProps {
   children: React.ReactNode;
 }
+
+export const metadata: Metadata = {
+  title: { default: "EmZ", template: "%s | EmZ" },
+  description: "an app consolidating all EmZ services",
+  icons: {
+    icon: "/favicon.png",
+  },
+};
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (

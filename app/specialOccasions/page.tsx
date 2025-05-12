@@ -2,6 +2,11 @@ import { FiCalendar } from "react-icons/fi";
 
 import RoutePage, { Route } from "../components/pages/RoutePage";
 
+export const generateMetadata = () => ({
+  title: "Special Occasions",
+  description: "Page to display notes and gifts for special occasions",
+});
+
 const ROUTES: Route[] = [
   {
     route: "/specialOccasions/2025",
