@@ -4,6 +4,11 @@ import { IoRose } from "react-icons/io5";
 import RoutePage from "../../components/pages/RoutePage";
 import { Route } from "../../components/pages/RoutePage";
 
+export const generateMetadata = () => ({
+  title: "2024 Special Occasions",
+  description: "Page for 2024 special occasions",
+});
+
 const ROUTES: Route[] = [
   {
     route: "/specialOccasions/2024/anniversary",

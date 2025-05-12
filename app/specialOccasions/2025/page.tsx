@@ -3,6 +3,11 @@ import { FiHeart, FiGift } from "react-icons/fi";
 
 import RoutePage, { Route } from "@/components/pages/RoutePage";
 
+export const generateMetadata = () => ({
+  title: "2025 Special Occasions",
+  description: "Page for 2025 special occasions",
+});
+
 const ROUTES: Route[] = [
   {
     route: "/specialOccasions/2025/valentines",

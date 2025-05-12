@@ -3,6 +3,11 @@ import Box from "@mui/material/Box";
 import VideoPage from "@/components/pages/VideoPage";
 import ShadowedText from "@/components/ShadowedText";
 
+export const generateMetadata = () => ({
+  title: "2024 Anniversary",
+  description: "Page for 2024 anniversary",
+});
+
 export default function Anniversary() {
   return (
     <VideoPage
