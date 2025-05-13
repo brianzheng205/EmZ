@@ -32,9 +32,12 @@ export const updateBudget = async (
 ) => {
   const newPathStr = pathToString(newPath);
   const oldPathStr = pathToString(oldPath);
-  const updates = {
-    [newPathStr]: object,
-  };
+  const updates =
+    newPathStr === ""
+      ? object
+      : {
+          [newPathStr]: object,
+        };
 
   if (oldPathStr !== newPathStr && oldPathStr !== "")
     updates[oldPathStr] = deleteField();

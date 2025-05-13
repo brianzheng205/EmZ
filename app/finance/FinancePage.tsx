@@ -139,11 +139,11 @@ export default function FinancePage() {
     }
 
     if (colChanged === "name") {
-      const oldPath = [category, oldName];
-      const newPath = [category, newName];
+      const oldPath = ["categories", category, oldName];
+      const newPath = ["categories", category, newName];
       const existingNames: string[] = R.union(
-        R.keys(R.propOr({}, category, emilyBudget) as object),
-        R.keys(R.propOr({}, category, brianBudget) as object)
+        R.keys(R.pathOr({}, ["categories", category], emilyBudget) as object),
+        R.keys(R.pathOr({}, ["categories", category], brianBudget) as object)
       );
 
       if (existingNames.includes(newName)) {
@@ -184,7 +184,7 @@ export default function FinancePage() {
       await updateBudget(brianDocRef, oldPath, newPath, brianNewObj);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     } else if (colChanged === "isRecurring") {
-      const path = [category, oldName];
+      const path = ["categories", category, oldName];
 
       const emilyNewObj = {
         ...(R.path(path, emilyBudget) as object),
@@ -223,8 +223,8 @@ export default function FinancePage() {
     }
 
     const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
-    const oldPath = [category, newName];
-    const newPath = [category, newName];
+    const oldPath = ["categories", category, newName];
+    const newPath = ["categories", category, newName];
     const newObj = {
       amount: rawNewRow[colChanged],
       time: getChangedCellTime(colChanged),
@@ -257,7 +257,7 @@ export default function FinancePage() {
   const handleDeleteRow = async (rowToDelete: BudgetItemRow) => {
     const { category, name } = rowToDelete;
 
-    const path = [category, name];
+    const path = ["categories", category, name];
 
     if (!brianDocRef || !emilyDocRef) {
       console.error("Document references are null.");
@@ -278,57 +278,58 @@ export default function FinancePage() {
     brianItem: object,
     emilyItem: object
   ) => {
-    const newPath = [category, name];
+    const newPath = ["categories", category, name];
 
-    if (brianDocRef) {
-      const newBrianBudget = getUpdatedBudget(
-        brianBudget,
-        [],
-        newPath,
-        brianItem
-      );
-      setBrianBudget(newBrianBudget);
-      await updateBudget(brianDocRef, [], newPath, brianItem);
+    if (!brianDocRef || !emilyDocRef) {
+      console.error("Document references are null.");
+      return;
     }
 
-    if (emilyDocRef) {
-      const newEmilyBudget = getUpdatedBudget(
-        emilyBudget,
-        [],
-        newPath,
-        emilyItem
-      );
-      setEmilyBudget(newEmilyBudget);
-      await updateBudget(emilyDocRef, [], newPath, emilyItem);
-    }
+    const newEmilyBudget = getUpdatedBudget(
+      emilyBudget,
+      [],
+      newPath,
+      emilyItem
+    );
+    const newBrianBudget = getUpdatedBudget(
+      brianBudget,
+      [],
+      newPath,
+      brianItem
+    );
+
+    setEmilyBudget(newEmilyBudget);
+    setBrianBudget(newBrianBudget);
+
+    await updateBudget(emilyDocRef, [], newPath, emilyItem);
+    await updateBudget(brianDocRef, [], newPath, brianItem);
 
     closeAddRowDialog();
   };
 
   const handleEditBudgetMetadata = (newMetadata: CombinedMetadata) => {
-    const newEmilyMetadata = newMetadata.emily;
-    const newBrianMetadata = newMetadata.brian;
-
-    if (
-      emilyDocRef &&
-      !R.equals(newEmilyMetadata, emilyBudget.metadata || {})
-    ) {
-      setEmilyBudget((prev) => ({
-        ...prev,
-        metadata: newEmilyMetadata,
-      }));
-      updateBudget(emilyDocRef, ["metadata"], ["metadata"], newEmilyMetadata);
+    if (!emilyDocRef || !brianDocRef) {
+      console.error("Document references are null.");
+      return;
     }
 
-    if (
-      brianDocRef &&
-      !R.equals(newBrianMetadata, brianBudget.metadata || {})
-    ) {
+    const newEmilyMetadata = newMetadata.emilyMetadata;
+    const newBrianMetadata = newMetadata.brianMetadata;
+
+    if (!R.equals(newEmilyMetadata, R.dissoc("categories", emilyBudget))) {
+      setEmilyBudget((prev) => ({
+        ...prev,
+        ...newEmilyMetadata,
+      }));
+      updateBudget(emilyDocRef, [], [], newEmilyMetadata);
+    }
+
+    if (!R.equals(newBrianMetadata, R.dissoc("categories", brianBudget))) {
       setBrianBudget((prev) => ({
         ...prev,
-        metadata: newBrianMetadata,
+        ...newBrianMetadata,
       }));
-      updateBudget(brianDocRef, ["metadata"], ["metadata"], newBrianMetadata);
+      updateBudget(brianDocRef, [], [], newBrianMetadata);
     }
 
     closeEditBudgetDialog();

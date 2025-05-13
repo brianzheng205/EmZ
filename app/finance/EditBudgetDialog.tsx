@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import * as R from "ramda";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import { Budget, Metadata, CombinedMetadata } from "./utils";
 
@@ -70,25 +70,22 @@ export default function EditBudgetDialog({
   emilyBudget,
   brianBudget,
 }: EditBudgetDialogProps) {
-  const [metadata, setMetadata] = useState<CombinedMetadata>({
-    brian: {
-      numMonths: brianBudget.metadata?.numMonths || 12,
-    },
-    emily: {
-      numMonths: emilyBudget.metadata?.numMonths || 12,
-    },
-  });
+  const getUpdatedMetadata = useCallback(
+    () =>
+      ({
+        emilyMetadata: R.dissoc("categories", emilyBudget),
+        brianMetadata: R.dissoc("categories", brianBudget),
+      } as CombinedMetadata),
+    [emilyBudget, brianBudget]
+  );
+
+  const [metadata, setMetadata] = useState<CombinedMetadata>(
+    getUpdatedMetadata()
+  );
 
   useEffect(() => {
-    setMetadata({
-      brian: {
-        numMonths: brianBudget.metadata?.numMonths || 12,
-      },
-      emily: {
-        numMonths: emilyBudget.metadata?.numMonths || 12,
-      },
-    });
-  }, [brianBudget, emilyBudget]);
+    setMetadata(getUpdatedMetadata());
+  }, [getUpdatedMetadata]);
 
   const handleSubmit = () => {
     if (areAllMetadataValid(metadata)) {
@@ -99,14 +96,14 @@ export default function EditBudgetDialog({
   const setEmilyMetadata = (newMetadata: Metadata) => {
     setMetadata((prev) => ({
       ...prev,
-      emily: newMetadata,
+      emilyMetadata: newMetadata,
     }));
   };
 
   const setBrianMetadata = (newMetadata: Metadata) => {
     setMetadata((prev) => ({
       ...prev,
-      brian: newMetadata,
+      brianMetadata: newMetadata,
     }));
   };
 
@@ -116,12 +113,12 @@ export default function EditBudgetDialog({
       <DialogContent sx={{ minHeight: 120, width: 500 }}>
         <Stack sx={{ flexDirection: "row", justifyContent: "center", gap: 2 }}>
           <EditBudgetMetadata
-            metadata={metadata.emily}
+            metadata={metadata.emilyMetadata}
             setMetadata={setEmilyMetadata}
             personName="Emily"
           />
           <EditBudgetMetadata
-            metadata={metadata.brian}
+            metadata={metadata.brianMetadata}
             setMetadata={setBrianMetadata}
             personName="Brian"
           />
