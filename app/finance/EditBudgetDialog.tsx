@@ -13,31 +13,56 @@ import React, { useState, useEffect, useCallback } from "react";
 
 import { Budget, Metadata, CombinedMetadata } from "./utils";
 
+const isNameInvalid = (name: string) => name.trim() === "";
+
 const isNumMonthsInvalid = (numMonths: number) =>
   numMonths <= 0 || numMonths > 12;
 
-const areAllMetadataValid = (metadata: CombinedMetadata) =>
-  !R.any((input) => isNumMonthsInvalid(input.numMonths), R.values(metadata));
+const isMetadataInvalid = (metadata: Metadata) =>
+  isNumMonthsInvalid(metadata.numMonths) || isNameInvalid(metadata.name);
+
+const isCombinedMetadataValid = (metadata: CombinedMetadata) =>
+  !R.any(isMetadataInvalid, R.values(metadata));
 
 interface EditBudgetMetadataProps {
   metadata: Metadata;
   setMetadata: (metadata: Metadata) => void;
-  personName: string;
+  oldBudgetName: string;
 }
 
 function EditBudgetMetadata({
   metadata,
   setMetadata,
-  personName,
+  oldBudgetName,
 }: EditBudgetMetadataProps) {
-  const onNumMonthsChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setMetadata({ ...metadata, numMonths: Number(e.target.value) });
-
   const numMonthsInvalid = isNumMonthsInvalid(metadata.numMonths);
 
   return (
-    <Stack sx={{ flex: 1 }}>
-      <Typography variant="h6">{`${personName}'s Budget`}</Typography>
+    <Stack
+      sx={{
+        width: 200,
+      }}
+    >
+      <Typography
+        noWrap
+        variant="h6"
+        sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {oldBudgetName}
+      </Typography>
+      <TextField
+        autoFocus
+        margin="dense"
+        label="Budget Name"
+        type="text"
+        fullWidth
+        value={metadata.name}
+        onChange={(e) => setMetadata({ ...metadata, name: e.target.value })}
+      />
       <TextField
         autoFocus
         margin="dense"
@@ -45,7 +70,9 @@ function EditBudgetMetadata({
         type="number"
         fullWidth
         value={metadata.numMonths}
-        onChange={onNumMonthsChange}
+        onChange={(e) =>
+          setMetadata({ ...metadata, numMonths: Number(e.target.value) })
+        }
         error={numMonthsInvalid}
         helperText={
           numMonthsInvalid ? "Must be between 0 and 12 but not 0" : ""
@@ -85,10 +112,10 @@ export default function EditBudgetDialog({
 
   useEffect(() => {
     setMetadata(getUpdatedMetadata());
-  }, [getUpdatedMetadata]);
+  }, [getUpdatedMetadata, open]);
 
   const handleSubmit = () => {
-    if (areAllMetadataValid(metadata)) {
+    if (isCombinedMetadataValid(metadata)) {
       onSubmit(metadata);
     }
   };
@@ -110,17 +137,31 @@ export default function EditBudgetDialog({
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Edit Budget</DialogTitle>
-      <DialogContent sx={{ minHeight: 120, width: 500 }}>
-        <Stack sx={{ flexDirection: "row", justifyContent: "center", gap: 2 }}>
+      <DialogContent
+        sx={{
+          minHeight: 120,
+          width: 500,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Stack
+          sx={{
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 2,
+          }}
+        >
           <EditBudgetMetadata
             metadata={metadata.emilyMetadata}
             setMetadata={setEmilyMetadata}
-            personName="Emily"
+            oldBudgetName={emilyBudget.name}
           />
           <EditBudgetMetadata
             metadata={metadata.brianMetadata}
             setMetadata={setBrianMetadata}
-            personName="Brian"
+            oldBudgetName={brianBudget.name}
           />
         </Stack>
       </DialogContent>
@@ -130,7 +171,7 @@ export default function EditBudgetDialog({
         </Button>
         <Button
           onClick={handleSubmit}
-          disabled={!areAllMetadataValid(metadata)}
+          disabled={!isCombinedMetadataValid(metadata)}
         >
           Save
         </Button>

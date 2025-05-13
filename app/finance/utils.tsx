@@ -9,10 +9,11 @@ import * as R from "ramda";
 import { capitalizeFirstLetter } from "@/utils";
 
 // TYPES
+export type Time = "month" | "year";
 
 type BudgetItem = {
   amount: number;
-  time: "month" | "year";
+  time: Time;
   isRecurring?: boolean;
 };
 
@@ -21,6 +22,7 @@ type CategoryItems = {
 };
 
 export type Metadata = {
+  name: string;
   numMonths: number;
 };
 
@@ -55,6 +57,8 @@ type CombinedBudget = CombinedMetadata & {
     savings: CombinedCategoryItems;
   };
 };
+
+export type Category = keyof CombinedBudget["categories"];
 
 type BudgetItemRowWithoutDividers = {
   id: string;
