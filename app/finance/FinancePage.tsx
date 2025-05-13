@@ -1,7 +1,7 @@
 "use client";
 
 import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
-import { Button, Stack, Container } from "@mui/material";
+import { Button, Stack, Container, CircularProgress } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
 import { DocumentReference } from "firebase/firestore";
@@ -68,8 +68,8 @@ export default function FinancePage() {
   const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
     null
   );
-  const [emilyBudget, setEmilyBudget] = useState<Budget>({} as Budget);
-  const [brianBudget, setBrianBudget] = useState<Budget>({} as Budget);
+  const [emilyBudget, setEmilyBudget] = useState<Budget | null>(null);
+  const [brianBudget, setBrianBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const {
     isDialogOpen: isAddRowDialogOpen,
@@ -85,11 +85,15 @@ export default function FinancePage() {
   const [rows, setRows] = useState<GridRowsProp>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const updateRows = async () => {
+      if (!emilyBudget || !brianBudget) {
+        return;
+      }
+
       setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
     };
 
-    fetchData();
+    updateRows();
   }, [emilyBudget, brianBudget]);
 
   useEffect(() => {
@@ -126,6 +130,11 @@ export default function FinancePage() {
     rawNewRow: BudgetItemRow,
     oldRow: BudgetItemRow
   ) => {
+    if (!emilyBudget || !brianBudget) {
+      console.error("Budgets are not loaded.");
+      return oldRow;
+    }
+
     const { category, name: newName } = rawNewRow;
     const { name: oldName } = oldRow;
 
@@ -278,6 +287,11 @@ export default function FinancePage() {
     brianItem: object,
     emilyItem: object
   ) => {
+    if (!emilyBudget || !brianBudget) {
+      console.error("Budgets are not loaded.");
+      return;
+    }
+
     const newPath = ["categories", category, name];
 
     if (!brianDocRef || !emilyDocRef) {
@@ -313,22 +327,35 @@ export default function FinancePage() {
       return;
     }
 
+    if (!emilyBudget || !brianBudget) {
+      console.error("Budgets are not loaded.");
+      return;
+    }
+
     const newEmilyMetadata = newMetadata.emilyMetadata;
     const newBrianMetadata = newMetadata.brianMetadata;
 
     if (!R.equals(newEmilyMetadata, R.dissoc("categories", emilyBudget))) {
-      setEmilyBudget((prev) => ({
-        ...prev,
-        ...newEmilyMetadata,
-      }));
+      setEmilyBudget((prev) =>
+        R.isNotNil(prev)
+          ? {
+              ...prev,
+              ...newEmilyMetadata,
+            }
+          : null
+      );
       updateBudget(emilyDocRef, [], [], newEmilyMetadata);
     }
 
     if (!R.equals(newBrianMetadata, R.dissoc("categories", brianBudget))) {
-      setBrianBudget((prev) => ({
-        ...prev,
-        ...newBrianMetadata,
-      }));
+      setBrianBudget((prev) =>
+        R.isNotNil(prev)
+          ? {
+              ...prev,
+              ...newBrianMetadata,
+            }
+          : null
+      );
       updateBudget(brianDocRef, [], [], newBrianMetadata);
     }
 
@@ -351,6 +378,21 @@ export default function FinancePage() {
         </Button>
       ),
   };
+
+  if (!emilyBudget || !brianBudget) {
+    return (
+      <Container
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container>
