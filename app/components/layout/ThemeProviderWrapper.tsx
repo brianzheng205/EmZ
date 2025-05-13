@@ -90,12 +90,23 @@ export default function ThemeProviderWrapper({
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Header setIsSidebarOpen={setIsSidebarOpen} />
-      <Stack direction="row" spacing={0}>
+      <Stack
+        sx={{
+          height: "100vh",
+        }}
+      >
+        <Header setIsSidebarOpen={setIsSidebarOpen} />
         <Drawer open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
           <SideBar setIsSidebarOpen={setIsSidebarOpen} />
         </Drawer>
-        <Box sx={{ flex: 1, overflowY: "auto" }}>{children}</Box>
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+          }}
+        >
+          {children}
+        </Box>
       </Stack>
     </ThemeProvider>
   );
