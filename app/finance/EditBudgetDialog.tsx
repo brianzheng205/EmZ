@@ -85,7 +85,7 @@ function EditBudgetMetadata({
 interface EditBudgetDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (newMetadata: CombinedMetadata) => void;
+  onSubmit: (newMetadata: CombinedMetadata) => Promise<void>;
   emilyBudget: Budget;
   brianBudget: Budget;
 }

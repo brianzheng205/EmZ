@@ -24,6 +24,7 @@ type CategoryItems = {
 export type Metadata = {
   name: string;
   numMonths: number;
+  user: string;
 };
 
 export type Budget = Metadata & {
@@ -33,6 +34,10 @@ export type Budget = Metadata & {
     expenses: CategoryItems;
     savings: CategoryItems;
   };
+};
+
+export type BudgetWithId = Budget & {
+  id: string;
 };
 
 type CombinedBudgetItem = {

@@ -1,25 +1,35 @@
 "use client";
 
 import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
-import { Button, Stack, Container, CircularProgress } from "@mui/material";
+import {
+  Button,
+  Stack,
+  Container,
+  CircularProgress,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import { DocumentReference } from "firebase/firestore";
+import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 import useDialog from "@/hooks/useDialog";
+import db from "@firebase";
 
 import AddBudgetRowDialog from "./AddBudgetRowDialog";
 import EditBudgetDialog from "./EditBudgetDialog";
 import {
   deleteBudgetItem,
   fetchActiveBudgets,
+  fetchAllBudgets,
   fetchBudget,
   updateBudget,
 } from "./firebaseUtils";
 import {
   Budget,
+  BudgetWithId,
   BudgetItemRow,
   CombinedMetadata,
   getCombinedBudgets,
@@ -32,6 +42,32 @@ import {
   isSumRow,
   isDataRow,
 } from "./utils";
+
+interface BudgetSelectorProps {
+  docRef: DocumentReference | null;
+  setDocRef: React.Dispatch<React.SetStateAction<DocumentReference | null>>;
+  budgets: BudgetWithId[];
+}
+
+function BudgetSelector({ docRef, setDocRef, budgets }: BudgetSelectorProps) {
+  return (
+    <Select
+      sx={{
+        width: 200,
+      }}
+      value={docRef?.id || ""}
+      onChange={(e) => setDocRef(doc(db, e.target.value))}
+      displayEmpty
+      margin="dense"
+    >
+      {budgets.map((budget) => (
+        <MenuItem key={budget.id} value={budget.id}>
+          {budget.name}
+        </MenuItem>
+      ))}
+    </Select>
+  );
+}
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .sumOfSum": {
@@ -62,6 +98,13 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
 }));
 
 export default function FinancePage() {
+  const [budgets, setBudgets] = useState<{
+    emily: BudgetWithId[];
+    brian: BudgetWithId[];
+  }>({
+    emily: [],
+    brian: [],
+  });
   const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
     null
   );
@@ -70,7 +113,7 @@ export default function FinancePage() {
   );
   const [emilyBudget, setEmilyBudget] = useState<Budget | null>(null);
   const [brianBudget, setBrianBudget] = useState<Budget | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const {
     isDialogOpen: isAddRowDialogOpen,
     openDialog: openAddRowDialog,
@@ -82,26 +125,20 @@ export default function FinancePage() {
     closeDialog: closeEditBudgetDialog,
   } = useDialog();
 
-  const [rows, setRows] = useState<GridRowsProp>([]);
-
-  useEffect(() => {
-    const updateRows = async () => {
-      if (!emilyBudget || !brianBudget) {
+  const fetchAndSetBudgets = useCallback(async () => {
+    fetchAllBudgets().then((newBudgets) => {
+      if (!newBudgets) {
+        setLoading(false);
         return;
       }
+      setBudgets(newBudgets);
+    });
+  }, [setBudgets, setLoading]);
 
-      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
-    };
-
-    updateRows();
-  }, [emilyBudget, brianBudget]);
-
-  useEffect(() => {
-    fetchBudgets();
-  }, []);
-
-  const fetchBudgets = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
+
+    await fetchAndSetBudgets();
 
     fetchActiveBudgets().then(async (document) => {
       if (!document) {
@@ -124,7 +161,32 @@ export default function FinancePage() {
       setBrianBudget(brianB);
       setLoading(false);
     });
-  };
+  }, [
+    fetchAndSetBudgets,
+    setLoading,
+    setEmilyDocRef,
+    setBrianDocRef,
+    setEmilyBudget,
+    setBrianBudget,
+  ]);
+
+  const [rows, setRows] = useState<GridRowsProp>([]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const updateRows = async () => {
+      if (!emilyBudget || !brianBudget) {
+        return;
+      }
+
+      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
+    };
+
+    updateRows();
+  }, [emilyBudget, brianBudget]);
 
   const handleRowUpdate = async (
     rawNewRow: BudgetItemRow,
@@ -321,7 +383,7 @@ export default function FinancePage() {
     closeAddRowDialog();
   };
 
-  const handleEditBudgetMetadata = (newMetadata: CombinedMetadata) => {
+  const handleEditBudgetMetadata = async (newMetadata: CombinedMetadata) => {
     if (!emilyDocRef || !brianDocRef) {
       console.error("Document references are null.");
       return;
@@ -360,6 +422,9 @@ export default function FinancePage() {
     }
 
     closeEditBudgetDialog();
+    setLoading(true);
+    await fetchAndSetBudgets();
+    setLoading(false);
   };
 
   const deleteColumn = {
@@ -403,19 +468,46 @@ export default function FinancePage() {
       >
         <Stack
           sx={{
-            flexDirection: "row-reverse",
-            gap: 1,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "100%",
+            height: 40,
           }}
         >
-          <Button startIcon={<Refresh />} onClick={fetchBudgets}>
-            Refresh
-          </Button>
-          <Button startIcon={<Add />} onClick={openAddRowDialog}>
-            Add
-          </Button>
-          <Button startIcon={<Edit />} onClick={() => openEditBudgetDialog()}>
-            Edit
-          </Button>
+          <Stack
+            sx={{
+              flexDirection: "row",
+              gap: 1,
+            }}
+          >
+            <BudgetSelector
+              docRef={emilyDocRef}
+              setDocRef={setEmilyDocRef}
+              budgets={budgets.emily}
+            />
+            <BudgetSelector
+              docRef={brianDocRef}
+              setDocRef={setBrianDocRef}
+              budgets={budgets.brian}
+            />
+          </Stack>
+
+          <Stack
+            sx={{
+              flexDirection: "row-reverse",
+              gap: 1,
+            }}
+          >
+            <Button startIcon={<Refresh />} onClick={fetchData}>
+              Refresh
+            </Button>
+            <Button startIcon={<Add />} onClick={openAddRowDialog}>
+              Add
+            </Button>
+            <Button startIcon={<Edit />} onClick={openEditBudgetDialog}>
+              Edit
+            </Button>
+          </Stack>
         </Stack>
         <StyledDataGrid
           sx={{ width: "100%" }}
