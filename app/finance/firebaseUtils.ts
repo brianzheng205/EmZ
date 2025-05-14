@@ -1,8 +1,34 @@
 import { DocumentReference, updateDoc, deleteField } from "firebase/firestore";
 
-import { fetchData, fetchDocument } from "@/utils";
+import { fetchData, fetchDocument, fetchDocumentIds } from "@/utils";
+
+import { BudgetWithId } from "./utils";
 
 const pathToString = (path: string[]) => path.join(".");
+
+export const fetchAllBudgets = async () => {
+  try {
+    const budgets = (await fetchDocumentIds("budgets")) as BudgetWithId[];
+    const emilyBudgets: BudgetWithId[] = [];
+    const brianBudgets: BudgetWithId[] = [];
+
+    budgets.forEach((budget) => {
+      if (budget.user === "emily") {
+        emilyBudgets.push(budget);
+      } else if (budget.user === "brian") {
+        brianBudgets.push(budget);
+      }
+    });
+
+    return {
+      emily: emilyBudgets,
+      brian: brianBudgets,
+    };
+  } catch (error) {
+    console.error("Error fetching all budgets:", error);
+    return null;
+  }
+};
 
 export const fetchActiveBudgets = async () => {
   const [emilyBudget, brianBudget] = await Promise.all([
@@ -32,9 +58,12 @@ export const updateBudget = async (
 ) => {
   const newPathStr = pathToString(newPath);
   const oldPathStr = pathToString(oldPath);
-  const updates = {
-    [newPathStr]: object,
-  };
+  const updates =
+    newPathStr === ""
+      ? object
+      : {
+          [newPathStr]: object,
+        };
 
   if (oldPathStr !== newPathStr && oldPathStr !== "")
     updates[oldPathStr] = deleteField();

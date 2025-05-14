@@ -16,12 +16,14 @@ import { useState } from "react";
 
 import { capitalizeFirstLetter } from "@/utils";
 
-const CATEGORY_OPTIONS = ["gross", "deductions", "expenses", "savings"].map(
-  (option) => ({
-    value: option,
-    label: capitalizeFirstLetter(option),
-  })
-);
+import { Time, Category } from "./utils";
+
+const categories: Category[] = ["gross", "deductions", "expenses", "savings"];
+
+const CATEGORY_OPTIONS = categories.map((option) => ({
+  value: option as Category,
+  label: capitalizeFirstLetter(option),
+}));
 
 interface BudgetItemInputsProps {
   amount: number;
@@ -86,10 +88,8 @@ interface AddBudgetRowDialogProps {
   ) => void;
 }
 
-type Time = "month" | "year";
-
 const DEFAULTS = {
-  category: "gross",
+  category: "expenses" as Category,
   name: "",
   amount: 0,
   time: "year" as Time,
@@ -100,7 +100,9 @@ export default function AddBudgetRowDialog({
   onClose,
   onSubmit,
 }: AddBudgetRowDialogProps) {
-  const [newRowCategory, setNewRowCategory] = useState(DEFAULTS.category);
+  const [newRowCategory, setNewRowCategory] = useState<Category>(
+    DEFAULTS.category
+  );
   const [newRowName, setNewRowName] = useState(DEFAULTS.name);
   const [brianAmount, setBrianAmount] = useState(DEFAULTS.amount);
   const [brianTime, setBrianTime] = useState(DEFAULTS.time);
@@ -108,11 +110,6 @@ export default function AddBudgetRowDialog({
   const [emilyTime, setEmilyTime] = useState(DEFAULTS.time);
 
   const handleSubmit = () => {
-    if (!newRowCategory || !newRowName) {
-      console.error("Category and Name are required.");
-      return;
-    }
-
     const brianItem = { amount: brianAmount, time: brianTime };
     const emilyItem = { amount: emilyAmount, time: emilyTime };
     onSubmit(newRowCategory, newRowName, brianItem, emilyItem);
@@ -129,6 +126,11 @@ export default function AddBudgetRowDialog({
     onClose();
   };
 
+  const areSomeInputsInvalid =
+    newRowName.trim() === "" ||
+    newRowCategory.trim() === "" ||
+    (brianAmount <= 0 && emilyAmount <= 0);
+
   const id = "category-select";
   const labelId = `${id}-label`;
 
@@ -144,7 +146,7 @@ export default function AddBudgetRowDialog({
               id={id}
               value={newRowCategory}
               label="Category"
-              onChange={(e) => setNewRowCategory(e.target.value)}
+              onChange={(e) => setNewRowCategory(e.target.value as Category)}
             >
               {CATEGORY_OPTIONS.map(({ value, label }) => (
                 <MenuItem key={value} value={value}>
@@ -180,7 +182,9 @@ export default function AddBudgetRowDialog({
         <Button onClick={handleClose} color="error">
           Cancel
         </Button>
-        <Button onClick={handleSubmit}>Add</Button>
+        <Button onClick={handleSubmit} disabled={areSomeInputsInvalid}>
+          Add
+        </Button>
       </DialogActions>
     </Dialog>
   );

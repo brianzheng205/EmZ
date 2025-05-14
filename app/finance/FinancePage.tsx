@@ -1,25 +1,35 @@
 "use client";
 
 import { Delete, Edit, Refresh, Add } from "@mui/icons-material";
-import { Button, Stack, Container } from "@mui/material";
+import {
+  Button,
+  Stack,
+  Container,
+  CircularProgress,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import { DocumentReference } from "firebase/firestore";
+import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 import useDialog from "@/hooks/useDialog";
+import db from "@firebase";
 
 import AddBudgetRowDialog from "./AddBudgetRowDialog";
 import EditBudgetDialog from "./EditBudgetDialog";
 import {
   deleteBudgetItem,
   fetchActiveBudgets,
+  fetchAllBudgets,
   fetchBudget,
   updateBudget,
 } from "./firebaseUtils";
 import {
   Budget,
+  BudgetWithId,
   BudgetItemRow,
   CombinedMetadata,
   getCombinedBudgets,
@@ -32,6 +42,32 @@ import {
   isSumRow,
   isDataRow,
 } from "./utils";
+
+interface BudgetSelectorProps {
+  docRef: DocumentReference | null;
+  setDocRef: React.Dispatch<React.SetStateAction<DocumentReference | null>>;
+  budgets: BudgetWithId[];
+}
+
+function BudgetSelector({ docRef, setDocRef, budgets }: BudgetSelectorProps) {
+  return (
+    <Select
+      sx={{
+        width: 200,
+      }}
+      value={docRef?.id || ""}
+      onChange={(e) => setDocRef(doc(db, e.target.value))}
+      displayEmpty
+      margin="dense"
+    >
+      {budgets.map((budget) => (
+        <MenuItem key={budget.id} value={budget.id}>
+          {budget.name}
+        </MenuItem>
+      ))}
+    </Select>
+  );
+}
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .sumOfSum": {
@@ -62,15 +98,22 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
 }));
 
 export default function FinancePage() {
+  const [budgets, setBudgets] = useState<{
+    emily: BudgetWithId[];
+    brian: BudgetWithId[];
+  }>({
+    emily: [],
+    brian: [],
+  });
   const [emilyDocRef, setEmilyDocRef] = useState<DocumentReference | null>(
     null
   );
   const [brianDocRef, setBrianDocRef] = useState<DocumentReference | null>(
     null
   );
-  const [emilyBudget, setEmilyBudget] = useState<Budget>({} as Budget);
-  const [brianBudget, setBrianBudget] = useState<Budget>({} as Budget);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [emilyBudget, setEmilyBudget] = useState<Budget | null>(null);
+  const [brianBudget, setBrianBudget] = useState<Budget | null>(null);
+  const [loading, setLoading] = useState(true);
   const {
     isDialogOpen: isAddRowDialogOpen,
     openDialog: openAddRowDialog,
@@ -82,22 +125,20 @@ export default function FinancePage() {
     closeDialog: closeEditBudgetDialog,
   } = useDialog();
 
-  const [rows, setRows] = useState<GridRowsProp>([]);
+  const fetchAndSetBudgets = useCallback(async () => {
+    fetchAllBudgets().then((newBudgets) => {
+      if (!newBudgets) {
+        setLoading(false);
+        return;
+      }
+      setBudgets(newBudgets);
+    });
+  }, [setBudgets, setLoading]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
-    };
-
-    fetchData();
-  }, [emilyBudget, brianBudget]);
-
-  useEffect(() => {
-    fetchBudgets();
-  }, []);
-
-  const fetchBudgets = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
+
+    await fetchAndSetBudgets();
 
     fetchActiveBudgets().then(async (document) => {
       if (!document) {
@@ -120,12 +161,42 @@ export default function FinancePage() {
       setBrianBudget(brianB);
       setLoading(false);
     });
-  };
+  }, [
+    fetchAndSetBudgets,
+    setLoading,
+    setEmilyDocRef,
+    setBrianDocRef,
+    setEmilyBudget,
+    setBrianBudget,
+  ]);
+
+  const [rows, setRows] = useState<GridRowsProp>([]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const updateRows = async () => {
+      if (!emilyBudget || !brianBudget) {
+        return;
+      }
+
+      setRows(await getRows(getCombinedBudgets(emilyBudget, brianBudget)));
+    };
+
+    updateRows();
+  }, [emilyBudget, brianBudget]);
 
   const handleRowUpdate = async (
     rawNewRow: BudgetItemRow,
     oldRow: BudgetItemRow
   ) => {
+    if (!emilyBudget || !brianBudget) {
+      console.error("Budgets are not loaded.");
+      return oldRow;
+    }
+
     const { category, name: newName } = rawNewRow;
     const { name: oldName } = oldRow;
 
@@ -139,11 +210,11 @@ export default function FinancePage() {
     }
 
     if (colChanged === "name") {
-      const oldPath = [category, oldName];
-      const newPath = [category, newName];
+      const oldPath = ["categories", category, oldName];
+      const newPath = ["categories", category, newName];
       const existingNames: string[] = R.union(
-        R.keys(R.propOr({}, category, emilyBudget) as object),
-        R.keys(R.propOr({}, category, brianBudget) as object)
+        R.keys(R.pathOr({}, ["categories", category], emilyBudget) as object),
+        R.keys(R.pathOr({}, ["categories", category], brianBudget) as object)
       );
 
       if (existingNames.includes(newName)) {
@@ -184,7 +255,7 @@ export default function FinancePage() {
       await updateBudget(brianDocRef, oldPath, newPath, brianNewObj);
       return newRows.find((row) => row.id === rawNewRow.id) || rawNewRow;
     } else if (colChanged === "isRecurring") {
-      const path = [category, oldName];
+      const path = ["categories", category, oldName];
 
       const emilyNewObj = {
         ...(R.path(path, emilyBudget) as object),
@@ -223,8 +294,8 @@ export default function FinancePage() {
     }
 
     const personChanged = getPersonFromColumnHeader(colChanged, "Em", "Z");
-    const oldPath = [category, newName];
-    const newPath = [category, newName];
+    const oldPath = ["categories", category, newName];
+    const newPath = ["categories", category, newName];
     const newObj = {
       amount: rawNewRow[colChanged],
       time: getChangedCellTime(colChanged),
@@ -257,7 +328,7 @@ export default function FinancePage() {
   const handleDeleteRow = async (rowToDelete: BudgetItemRow) => {
     const { category, name } = rowToDelete;
 
-    const path = [category, name];
+    const path = ["categories", category, name];
 
     if (!brianDocRef || !emilyDocRef) {
       console.error("Document references are null.");
@@ -278,60 +349,82 @@ export default function FinancePage() {
     brianItem: object,
     emilyItem: object
   ) => {
-    const newPath = [category, name];
-
-    if (brianDocRef) {
-      const newBrianBudget = getUpdatedBudget(
-        brianBudget,
-        [],
-        newPath,
-        brianItem
-      );
-      setBrianBudget(newBrianBudget);
-      await updateBudget(brianDocRef, [], newPath, brianItem);
+    if (!emilyBudget || !brianBudget) {
+      console.error("Budgets are not loaded.");
+      return;
     }
 
-    if (emilyDocRef) {
-      const newEmilyBudget = getUpdatedBudget(
-        emilyBudget,
-        [],
-        newPath,
-        emilyItem
-      );
-      setEmilyBudget(newEmilyBudget);
-      await updateBudget(emilyDocRef, [], newPath, emilyItem);
+    const newPath = ["categories", category, name];
+
+    if (!brianDocRef || !emilyDocRef) {
+      console.error("Document references are null.");
+      return;
     }
+
+    const newEmilyBudget = getUpdatedBudget(
+      emilyBudget,
+      [],
+      newPath,
+      emilyItem
+    );
+    const newBrianBudget = getUpdatedBudget(
+      brianBudget,
+      [],
+      newPath,
+      brianItem
+    );
+
+    setEmilyBudget(newEmilyBudget);
+    setBrianBudget(newBrianBudget);
+
+    await updateBudget(emilyDocRef, [], newPath, emilyItem);
+    await updateBudget(brianDocRef, [], newPath, brianItem);
 
     closeAddRowDialog();
   };
 
-  const handleEditBudgetMetadata = (newMetadata: CombinedMetadata) => {
-    const newEmilyMetadata = newMetadata.emily;
-    const newBrianMetadata = newMetadata.brian;
-
-    if (
-      emilyDocRef &&
-      !R.equals(newEmilyMetadata, emilyBudget.metadata || {})
-    ) {
-      setEmilyBudget((prev) => ({
-        ...prev,
-        metadata: newEmilyMetadata,
-      }));
-      updateBudget(emilyDocRef, ["metadata"], ["metadata"], newEmilyMetadata);
+  const handleEditBudgetMetadata = async (newMetadata: CombinedMetadata) => {
+    if (!emilyDocRef || !brianDocRef) {
+      console.error("Document references are null.");
+      return;
     }
 
-    if (
-      brianDocRef &&
-      !R.equals(newBrianMetadata, brianBudget.metadata || {})
-    ) {
-      setBrianBudget((prev) => ({
-        ...prev,
-        metadata: newBrianMetadata,
-      }));
-      updateBudget(brianDocRef, ["metadata"], ["metadata"], newBrianMetadata);
+    if (!emilyBudget || !brianBudget) {
+      console.error("Budgets are not loaded.");
+      return;
+    }
+
+    const newEmilyMetadata = newMetadata.emilyMetadata;
+    const newBrianMetadata = newMetadata.brianMetadata;
+
+    if (!R.equals(newEmilyMetadata, R.dissoc("categories", emilyBudget))) {
+      setEmilyBudget((prev) =>
+        R.isNotNil(prev)
+          ? {
+              ...prev,
+              ...newEmilyMetadata,
+            }
+          : null
+      );
+      updateBudget(emilyDocRef, [], [], newEmilyMetadata);
+    }
+
+    if (!R.equals(newBrianMetadata, R.dissoc("categories", brianBudget))) {
+      setBrianBudget((prev) =>
+        R.isNotNil(prev)
+          ? {
+              ...prev,
+              ...newBrianMetadata,
+            }
+          : null
+      );
+      updateBudget(brianDocRef, [], [], newBrianMetadata);
     }
 
     closeEditBudgetDialog();
+    setLoading(true);
+    await fetchAndSetBudgets();
+    setLoading(false);
   };
 
   const deleteColumn = {
@@ -351,6 +444,21 @@ export default function FinancePage() {
       ),
   };
 
+  if (!emilyBudget || !brianBudget) {
+    return (
+      <Container
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Stack
@@ -360,19 +468,46 @@ export default function FinancePage() {
       >
         <Stack
           sx={{
-            flexDirection: "row-reverse",
-            gap: 1,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "100%",
+            height: 40,
           }}
         >
-          <Button startIcon={<Refresh />} onClick={fetchBudgets}>
-            Refresh
-          </Button>
-          <Button startIcon={<Add />} onClick={openAddRowDialog}>
-            Add
-          </Button>
-          <Button startIcon={<Edit />} onClick={() => openEditBudgetDialog()}>
-            Edit
-          </Button>
+          <Stack
+            sx={{
+              flexDirection: "row",
+              gap: 1,
+            }}
+          >
+            <BudgetSelector
+              docRef={emilyDocRef}
+              setDocRef={setEmilyDocRef}
+              budgets={budgets.emily}
+            />
+            <BudgetSelector
+              docRef={brianDocRef}
+              setDocRef={setBrianDocRef}
+              budgets={budgets.brian}
+            />
+          </Stack>
+
+          <Stack
+            sx={{
+              flexDirection: "row-reverse",
+              gap: 1,
+            }}
+          >
+            <Button startIcon={<Refresh />} onClick={fetchData}>
+              Refresh
+            </Button>
+            <Button startIcon={<Add />} onClick={openAddRowDialog}>
+              Add
+            </Button>
+            <Button startIcon={<Edit />} onClick={openEditBudgetDialog}>
+              Edit
+            </Button>
+          </Stack>
         </Stack>
         <StyledDataGrid
           sx={{ width: "100%" }}
