@@ -1,24 +1,33 @@
-import { DocumentReference, updateDoc, deleteField } from "firebase/firestore";
+import {
+  DocumentReference,
+  updateDoc,
+  deleteField,
+  addDoc,
+  collection,
+} from "firebase/firestore";
+import * as R from "ramda";
 
-import { fetchData, fetchDocument, fetchDocumentIds } from "@/utils";
+import { fetchData, fetchDocuments } from "@/utils";
+import db from "@firebase";
 
-import { BudgetWithId } from "./utils";
+import { Budget } from "./utils";
+import { IdToBudget } from "./utils";
 
 const pathToString = (path: string[]) => path.join(".");
 
 export const fetchAllBudgets = async () => {
   try {
-    const budgets = (await fetchDocumentIds("budgets")) as BudgetWithId[];
-    const emilyBudgets: BudgetWithId[] = [];
-    const brianBudgets: BudgetWithId[] = [];
+    const budgets = (await fetchDocuments("budgets")) as IdToBudget;
+    const emilyBudgets: IdToBudget = {};
+    const brianBudgets: IdToBudget = {};
 
-    budgets.forEach((budget) => {
+    R.forEachObjIndexed((budget, budgetId) => {
       if (budget.user === "emily") {
-        emilyBudgets.push(budget);
+        emilyBudgets[budgetId] = budget;
       } else if (budget.user === "brian") {
-        brianBudgets.push(budget);
+        brianBudgets[budgetId] = budget;
       }
-    });
+    }, budgets);
 
     return {
       emily: emilyBudgets,
@@ -47,9 +56,6 @@ export const fetchActiveBudgets = async () => {
   };
 };
 
-export const fetchBudget = async (budgetReference: DocumentReference) =>
-  await fetchDocument(budgetReference);
-
 export const updateBudget = async (
   docRef: DocumentReference,
   oldPath: string[],
@@ -68,7 +74,12 @@ export const updateBudget = async (
   if (oldPathStr !== newPathStr && oldPathStr !== "")
     updates[oldPathStr] = deleteField();
 
-  return await updateDoc(docRef, updates);
+  try {
+    return await updateDoc(docRef, updates);
+  } catch (error) {
+    console.error("Error updating budget:", error);
+    return null;
+  }
 };
 
 export const deleteBudgetItem = async (
@@ -79,4 +90,12 @@ export const deleteBudgetItem = async (
   return await updateDoc(docRef, {
     [pathStr]: deleteField(),
   });
+};
+
+export const createBudget = async (name: string, budgetToCopy: Budget) => {
+  try {
+    await addDoc(collection(db, "budgets"), { ...budgetToCopy, name });
+  } catch (error) {
+    console.error("Error creating budget:", error);
+  }
 };
