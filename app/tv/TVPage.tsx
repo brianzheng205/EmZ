@@ -1,4 +1,5 @@
 "use client";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Autocomplete,
   Box,
@@ -8,7 +9,7 @@ import {
   Chip,
   Select,
   MenuItem,
-  Button,
+  IconButton,
 } from "@mui/material";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
 import { debounce } from "lodash";
@@ -47,11 +48,18 @@ export default function TVPage() {
     value["who"] = who;
     value["watched"] = 0;
 
-    const data = await fetchDataFromTMDB(
-      `https://api.themoviedb.org/3/tv/${value.id}`
-    );
-    value["episodes"] = data.number_of_episodes;
-    value["ongoing"] = data.in_production;
+    if (value.media_type === "tv") {
+      const data = await fetchDataFromTMDB(
+        `https://api.themoviedb.org/3/tv/${value.id}`
+      );
+
+      value["episodes"] = data.number_of_episodes;
+      value["ongoing"] = data.in_production;
+    } else {
+      value["episodes"] = 1;
+      value["ongoing"] = false;
+    }
+    console.log("value", value);
     addContentToFirebase(value as EmZContent);
     fetchData();
   };
@@ -64,6 +72,7 @@ export default function TVPage() {
       const docData = doc.data();
       return {
         ...docData,
+        name: docData.media_type === "tv" ? docData.name : docData.title,
         genre: docData.genre_ids.map((id: number) => {
           return genreData[id];
         }),
@@ -176,13 +185,17 @@ export default function TVPage() {
             {
               field: "name",
               headerName: "Name",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
-            { field: "who", headerName: "Who", cellClassName: "centered-cell" },
+            {
+              field: "who",
+              headerName: "Who",
+              cellClassName: "base-cell left-aligned-cell",
+            },
             {
               field: "media_type",
               headerName: "Type",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "genre",
@@ -201,17 +214,18 @@ export default function TVPage() {
                   ))}
                 </Box>
               ),
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
             },
             {
               field: "ongoing",
               headerName: "Ongoing",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
+              type: "boolean",
             },
             {
               field: "status",
               headerName: "Status",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
               width: 130,
               renderCell: (params) => {
                 return (
@@ -230,17 +244,17 @@ export default function TVPage() {
             {
               field: "watched",
               headerName: "Watched",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "episodes",
               headerName: "Total",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "progress",
               headerName: "Progress",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
               renderCell: (params) => {
                 return (
                   <CircularProgressWithLabel
@@ -251,25 +265,30 @@ export default function TVPage() {
             },
             {
               field: "actions",
-              headerName: "Actions",
+              headerName: "",
               width: 150,
               renderCell: (params) => (
-                <Button
-                  color="error"
-                  variant="contained"
+                <IconButton
+                  aria-label="delete"
                   onClick={() => handleDelete(params.row.id)}
                 >
-                  Delete
-                </Button>
+                  <DeleteIcon />
+                </IconButton>
               ),
+              cellClassName: "base-cell center-aligned-cell",
             },
           ]}
           sx={{
-            "& .centered-cell": {
+            "& .base-cell": {
               display: "flex",
-              justifyContent: "center",
               alignItems: "center",
-              marginY: 1, // Adds vertical margin to the cell
+            },
+            "& .left-aligned-cell": {
+              justifyContent: "left",
+            },
+            "& .center-aligned-cell": {
+              justifyContent: "center",
+              paddingY: 1,
             },
           }}
         />
