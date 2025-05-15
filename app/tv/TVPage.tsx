@@ -36,6 +36,7 @@ import {
 
 export default function TVPage() {
   const [options, setOptions] = useState<Content[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
   const [rows, setRows] = useState<GridRowsProp>([]);
