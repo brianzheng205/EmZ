@@ -12,9 +12,16 @@ import {
   MenuItem,
   IconButton,
 } from "@mui/material";
-import { DataGrid, GridRowsProp, GridValidRowModel } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridRowsProp,
+  GridValidRowModel,
+  GridCellModesModel,
+  GridCellParams,
+  GridCellModes,
+} from "@mui/x-data-grid";
 import { isEqual, debounce } from "lodash";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, MouseEvent } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
@@ -44,8 +51,55 @@ export default function TVPage() {
   const [rows, setRows] = useState<GridRowsProp>([]);
   const [genres, setGenres] = useState<Record<number, TMDBGenre> | null>(null);
   const [who, setWho] = useState<WhoSelection>("Both");
+  const [cellModesModel, setCellModesModel] = useState<GridCellModesModel>({});
 
   const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
+
+  const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
+    console.log("params", params);
+    console.log("event", event);
+    if (!params.isEditable) {
+      return;
+    }
+
+    if (
+      (event.target as any).nodeType === 1 &&
+      !event.currentTarget.contains(event.target as Element)
+    ) {
+      return;
+    }
+
+    setCellModesModel((prevModel) => {
+      return {
+        // Revert the mode of the other cells from other rows
+        ...Object.keys(prevModel).reduce(
+          (acc, id) => ({
+            ...acc,
+            [id]: Object.keys(prevModel[id]).reduce(
+              (acc2, field) => ({
+                ...acc2,
+                [field]: { mode: GridCellModes.View },
+              }),
+              {}
+            ),
+          }),
+          {}
+        ),
+        [params.id]: {
+          // Revert the mode of other cells in the same row
+          ...Object.keys(prevModel[params.id] || {}).reduce(
+            (acc, field) => ({ ...acc, [field]: { mode: GridCellModes.View } }),
+            {}
+          ),
+          [params.field]: { mode: GridCellModes.Edit },
+        },
+      };
+    });
+  };
+
+  const handleCellModesModelChange = (newModel: GridCellModesModel) => {
+    setCellModesModel(newModel);
+  };
 
   const addContent = async (value: Content, who: WhoSelection) => {
     value["who"] = who;
@@ -188,6 +242,9 @@ export default function TVPage() {
       <Box sx={{ height: 400, marginTop: "3%" }}>
         <DataGrid
           getRowHeight={() => "auto"}
+          cellModesModel={cellModesModel}
+          onCellModesModelChange={handleCellModesModelChange}
+          onCellClick={handleCellClick}
           processRowUpdate={(
             newRow: GridValidRowModel,
             oldRow: GridValidRowModel
@@ -217,8 +274,9 @@ export default function TVPage() {
                 return (
                   <Chip
                     label={params.row.who}
-                    onDelete={() => {}}
+                    onDelete={(event) => handleCellClick(params, event)}
                     deleteIcon={<ArrowDropDown />}
+                    onClick={(event) => handleCellClick(params, event)}
                     color={
                       params.row.who === "Emily"
                         ? "primary"
