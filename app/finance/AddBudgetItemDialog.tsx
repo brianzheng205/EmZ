@@ -12,11 +12,12 @@ import {
   InputLabel,
   Stack,
 } from "@mui/material";
+import * as R from "ramda";
 import { useState } from "react";
 
 import { capitalizeFirstLetter } from "@/utils";
 
-import { Time, Category } from "./types";
+import { Time, Category, Budget } from "./types";
 
 const categories: Category[] = ["gross", "deductions", "expenses", "savings"];
 
@@ -25,7 +26,7 @@ const CATEGORY_OPTIONS = categories.map((option) => ({
   label: capitalizeFirstLetter(option),
 }));
 
-interface BudgetItemInputsProps {
+interface BudgetItemInputsByPersonProps {
   amount: number;
   setAmount: (value: number) => void;
   time: "month" | "year";
@@ -33,13 +34,13 @@ interface BudgetItemInputsProps {
   personName: string;
 }
 
-function BudgetItemInputs({
+function BudgetItemInputsByPerson({
   amount,
   setAmount,
   time,
   setTime,
   personName,
-}: BudgetItemInputsProps) {
+}: BudgetItemInputsByPersonProps) {
   const id = `${personName}-time-select`;
   const labelId = `${id}-label`;
 
@@ -67,7 +68,7 @@ function BudgetItemInputs({
           id={id}
           value={time}
           label={`${personName} Time`}
-          onChange={(e) => setTime(e.target.value as "month" | "year")}
+          onChange={(e) => setTime(e.target.value as Time)}
         >
           <MenuItem value="month">Month</MenuItem>
           <MenuItem value="year">Year</MenuItem>
@@ -86,6 +87,8 @@ interface AddBudgetRowDialogProps {
     brianItem: object,
     emilyItem: object
   ) => void;
+  activeBudgetEm: Budget;
+  activeBudgetZ: Budget;
 }
 
 const DEFAULTS = {
@@ -95,10 +98,15 @@ const DEFAULTS = {
   time: "year" as Time,
 };
 
+const id = "category-select";
+const labelId = `${id}-label`;
+
 export default function AddBudgetItemDialog({
   open,
   onClose,
   onSubmit,
+  activeBudgetEm,
+  activeBudgetZ,
 }: AddBudgetRowDialogProps) {
   const [newRowCategory, setNewRowCategory] = useState<Category>(
     DEFAULTS.category
@@ -126,13 +134,28 @@ export default function AddBudgetItemDialog({
     onClose();
   };
 
+  const allNames = new Set<string>();
+
+  R.forEach(
+    (budget) =>
+      R.forEachObjIndexed(
+        (category) =>
+          R.forEachObjIndexed(
+            (_, name: string) => allNames.add(name),
+            category
+          ),
+        budget.categories
+      ),
+    [activeBudgetEm, activeBudgetZ]
+  );
+
+  const isNameDuplicate = allNames.has(newRowName);
+
   const areSomeInputsInvalid =
     newRowName.trim() === "" ||
+    isNameDuplicate ||
     newRowCategory.trim() === "" ||
     (brianAmount <= 0 && emilyAmount <= 0);
-
-  const id = "category-select";
-  const labelId = `${id}-label`;
 
   return (
     <Dialog open={open} onClose={handleClose}>
@@ -162,15 +185,17 @@ export default function AddBudgetItemDialog({
           fullWidth
           value={newRowName}
           onChange={(e) => setNewRowName(e.target.value)}
+          error={isNameDuplicate}
+          helperText={isNameDuplicate ? "Name already exists" : ""}
         />
-        <BudgetItemInputs
+        <BudgetItemInputsByPerson
           amount={emilyAmount}
           setAmount={setEmilyAmount}
           time={emilyTime}
           setTime={setEmilyTime}
           personName="Emily"
         />
-        <BudgetItemInputs
+        <BudgetItemInputsByPerson
           amount={brianAmount}
           setAmount={setBrianAmount}
           time={brianTime}

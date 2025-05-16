@@ -72,8 +72,6 @@ function BudgetSelector({
     closeDialog: closeAddBudgetDialog,
   } = useDialog();
 
-  console.log(budgets, docRef.id);
-
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Select
@@ -654,19 +652,24 @@ export default function FinancePage() {
           disableColumnResize
         />
       </Stack>
-      <AddBudgetItemDialog
-        open={isAddRowDialogOpen}
-        onClose={closeAddRowDialog}
-        onSubmit={handleAddRow}
-      />
+
       {activeBudgetEm && activeBudgetZ && (
-        <EditBudgetDialog
-          open={isEditBudgetDialogopen}
-          onClose={closeEditBudgetDialog}
-          onSubmit={handleEditBudgetMetadata}
-          emilyBudget={activeBudgetEm}
-          brianBudget={activeBudgetZ}
-        />
+        <>
+          <AddBudgetItemDialog
+            open={isAddRowDialogOpen}
+            onClose={closeAddRowDialog}
+            onSubmit={handleAddRow}
+            activeBudgetEm={activeBudgetEm}
+            activeBudgetZ={activeBudgetZ}
+          />
+          <EditBudgetDialog
+            open={isEditBudgetDialogopen}
+            onClose={closeEditBudgetDialog}
+            onSubmit={handleEditBudgetMetadata}
+            emilyBudget={activeBudgetEm}
+            brianBudget={activeBudgetZ}
+          />
+        </>
       )}
     </Container>
   );

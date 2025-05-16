@@ -12,20 +12,20 @@ import { IdToBudget } from "./types";
 
 interface AddBudgetDialogProps {
   open: boolean;
-  budgets: IdToBudget;
   onClose: () => void;
   onSubmit: (name: string) => void;
+  budgets: IdToBudget;
 }
 
 export default function AddBudgetDialog({
   open,
-  budgets,
   onClose,
   onSubmit,
+  budgets,
 }: AddBudgetDialogProps) {
   const [name, setName] = useState("");
 
-  const isDisabled =
+  const areSomeInputsInvalid =
     name.trim() === "" ||
     Object.values(budgets).some((budget) => budget.name === name);
 
@@ -58,7 +58,7 @@ export default function AddBudgetDialog({
         <Button onClick={handleClose} color="error">
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={isDisabled}>
+        <Button onClick={handleSubmit} disabled={areSomeInputsInvalid}>
           Add
         </Button>
       </DialogActions>
