@@ -11,7 +11,7 @@ import {
 import * as R from "ramda";
 import React, { useState, useEffect, useCallback } from "react";
 
-import { Budget, Metadata, CombinedMetadata } from "./utils";
+import { Budget, Metadata, CombinedMetadata } from "./types";
 
 const isNameInvalid = (name: string) => name.trim() === "";
 

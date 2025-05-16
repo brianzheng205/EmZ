@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 
-import { IdToBudget } from "./utils";
+import { IdToBudget } from "./types";
 
 interface AddBudgetDialogProps {
   open: boolean;

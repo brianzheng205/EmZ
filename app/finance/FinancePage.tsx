@@ -36,6 +36,9 @@ import {
   IdToBudget,
   BudgetItemRow,
   CombinedMetadata,
+  BudgetItem,
+} from "./types";
+import {
   getCombinedBudgets,
   getBudgetsWithUpdatedItem,
   getChangedCellTime,
@@ -45,7 +48,6 @@ import {
   isSumOfSumRow,
   isSumRow,
   isDataRow,
-  BudgetItem,
   getActiveBudgets,
 } from "./utils";
 

@@ -16,7 +16,7 @@ import { useState } from "react";
 
 import { capitalizeFirstLetter } from "@/utils";
 
-import { Time, Category } from "./utils";
+import { Time, Category } from "./types";
 
 const categories: Category[] = ["gross", "deductions", "expenses", "savings"];
 

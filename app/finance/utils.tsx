@@ -9,108 +9,20 @@ import * as R from "ramda";
 import { capitalizeFirstLetter } from "@/utils";
 
 import { AllBudgetsBoth } from "./FinancePage";
-
-// TYPES
-export type Time = "month" | "year";
-
-export type BudgetItem = {
-  amount: number;
-  time: Time;
-  isRecurring?: boolean;
-};
-
-type CategoryItems = {
-  [name: string]: BudgetItem;
-};
-
-export type Metadata = {
-  name: string;
-  numMonths: number;
-  user: string;
-};
-
-export type Budget = Metadata & {
-  categories: {
-    gross: CategoryItems;
-    deductions: CategoryItems;
-    expenses: CategoryItems;
-    savings: CategoryItems;
-  };
-};
-
-export type BudgetWithId = Budget & {
-  id: string;
-};
-
-type CombinedBudgetItem = {
-  emily: BudgetItem;
-  brian: BudgetItem;
-};
-
-type CombinedCategoryItems = {
-  [name: string]: CombinedBudgetItem;
-};
-
-export type CombinedMetadata = {
-  emilyMetadata: Metadata;
-  brianMetadata: Metadata;
-};
-
-type CombinedBudget = CombinedMetadata & {
-  categories: {
-    gross: CombinedCategoryItems;
-    deductions: CombinedCategoryItems;
-    expenses: CombinedCategoryItems;
-    savings: CombinedCategoryItems;
-  };
-};
-
-export type IdToBudget = {
-  [id: string]: Budget;
-};
-
-export type Category = keyof CombinedBudget["categories"];
-
-type BudgetItemRowWithoutDividers = {
-  id: string;
-  status?: string;
-  category?: string;
-  name: string;
-  isRecurring: boolean;
-  monthlyEmAmount: number;
-  yearlyEmAmount: number;
-  monthlyZAmount: number;
-  yearlyZAmount: number;
-  yearlySalaryEm?: number;
-  yearlySalaryZ?: number;
-};
-
-export type BudgetItemRow = Required<Pick<BudgetSumsRow, "category">> &
-  Omit<BudgetSumsRow, "category">;
-
-type BudgetSumsRow = BudgetItemRowWithoutDividers & {
-  monthlyEmDivider: number;
-  yearlyEmDivider: number;
-  monthlyZDivider: number;
-  yearlyZDivider: number;
-};
-
-type Dividers = {
-  monthlyGross: number;
-  yearlyGross: number;
-  monthlyTakeHome: number;
-  yearlyTakeHome: number;
-};
-
-type TaxBracket = {
-  cap: number | "Infinity";
-  rate: number;
-};
-
-type TaxBracketFinite = {
-  cap: number;
-  rate: number;
-};
+import {
+  BudgetItem,
+  Budget,
+  CombinedBudget,
+  CombinedBudgetItem,
+  CombinedCategoryItems,
+  Dividers,
+  BudgetItemRow,
+  BudgetItemRowWithoutDividers,
+  BudgetSumsRow,
+  Metadata,
+  TaxBracket,
+  TaxBracketFinite,
+} from "./types";
 
 const NUM_MONTHS = 12;
 
