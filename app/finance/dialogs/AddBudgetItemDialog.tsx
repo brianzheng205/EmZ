@@ -1,10 +1,5 @@
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  Button,
   Box,
   Select,
   MenuItem,
@@ -12,11 +7,13 @@ import {
   InputLabel,
   Stack,
 } from "@mui/material";
+import * as R from "ramda";
 import { useState } from "react";
 
+import DialogWrapper from "@/components/DialogWrapper";
 import { capitalizeFirstLetter } from "@/utils";
 
-import { Time, Category } from "./utils";
+import { Time, Category, Budget } from "../types";
 
 const categories: Category[] = ["gross", "deductions", "expenses", "savings"];
 
@@ -25,7 +22,7 @@ const CATEGORY_OPTIONS = categories.map((option) => ({
   label: capitalizeFirstLetter(option),
 }));
 
-interface BudgetItemInputsProps {
+interface BudgetItemInputsByPersonProps {
   amount: number;
   setAmount: (value: number) => void;
   time: "month" | "year";
@@ -33,13 +30,13 @@ interface BudgetItemInputsProps {
   personName: string;
 }
 
-function BudgetItemInputs({
+function BudgetItemInputsByPerson({
   amount,
   setAmount,
   time,
   setTime,
   personName,
-}: BudgetItemInputsProps) {
+}: BudgetItemInputsByPersonProps) {
   const id = `${personName}-time-select`;
   const labelId = `${id}-label`;
 
@@ -67,7 +64,7 @@ function BudgetItemInputs({
           id={id}
           value={time}
           label={`${personName} Time`}
-          onChange={(e) => setTime(e.target.value as "month" | "year")}
+          onChange={(e) => setTime(e.target.value as Time)}
         >
           <MenuItem value="month">Month</MenuItem>
           <MenuItem value="year">Year</MenuItem>
@@ -86,6 +83,8 @@ interface AddBudgetRowDialogProps {
     brianItem: object,
     emilyItem: object
   ) => void;
+  activeBudgetEm: Budget;
+  activeBudgetZ: Budget;
 }
 
 const DEFAULTS = {
@@ -95,10 +94,15 @@ const DEFAULTS = {
   time: "year" as Time,
 };
 
+const id = "category-select";
+const labelId = `${id}-label`;
+
 export default function AddBudgetItemDialog({
   open,
   onClose,
   onSubmit,
+  activeBudgetEm,
+  activeBudgetZ,
 }: AddBudgetRowDialogProps) {
   const [newRowCategory, setNewRowCategory] = useState<Category>(
     DEFAULTS.category
@@ -126,66 +130,78 @@ export default function AddBudgetItemDialog({
     onClose();
   };
 
+  const allNames = new Set<string>();
+
+  R.forEach(
+    (budget) =>
+      R.forEachObjIndexed(
+        (category) =>
+          R.forEachObjIndexed(
+            (_, name: string) => allNames.add(name),
+            category
+          ),
+        budget.categories
+      ),
+    [activeBudgetEm, activeBudgetZ]
+  );
+
+  const isNameDuplicate = allNames.has(newRowName);
+
   const areSomeInputsInvalid =
     newRowName.trim() === "" ||
+    isNameDuplicate ||
     newRowCategory.trim() === "" ||
     (brianAmount <= 0 && emilyAmount <= 0);
 
-  const id = "category-select";
-  const labelId = `${id}-label`;
-
   return (
-    <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Add New Row</DialogTitle>
-      <DialogContent>
-        <Box>
-          <FormControl fullWidth margin="dense" variant="outlined">
-            <InputLabel id={labelId}>Category</InputLabel>
-            <Select
-              labelId={labelId}
-              id={id}
-              value={newRowCategory}
-              label="Category"
-              onChange={(e) => setNewRowCategory(e.target.value as Category)}
-            >
-              {CATEGORY_OPTIONS.map(({ value, label }) => (
-                <MenuItem key={value} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        <TextField
-          margin="dense"
-          label="Name"
-          fullWidth
-          value={newRowName}
-          onChange={(e) => setNewRowName(e.target.value)}
-        />
-        <BudgetItemInputs
-          amount={emilyAmount}
-          setAmount={setEmilyAmount}
-          time={emilyTime}
-          setTime={setEmilyTime}
-          personName="Emily"
-        />
-        <BudgetItemInputs
-          amount={brianAmount}
-          setAmount={setBrianAmount}
-          time={brianTime}
-          setTime={setBrianTime}
-          personName="Brian"
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="error">
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={areSomeInputsInvalid}>
-          Add
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <DialogWrapper
+      open={open}
+      onClose={handleClose}
+      onSubmit={handleSubmit}
+      title="Add New Row"
+      disabled={areSomeInputsInvalid}
+    >
+      <Box>
+        <FormControl fullWidth margin="dense" variant="outlined">
+          <InputLabel id={labelId}>Category</InputLabel>
+          <Select
+            labelId={labelId}
+            id={id}
+            value={newRowCategory}
+            label="Category"
+            onChange={(e) => setNewRowCategory(e.target.value as Category)}
+          >
+            {CATEGORY_OPTIONS.map(({ value, label }) => (
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <TextField
+        margin="dense"
+        label="Name"
+        fullWidth
+        value={newRowName}
+        onChange={(e) => setNewRowName(e.target.value)}
+        error={isNameDuplicate}
+        helperText={isNameDuplicate ? "Name already exists" : ""}
+      />
+      <BudgetItemInputsByPerson
+        amount={emilyAmount}
+        setAmount={setEmilyAmount}
+        time={emilyTime}
+        setTime={setEmilyTime}
+        personName="Emily"
+      />
+      <BudgetItemInputsByPerson
+        amount={brianAmount}
+        setAmount={setBrianAmount}
+        time={brianTime}
+        setTime={setBrianTime}
+        personName="Brian"
+      />
+    </DialogWrapper>
   );
 }

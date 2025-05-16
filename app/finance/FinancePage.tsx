@@ -19,9 +19,9 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
-import AddBudgetDialog from "./AddBudgetDialog";
-import AddBudgetItemDialog from "./AddBudgetItemDialog";
-import EditBudgetDialog from "./EditBudgetDialog";
+import AddBudgetDialog from "./dialogs/AddBudgetDialog";
+import AddBudgetItemDialog from "./dialogs/AddBudgetItemDialog";
+import EditBudgetDialog from "./dialogs/EditBudgetDialog";
 import {
   deleteBudgetItem,
   fetchActiveBudgets,
@@ -36,6 +36,9 @@ import {
   IdToBudget,
   BudgetItemRow,
   CombinedMetadata,
+  BudgetItem,
+} from "./types";
+import {
   getCombinedBudgets,
   getBudgetsWithUpdatedItem,
   getChangedCellTime,
@@ -45,7 +48,6 @@ import {
   isSumOfSumRow,
   isSumRow,
   isDataRow,
-  BudgetItem,
   getActiveBudgets,
 } from "./utils";
 
@@ -69,8 +71,6 @@ function BudgetSelector({
     openDialog: openAddBudgetDialog,
     closeDialog: closeAddBudgetDialog,
   } = useDialog();
-
-  console.log(budgets, docRef.id);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -542,7 +542,9 @@ export default function FinancePage() {
     }
     const { id, newBudget } = possibleNewBudget;
     const newBudgets = getClonedBudgets(budgets);
-    newBudgets[person === "Em" ? "emily" : "brian"].budgets[id] = newBudget;
+    const personKey = person === "Em" ? "emily" : "brian";
+    newBudgets[personKey].budgets[id] = newBudget;
+    newBudgets[personKey].active = doc(db, "budgets", id);
     setBudgets(newBudgets);
   };
 
@@ -652,19 +654,24 @@ export default function FinancePage() {
           disableColumnResize
         />
       </Stack>
-      <AddBudgetItemDialog
-        open={isAddRowDialogOpen}
-        onClose={closeAddRowDialog}
-        onSubmit={handleAddRow}
-      />
+
       {activeBudgetEm && activeBudgetZ && (
-        <EditBudgetDialog
-          open={isEditBudgetDialogopen}
-          onClose={closeEditBudgetDialog}
-          onSubmit={handleEditBudgetMetadata}
-          emilyBudget={activeBudgetEm}
-          brianBudget={activeBudgetZ}
-        />
+        <>
+          <AddBudgetItemDialog
+            open={isAddRowDialogOpen}
+            onClose={closeAddRowDialog}
+            onSubmit={handleAddRow}
+            activeBudgetEm={activeBudgetEm}
+            activeBudgetZ={activeBudgetZ}
+          />
+          <EditBudgetDialog
+            open={isEditBudgetDialogopen}
+            onClose={closeEditBudgetDialog}
+            onSubmit={handleEditBudgetMetadata}
+            emilyBudget={activeBudgetEm}
+            brianBudget={activeBudgetZ}
+          />
+        </>
       )}
     </Container>
   );

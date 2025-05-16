@@ -13,8 +13,7 @@ import * as R from "ramda";
 import { fetchData, fetchDocuments } from "@/utils";
 import db from "@firebase";
 
-import { Budget } from "./utils";
-import { IdToBudget } from "./utils";
+import { IdToBudget, Budget } from "./types";
 
 const pathToString = (path: string[]) => path.join(".");
 
