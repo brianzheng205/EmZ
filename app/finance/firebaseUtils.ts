@@ -4,6 +4,7 @@ import {
   deleteField,
   addDoc,
   collection,
+  getDoc,
 } from "firebase/firestore";
 import * as R from "ramda";
 
@@ -94,8 +95,17 @@ export const deleteBudgetItem = async (
 
 export const createBudget = async (name: string, budgetToCopy: Budget) => {
   try {
-    await addDoc(collection(db, "budgets"), { ...budgetToCopy, name });
+    const newBudgetRef = await addDoc(collection(db, "budgets"), {
+      ...R.clone(budgetToCopy),
+      name,
+    });
+
+    const newBudgetSnap = await getDoc(newBudgetRef);
+    const newBudget = newBudgetSnap.data() as Budget;
+
+    return { id: newBudgetRef.id, newBudget };
   } catch (error) {
     console.error("Error creating budget:", error);
+    return null;
   }
 };

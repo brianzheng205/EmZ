@@ -8,6 +8,7 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  Box,
 } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
@@ -18,12 +19,14 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
-import AddBudgetRowDialog from "./AddBudgetRowDialog";
+import AddBudgetDialog from "./AddBudgetDialog";
+import AddBudgetItemDialog from "./AddBudgetItemDialog";
 import EditBudgetDialog from "./EditBudgetDialog";
 import {
   deleteBudgetItem,
   fetchActiveBudgets,
   fetchAllBudgets,
+  createBudget,
   updateBudget,
 } from "./firebaseUtils";
 import {
@@ -48,28 +51,55 @@ interface BudgetSelectorProps {
   docRef: DocumentReference;
   setDocRef: (docRef: DocumentReference) => void;
   budgets: IdToBudget;
+  onAdd: (name: string) => void;
 }
 
-function BudgetSelector({ docRef, setDocRef, budgets }: BudgetSelectorProps) {
+function BudgetSelector({
+  docRef,
+  setDocRef,
+  budgets,
+  onAdd,
+}: BudgetSelectorProps) {
+  const {
+    isDialogOpen: isAddBudgetDialogOpen,
+    openDialog: openAddBudgetDialog,
+    closeDialog: closeAddBudgetDialog,
+  } = useDialog();
+
   return (
-    <Select
-      sx={{
-        width: 200,
-      }}
-      value={docRef.id}
-      onChange={(e) => setDocRef(doc(db, e.target.value))}
-      displayEmpty
-      margin="dense"
-    >
-      {R.pipe(
-        R.mapObjIndexed((budget: Budget, budgetId) => (
-          <MenuItem key={budgetId} value={budgetId}>
-            {budget.name}
-          </MenuItem>
-        )),
-        R.values
-      )(budgets)}
-    </Select>
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <Select
+        sx={{
+          width: 200,
+          height: "100%",
+        }}
+        value={docRef.id}
+        onChange={(e) => {
+          if (e.target.value !== "add-new") {
+            setDocRef(doc(db, "budgets", e.target.value));
+          }
+        }}
+        displayEmpty
+        margin="dense"
+      >
+        <MenuItem value="add-new" onClick={openAddBudgetDialog}>
+          + Add new budget
+        </MenuItem>
+        {R.pipe(
+          R.mapObjIndexed((budget: Budget, budgetId) => (
+            <MenuItem key={budgetId} value={budgetId}>
+              {budget.name}
+            </MenuItem>
+          )),
+          R.values
+        )(budgets)}
+      </Select>
+      <AddBudgetDialog
+        open={isAddBudgetDialogOpen}
+        onClose={closeAddBudgetDialog}
+        onSubmit={onAdd}
+      />
+    </Box>
   );
 }
 
@@ -450,6 +480,24 @@ export default function FinancePage() {
       return newBudgets;
     });
 
+  const addBudget = async (name: string, person: "Em" | "Z") => {
+    if (!budgets) {
+      console.error("Budgets are not loaded.");
+      return;
+    }
+
+    const { emilyBudget, brianBudget } = getActiveBudgets(budgets);
+    const budgetToCopy = person === "Em" ? emilyBudget : brianBudget;
+    const possibleNewBudget = await createBudget(name, budgetToCopy);
+    if (!possibleNewBudget) {
+      return;
+    }
+    const { id, newBudget } = possibleNewBudget;
+    const newBudgets = getClonedBudgets(budgets);
+    newBudgets[person === "Em" ? "emily" : "brian"].budgets[id] = newBudget;
+    setBudgets(newBudgets);
+  };
+
   if (
     !budgets ||
     !activeBudgetEm ||
@@ -496,11 +544,13 @@ export default function FinancePage() {
               docRef={budgets.emily.active}
               setDocRef={(docRef) => setDocRef(docRef, "Em")}
               budgets={budgetsEm}
+              onAdd={(name) => addBudget(name, "Em")}
             />
             <BudgetSelector
               docRef={budgets.brian.active}
               setDocRef={(docRef) => setDocRef(docRef, "Z")}
               budgets={budgetsZ}
+              onAdd={(name) => addBudget(name, "Z")}
             />
           </Stack>
 
@@ -543,7 +593,7 @@ export default function FinancePage() {
           disableColumnResize
         />
       </Stack>
-      <AddBudgetRowDialog
+      <AddBudgetItemDialog
         open={isAddRowDialogOpen}
         onClose={closeAddRowDialog}
         onSubmit={handleAddRow}
