@@ -542,7 +542,9 @@ export default function FinancePage() {
     }
     const { id, newBudget } = possibleNewBudget;
     const newBudgets = getClonedBudgets(budgets);
-    newBudgets[person === "Em" ? "emily" : "brian"].budgets[id] = newBudget;
+    const personKey = person === "Em" ? "emily" : "brian";
+    newBudgets[personKey].budgets[id] = newBudget;
+    newBudgets[personKey].active = doc(db, "budgets", id);
     setBudgets(newBudgets);
   };
 
