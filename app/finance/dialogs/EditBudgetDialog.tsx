@@ -1,17 +1,10 @@
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Stack, TextField, Typography } from "@mui/material";
 import * as R from "ramda";
 import React, { useState, useEffect, useCallback } from "react";
 
-import { Budget, Metadata, CombinedMetadata } from "./types";
+import DialogWrapper from "@/components/DialogWrapper";
+
+import { Budget, Metadata, CombinedMetadata } from "../types";
 
 const isNameInvalid = (name: string) => name.trim() === "";
 
@@ -135,47 +128,29 @@ export default function EditBudgetDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Edit Budget</DialogTitle>
-      <DialogContent
-        sx={{
-          minHeight: 120,
-          width: 500,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Stack
-          sx={{
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 2,
-          }}
-        >
-          <EditBudgetMetadata
-            metadata={metadata.emilyMetadata}
-            setMetadata={setEmilyMetadata}
-            oldBudgetName={emilyBudget.name}
-          />
-          <EditBudgetMetadata
-            metadata={metadata.brianMetadata}
-            setMetadata={setBrianMetadata}
-            oldBudgetName={brianBudget.name}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} color="error">
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={!isCombinedMetadataValid(metadata)}
-        >
-          Save
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <DialogWrapper
+      open={open}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title="Edit Budget"
+      disabled={!isCombinedMetadataValid(metadata)}
+      contentSx={{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 2,
+      }}
+    >
+      <EditBudgetMetadata
+        metadata={metadata.emilyMetadata}
+        setMetadata={setEmilyMetadata}
+        oldBudgetName={emilyBudget.name}
+      />
+      <EditBudgetMetadata
+        metadata={metadata.brianMetadata}
+        setMetadata={setBrianMetadata}
+        oldBudgetName={brianBudget.name}
+      />
+    </DialogWrapper>
   );
 }

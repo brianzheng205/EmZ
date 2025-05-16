@@ -19,9 +19,9 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
-import AddBudgetDialog from "./AddBudgetDialog";
-import AddBudgetItemDialog from "./AddBudgetItemDialog";
-import EditBudgetDialog from "./EditBudgetDialog";
+import AddBudgetDialog from "./dialogs/AddBudgetDialog";
+import AddBudgetItemDialog from "./dialogs/AddBudgetItemDialog";
+import EditBudgetDialog from "./dialogs/EditBudgetDialog";
 import {
   deleteBudgetItem,
   fetchActiveBudgets,

@@ -1,10 +1,5 @@
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  Button,
   Box,
   Select,
   MenuItem,
@@ -15,9 +10,10 @@ import {
 import * as R from "ramda";
 import { useState } from "react";
 
+import DialogWrapper from "@/components/DialogWrapper";
 import { capitalizeFirstLetter } from "@/utils";
 
-import { Time, Category, Budget } from "./types";
+import { Time, Category, Budget } from "../types";
 
 const categories: Category[] = ["gross", "deductions", "expenses", "savings"];
 
@@ -158,59 +154,54 @@ export default function AddBudgetItemDialog({
     (brianAmount <= 0 && emilyAmount <= 0);
 
   return (
-    <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Add New Row</DialogTitle>
-      <DialogContent>
-        <Box>
-          <FormControl fullWidth margin="dense" variant="outlined">
-            <InputLabel id={labelId}>Category</InputLabel>
-            <Select
-              labelId={labelId}
-              id={id}
-              value={newRowCategory}
-              label="Category"
-              onChange={(e) => setNewRowCategory(e.target.value as Category)}
-            >
-              {CATEGORY_OPTIONS.map(({ value, label }) => (
-                <MenuItem key={value} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-        <TextField
-          margin="dense"
-          label="Name"
-          fullWidth
-          value={newRowName}
-          onChange={(e) => setNewRowName(e.target.value)}
-          error={isNameDuplicate}
-          helperText={isNameDuplicate ? "Name already exists" : ""}
-        />
-        <BudgetItemInputsByPerson
-          amount={emilyAmount}
-          setAmount={setEmilyAmount}
-          time={emilyTime}
-          setTime={setEmilyTime}
-          personName="Emily"
-        />
-        <BudgetItemInputsByPerson
-          amount={brianAmount}
-          setAmount={setBrianAmount}
-          time={brianTime}
-          setTime={setBrianTime}
-          personName="Brian"
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} color="error">
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={areSomeInputsInvalid}>
-          Add
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <DialogWrapper
+      open={open}
+      onClose={handleClose}
+      onSubmit={handleSubmit}
+      title="Add New Row"
+      disabled={areSomeInputsInvalid}
+    >
+      <Box>
+        <FormControl fullWidth margin="dense" variant="outlined">
+          <InputLabel id={labelId}>Category</InputLabel>
+          <Select
+            labelId={labelId}
+            id={id}
+            value={newRowCategory}
+            label="Category"
+            onChange={(e) => setNewRowCategory(e.target.value as Category)}
+          >
+            {CATEGORY_OPTIONS.map(({ value, label }) => (
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <TextField
+        margin="dense"
+        label="Name"
+        fullWidth
+        value={newRowName}
+        onChange={(e) => setNewRowName(e.target.value)}
+        error={isNameDuplicate}
+        helperText={isNameDuplicate ? "Name already exists" : ""}
+      />
+      <BudgetItemInputsByPerson
+        amount={emilyAmount}
+        setAmount={setEmilyAmount}
+        time={emilyTime}
+        setTime={setEmilyTime}
+        personName="Emily"
+      />
+      <BudgetItemInputsByPerson
+        amount={brianAmount}
+        setAmount={setBrianAmount}
+        time={brianTime}
+        setTime={setBrianTime}
+        personName="Brian"
+      />
+    </DialogWrapper>
   );
 }
