@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import DatesPage from "./DatesPage";
 
 export const generateMetadata = () => ({
   title: "Dates",
@@ -6,5 +6,5 @@ export const generateMetadata = () => ({
 });
 
 export default function Dates() {
-  return <Box>hi</Box>;
+  return <DatesPage />;
 }
