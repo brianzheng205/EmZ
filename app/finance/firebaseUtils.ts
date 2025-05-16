@@ -5,6 +5,8 @@ import {
   addDoc,
   collection,
   getDoc,
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 import * as R from "ramda";
 
@@ -106,6 +108,29 @@ export const createBudget = async (name: string, budgetToCopy: Budget) => {
     return { id: newBudgetRef.id, newBudget };
   } catch (error) {
     console.error("Error creating budget:", error);
+    return null;
+  }
+};
+
+export const deleteBudget = async (docRef: DocumentReference) => {
+  try {
+    return await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting budget:", error);
+    return null;
+  }
+};
+
+export const updateActiveBudget = async (
+  user: "emily" | "brian",
+  docRef: DocumentReference
+) => {
+  try {
+    return await updateDoc(doc(db, `users/${user}`), {
+      activeBudget: docRef,
+    });
+  } catch (error) {
+    console.error("Error updating active budget:", error);
     return null;
   }
 };

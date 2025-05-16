@@ -28,6 +28,8 @@ import {
   fetchAllBudgets,
   createBudget,
   updateBudget,
+  deleteBudget,
+  updateActiveBudget,
 } from "./firebaseUtils";
 import {
   Budget,
@@ -50,8 +52,9 @@ import {
 interface BudgetSelectorProps {
   docRef: DocumentReference;
   setDocRef: (docRef: DocumentReference) => void;
-  budgets: IdToBudget;
+  budgets: IdToBudget | null;
   onAdd: (name: string) => void;
+  onDelete: (docRef: DocumentReference) => void;
 }
 
 function BudgetSelector({
@@ -59,6 +62,7 @@ function BudgetSelector({
   setDocRef,
   budgets,
   onAdd,
+  onDelete,
 }: BudgetSelectorProps) {
   const {
     isDialogOpen: isAddBudgetDialogOpen,
@@ -66,39 +70,84 @@ function BudgetSelector({
     closeDialog: closeAddBudgetDialog,
   } = useDialog();
 
+  console.log(budgets, docRef.id);
+
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Select
-        sx={{
-          width: 200,
-          height: "100%",
-        }}
+        sx={{ width: 200, height: "100%" }}
         value={docRef.id}
-        onChange={(e) => {
-          if (e.target.value !== "add-new") {
-            setDocRef(doc(db, "budgets", e.target.value));
-          }
-        }}
         displayEmpty
         margin="dense"
+        renderValue={(selectedId) =>
+          budgets?.[selectedId] ? budgets[selectedId].name : "+ Add new budget"
+        }
       >
         <MenuItem value="add-new" onClick={openAddBudgetDialog}>
           + Add new budget
         </MenuItem>
-        {R.pipe(
-          R.mapObjIndexed((budget: Budget, budgetId) => (
-            <MenuItem key={budgetId} value={budgetId}>
-              {budget.name}
-            </MenuItem>
-          )),
-          R.values
-        )(budgets)}
+
+        {budgets &&
+          R.pipe(
+            R.mapObjIndexed((budget: Budget, budgetId) => (
+              <MenuItem
+                key={budgetId}
+                value={budgetId}
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  width: 200,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (budgetId !== docRef.id) {
+                    setDocRef(doc(db, "budgets", budgetId));
+                  }
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 160,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {budget.name}
+                </Box>
+                <Button
+                  sx={{
+                    width: 40,
+                    minWidth: 0,
+                    padding: 0.5,
+                    margin: 0,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  variant="text"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(doc(db, "budgets", budgetId));
+                  }}
+                  disabled={budgetId === docRef.id}
+                >
+                  <Delete fontSize="small" />
+                </Button>
+              </MenuItem>
+            )),
+            R.values
+          )(budgets)}
       </Select>
-      <AddBudgetDialog
-        open={isAddBudgetDialogOpen}
-        onClose={closeAddBudgetDialog}
-        onSubmit={onAdd}
-      />
+      {budgets && (
+        <AddBudgetDialog
+          open={isAddBudgetDialogOpen}
+          budgets={budgets}
+          onClose={closeAddBudgetDialog}
+          onSubmit={onAdd}
+        />
+      )}
     </Box>
   );
 }
@@ -144,6 +193,7 @@ export type AllBudgetsBoth = {
 export default function FinancePage() {
   const [budgets, setBudgets] = useState<AllBudgetsBoth | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<GridRowsProp>([]);
 
   const budgetsEm = useMemo(
     () => (budgets ? budgets.emily.budgets : null),
@@ -189,24 +239,19 @@ export default function FinancePage() {
         return;
       }
 
-      const emilyBudgetRef: DocumentReference = document.emilyBudget;
-      const brianBudgetRef: DocumentReference = document.brianBudget;
-
       setBudgets({
         emily: {
-          active: emilyBudgetRef,
+          active: document.emilyBudget,
           budgets: newBudgets.emily,
         },
         brian: {
-          active: brianBudgetRef,
+          active: document.brianBudget,
           budgets: newBudgets.brian,
         },
       });
       setLoading(false);
     });
   }, [setLoading, setBudgets]);
-
-  const [rows, setRows] = useState<GridRowsProp>([]);
 
   useEffect(() => {
     fetchData();
@@ -469,18 +514,21 @@ export default function FinancePage() {
       ),
   };
 
-  const setDocRef = (docRef: DocumentReference, person: "Em" | "Z") =>
+  const setDocRef = async (docRef: DocumentReference, person: "Em" | "Z") => {
+    const personKey = person === "Em" ? "emily" : "brian";
     setBudgets((prev) => {
       if (!prev) {
         return null;
       }
 
       const newBudgets = getClonedBudgets(prev);
-      newBudgets[person === "Em" ? "emily" : "brian"].active = docRef;
+      newBudgets[personKey].active = docRef;
       return newBudgets;
     });
+    await updateActiveBudget(personKey, docRef);
+  };
 
-  const addBudget = async (name: string, person: "Em" | "Z") => {
+  const onAddBudget = async (name: string, person: "Em" | "Z") => {
     if (!budgets) {
       console.error("Budgets are not loaded.");
       return;
@@ -498,13 +546,22 @@ export default function FinancePage() {
     setBudgets(newBudgets);
   };
 
-  if (
-    !budgets ||
-    !activeBudgetEm ||
-    !activeBudgetZ ||
-    !budgetsEm ||
-    !budgetsZ
-  ) {
+  const onDeleteBudget = async (
+    docRef: DocumentReference,
+    person: "Em" | "Z"
+  ) => {
+    if (!budgets) {
+      console.error("Budgets are not loaded.");
+      return;
+    }
+
+    const newBudgets = getClonedBudgets(budgets);
+    delete newBudgets[person === "Em" ? "emily" : "brian"].budgets[docRef.id];
+    setBudgets(newBudgets);
+    await deleteBudget(docRef);
+  };
+
+  if (!budgets) {
     return (
       <Container
         sx={{
@@ -544,13 +601,15 @@ export default function FinancePage() {
               docRef={budgets.emily.active}
               setDocRef={(docRef) => setDocRef(docRef, "Em")}
               budgets={budgetsEm}
-              onAdd={(name) => addBudget(name, "Em")}
+              onAdd={(name) => onAddBudget(name, "Em")}
+              onDelete={(docRef) => onDeleteBudget(docRef, "Em")}
             />
             <BudgetSelector
               docRef={budgets.brian.active}
               setDocRef={(docRef) => setDocRef(docRef, "Z")}
               budgets={budgetsZ}
-              onAdd={(name) => addBudget(name, "Z")}
+              onAdd={(name) => onAddBudget(name, "Z")}
+              onDelete={(docRef) => onDeleteBudget(docRef, "Z")}
             />
           </Stack>
 
@@ -598,13 +657,15 @@ export default function FinancePage() {
         onClose={closeAddRowDialog}
         onSubmit={handleAddRow}
       />
-      <EditBudgetDialog
-        open={isEditBudgetDialogopen}
-        onClose={closeEditBudgetDialog}
-        onSubmit={handleEditBudgetMetadata}
-        emilyBudget={activeBudgetEm}
-        brianBudget={activeBudgetZ}
-      />
+      {activeBudgetEm && activeBudgetZ && (
+        <EditBudgetDialog
+          open={isEditBudgetDialogopen}
+          onClose={closeEditBudgetDialog}
+          onSubmit={handleEditBudgetMetadata}
+          emilyBudget={activeBudgetEm}
+          brianBudget={activeBudgetZ}
+        />
+      )}
     </Container>
   );
 }
