@@ -12,9 +12,16 @@ import {
   MenuItem,
   IconButton,
 } from "@mui/material";
-import { DataGrid, GridRowsProp, GridValidRowModel } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridRowsProp,
+  GridValidRowModel,
+  GridCellModesModel,
+  GridCellParams,
+  GridCellModes,
+} from "@mui/x-data-grid";
 import { isEqual, debounce } from "lodash";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, MouseEvent } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
@@ -44,8 +51,53 @@ export default function TVPage() {
   const [rows, setRows] = useState<GridRowsProp>([]);
   const [genres, setGenres] = useState<Record<number, TMDBGenre> | null>(null);
   const [who, setWho] = useState<WhoSelection>("Both");
+  const [cellModesModel, setCellModesModel] = useState<GridCellModesModel>({});
 
   const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
+
+  const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
+    if (!params.isEditable) {
+      return;
+    }
+
+    if (
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      (event.target as any).nodeType === 1 &&
+      !event.currentTarget.contains(event.target as Element)
+    ) {
+      return;
+    }
+
+    setCellModesModel((prevModel) => {
+      return {
+        ...Object.keys(prevModel).reduce(
+          (acc, id) => ({
+            ...acc,
+            [id]: Object.keys(prevModel[id]).reduce(
+              (acc2, field) => ({
+                ...acc2,
+                [field]: { mode: GridCellModes.View },
+              }),
+              {}
+            ),
+          }),
+          {}
+        ),
+        [params.id]: {
+          // Revert the mode of other cells in the same row
+          ...Object.keys(prevModel[params.id] || {}).reduce(
+            (acc, field) => ({ ...acc, [field]: { mode: GridCellModes.View } }),
+            {}
+          ),
+          [params.field]: { mode: GridCellModes.Edit },
+        },
+      };
+    });
+  };
+
+  const handleCellModesModelChange = (newModel: GridCellModesModel) => {
+    setCellModesModel(newModel);
+  };
 
   const addContent = async (value: Content, who: WhoSelection) => {
     value["who"] = who;
@@ -77,9 +129,6 @@ export default function TVPage() {
       return {
         ...docData,
         name: docData.media_type === "tv" ? docData.name : docData.title,
-        genre: docData.genre_ids.map((id: number) => {
-          return genreData[id];
-        }),
       };
     });
     if (!genres) {
@@ -188,10 +237,15 @@ export default function TVPage() {
       <Box sx={{ height: 400, marginTop: "3%" }}>
         <DataGrid
           getRowHeight={() => "auto"}
+          cellModesModel={cellModesModel}
+          onCellModesModelChange={handleCellModesModelChange}
+          onCellClick={handleCellClick}
           processRowUpdate={(
             newRow: GridValidRowModel,
             oldRow: GridValidRowModel
           ) => {
+            console.log("newRow", newRow);
+
             if (!isEqual(newRow, oldRow)) {
               addContentToFirebase(newRow as EmZContent);
               fetchData();
@@ -217,8 +271,9 @@ export default function TVPage() {
                 return (
                   <Chip
                     label={params.row.who}
-                    onDelete={() => {}}
+                    onDelete={(event) => handleCellClick(params, event)}
                     deleteIcon={<ArrowDropDown />}
+                    onClick={(event) => handleCellClick(params, event)}
                     color={
                       params.row.who === "Emily"
                         ? "primary"
@@ -239,6 +294,11 @@ export default function TVPage() {
               field: "genre",
               headerName: "Genre",
               width: 200,
+              valueGetter: (value, row) => {
+                return row.genre_ids.map((id: number) => {
+                  return genres ? genres[id] : id;
+                });
+              },
               renderCell: (params) => (
                 <Box
                   sx={{
@@ -247,12 +307,12 @@ export default function TVPage() {
                     flexWrap: "wrap",
                   }}
                 >
-                  {params.row.genre.map((g, index) => (
+                  {params.value.map((g, index) => (
                     <Chip key={index} label={g} />
                   ))}
                 </Box>
               ),
-              cellClassName: "base-cell center-aligned-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "ongoing",
@@ -265,20 +325,21 @@ export default function TVPage() {
               headerName: "Status",
               cellClassName: "base-cell center-aligned-cell",
               width: 130,
+              valueGetter: (value, row) => {
+                return row.watched === 0
+                  ? "Not Started"
+                  : row.watched < row.episodes
+                  ? "In Progress"
+                  : "Completed";
+              },
               renderCell: (params) => {
                 return (
                   <Chip
-                    label={
-                      params.row.watched === 0
-                        ? "Not Started"
-                        : params.row.watched < params.row.episodes
-                        ? "In Progress"
-                        : "Completed"
-                    }
+                    label={params.value}
                     color={
-                      params.row.watched === 0
+                      params.value === "Not Started"
                         ? "default"
-                        : params.row.watched < params.row.episodes
+                        : params.value === "In Progress"
                         ? "info"
                         : "success"
                     }
@@ -292,6 +353,39 @@ export default function TVPage() {
               cellClassName: "base-cell left-aligned-cell editable-cell",
               editable: true,
               type: "number",
+
+              renderEditCell: (params) => (
+                <TextField
+                  type="number"
+                  variant="standard"
+                  slotProps={{
+                    input: {
+                      disableUnderline: true,
+                    },
+                  }}
+                  defaultValue={params.value}
+                  onChange={(e) => {
+                    const value = Math.max(
+                      0,
+                      Math.min(Number(e.target.value), params.row.episodes)
+                    );
+                    params.api.setEditCellValue({
+                      id: params.id,
+                      field: params.field,
+                      value,
+                    });
+                  }}
+                  sx={{
+                    "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
+                      {
+                        WebkitAppearance: "auto",
+                      },
+                    "& input[type=number]": {
+                      MozAppearance: "text-field",
+                    },
+                  }}
+                />
+              ),
             },
             {
               field: "episodes",
@@ -302,12 +396,11 @@ export default function TVPage() {
               field: "progress",
               headerName: "Progress",
               cellClassName: "base-cell center-aligned-cell",
+              valueGetter: (value, row) => {
+                return (row.watched * 100) / row.episodes;
+              },
               renderCell: (params) => {
-                return (
-                  <CircularProgressWithLabel
-                    value={(params.row.watched * 100) / params.row.episodes}
-                  />
-                );
+                return <CircularProgressWithLabel value={params.value} />;
               },
             },
             {

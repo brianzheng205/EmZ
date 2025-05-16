@@ -92,13 +92,12 @@ export const fetchDataFromTMDB = async (url: string) => {
   return data;
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export function filterToInterface<T>(obj: any, keys: (keyof T)[]): T {
-  const result: Partial<T> = {};
-  for (const key of keys) {
-    if (key in obj) {
-      result[key] = obj[key];
-    }
-  }
-  return result as T;
-}
+// export function filterToInterface<T>(obj: any, keys: (keyof T)[]): T {
+//   const result: Partial<T> = {};
+//   for (const key of keys) {
+//     if (key in obj) {
+//       result[key] = obj[key];
+//     }
+//   }
+//   return result as T;
+// }
