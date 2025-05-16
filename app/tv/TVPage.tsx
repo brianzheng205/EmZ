@@ -63,6 +63,7 @@ export default function TVPage() {
     }
 
     if (
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       (event.target as any).nodeType === 1 &&
       !event.currentTarget.contains(event.target as Element)
     ) {
@@ -71,7 +72,6 @@ export default function TVPage() {
 
     setCellModesModel((prevModel) => {
       return {
-        // Revert the mode of the other cells from other rows
         ...Object.keys(prevModel).reduce(
           (acc, id) => ({
             ...acc,
