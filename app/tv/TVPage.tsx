@@ -56,8 +56,6 @@ export default function TVPage() {
   const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
 
   const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
-    console.log("params", params);
-    console.log("event", event);
     if (!params.isEditable) {
       return;
     }
@@ -131,9 +129,6 @@ export default function TVPage() {
       return {
         ...docData,
         name: docData.media_type === "tv" ? docData.name : docData.title,
-        genre: docData.genre_ids.map((id: number) => {
-          return genreData[id];
-        }),
       };
     });
     if (!genres) {
@@ -249,6 +244,8 @@ export default function TVPage() {
             newRow: GridValidRowModel,
             oldRow: GridValidRowModel
           ) => {
+            console.log("newRow", newRow);
+
             if (!isEqual(newRow, oldRow)) {
               addContentToFirebase(newRow as EmZContent);
               fetchData();
@@ -297,6 +294,11 @@ export default function TVPage() {
               field: "genre",
               headerName: "Genre",
               width: 200,
+              valueGetter: (value, row) => {
+                return row.genre_ids.map((id: number) => {
+                  return genres ? genres[id] : id;
+                });
+              },
               renderCell: (params) => (
                 <Box
                   sx={{
@@ -305,12 +307,12 @@ export default function TVPage() {
                     flexWrap: "wrap",
                   }}
                 >
-                  {params.row.genre.map((g, index) => (
+                  {params.value.map((g, index) => (
                     <Chip key={index} label={g} />
                   ))}
                 </Box>
               ),
-              cellClassName: "base-cell center-aligned-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "ongoing",
@@ -323,20 +325,21 @@ export default function TVPage() {
               headerName: "Status",
               cellClassName: "base-cell center-aligned-cell",
               width: 130,
+              valueGetter: (value, row) => {
+                return row.watched === 0
+                  ? "Not Started"
+                  : row.watched < row.episodes
+                  ? "In Progress"
+                  : "Completed";
+              },
               renderCell: (params) => {
                 return (
                   <Chip
-                    label={
-                      params.row.watched === 0
-                        ? "Not Started"
-                        : params.row.watched < params.row.episodes
-                        ? "In Progress"
-                        : "Completed"
-                    }
+                    label={params.value}
                     color={
-                      params.row.watched === 0
+                      params.value === "Not Started"
                         ? "default"
-                        : params.row.watched < params.row.episodes
+                        : params.value === "In Progress"
                         ? "info"
                         : "success"
                     }
@@ -350,6 +353,39 @@ export default function TVPage() {
               cellClassName: "base-cell left-aligned-cell editable-cell",
               editable: true,
               type: "number",
+
+              renderEditCell: (params) => (
+                <TextField
+                  type="number"
+                  variant="standard"
+                  slotProps={{
+                    input: {
+                      disableUnderline: true,
+                    },
+                  }}
+                  defaultValue={params.value}
+                  onChange={(e) => {
+                    const value = Math.max(
+                      0,
+                      Math.min(Number(e.target.value), params.row.episodes)
+                    );
+                    params.api.setEditCellValue({
+                      id: params.id,
+                      field: params.field,
+                      value,
+                    });
+                  }}
+                  sx={{
+                    "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
+                      {
+                        WebkitAppearance: "auto",
+                      },
+                    "& input[type=number]": {
+                      MozAppearance: "text-field",
+                    },
+                  }}
+                />
+              ),
             },
             {
               field: "episodes",
@@ -360,12 +396,11 @@ export default function TVPage() {
               field: "progress",
               headerName: "Progress",
               cellClassName: "base-cell center-aligned-cell",
+              valueGetter: (value, row) => {
+                return (row.watched * 100) / row.episodes;
+              },
               renderCell: (params) => {
-                return (
-                  <CircularProgressWithLabel
-                    value={(params.row.watched * 100) / params.row.episodes}
-                  />
-                );
+                return <CircularProgressWithLabel value={params.value} />;
               },
             },
             {
