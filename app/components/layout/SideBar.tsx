@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { FiHome, FiCalendar } from "react-icons/fi";
 import { HiOutlineBanknotes } from "react-icons/hi2";
 import { MdOutlineTimer } from "react-icons/md";
+import { TbLocationHeart } from "react-icons/tb";
 
 import { Route } from "../pages/RoutePage";
 import StyledLink from "../StyledLink";
@@ -31,6 +32,11 @@ export const ROUTES_WITHOUT_HOME: Route[] = [
     route: "/specialOccasions",
     label: "Special Occasions",
     icon: <FiCalendar />,
+  },
+  {
+    route: "/dates",
+    label: "Dates",
+    icon: <TbLocationHeart />,
   },
 ];
 
