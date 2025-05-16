@@ -1,4 +1,5 @@
 "use client";
+import { ArrowDropDown } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Autocomplete,
@@ -11,8 +12,8 @@ import {
   MenuItem,
   IconButton,
 } from "@mui/material";
-import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import { debounce } from "lodash";
+import { DataGrid, GridRowsProp, GridValidRowModel } from "@mui/x-data-grid";
+import { isEqual, debounce } from "lodash";
 import { useState, useMemo, useEffect } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
@@ -44,6 +45,8 @@ export default function TVPage() {
   const [genres, setGenres] = useState<Record<number, TMDBGenre> | null>(null);
   const [who, setWho] = useState<WhoSelection>("Both");
 
+  const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
+
   const addContent = async (value: Content, who: WhoSelection) => {
     value["who"] = who;
     value["watched"] = 0;
@@ -59,7 +62,6 @@ export default function TVPage() {
       value["episodes"] = 1;
       value["ongoing"] = false;
     }
-    console.log("value", value);
     addContentToFirebase(value as EmZContent);
     fetchData();
   };
@@ -68,8 +70,10 @@ export default function TVPage() {
 
     const genreData = genres ? genres : await fetchGenres();
 
+    const showMenuItems = {};
     const rowsData = data.docs.map((doc) => {
       const docData = doc.data();
+      showMenuItems[docData.id] = false;
       return {
         ...docData,
         name: docData.media_type === "tv" ? docData.name : docData.title,
@@ -78,7 +82,9 @@ export default function TVPage() {
         }),
       };
     });
-    if (!genres) setGenres(genreData);
+    if (!genres) {
+      setGenres(genreData);
+    }
     setRows(rowsData);
   };
 
@@ -172,14 +178,26 @@ export default function TVPage() {
           }}
           sx={{ width: "10%" }}
         >
-          <MenuItem value="Emily">Emily</MenuItem>
-          <MenuItem value="Brian">Brian</MenuItem>
-          <MenuItem value="Both">Both</MenuItem>
+          {whoOptions.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
         </Select>
       </Stack>
       <Box sx={{ height: 400, marginTop: "3%" }}>
         <DataGrid
           getRowHeight={() => "auto"}
+          processRowUpdate={(
+            newRow: GridValidRowModel,
+            oldRow: GridValidRowModel
+          ) => {
+            if (!isEqual(newRow, oldRow)) {
+              addContentToFirebase(newRow as EmZContent);
+              fetchData();
+            }
+            return newRow;
+          }}
           rows={rows}
           columns={[
             {
@@ -190,7 +208,27 @@ export default function TVPage() {
             {
               field: "who",
               headerName: "Who",
-              cellClassName: "base-cell left-aligned-cell",
+              cellClassName: "base-cell center-aligned-cell editable-cell",
+              valueOptions: whoOptions,
+              type: "singleSelect",
+
+              editable: true,
+              renderCell: (params) => {
+                return (
+                  <Chip
+                    label={params.row.who}
+                    onDelete={() => {}}
+                    deleteIcon={<ArrowDropDown />}
+                    color={
+                      params.row.who === "Emily"
+                        ? "primary"
+                        : params.row.who === "Brian"
+                        ? "secondary"
+                        : "default"
+                    }
+                  />
+                );
+              },
             },
             {
               field: "media_type",
@@ -237,6 +275,13 @@ export default function TVPage() {
                         ? "In Progress"
                         : "Completed"
                     }
+                    color={
+                      params.row.watched === 0
+                        ? "default"
+                        : params.row.watched < params.row.episodes
+                        ? "info"
+                        : "success"
+                    }
                   />
                 );
               },
@@ -244,7 +289,9 @@ export default function TVPage() {
             {
               field: "watched",
               headerName: "Watched",
-              cellClassName: "base-cell left-aligned-cell",
+              cellClassName: "base-cell left-aligned-cell editable-cell",
+              editable: true,
+              type: "number",
             },
             {
               field: "episodes",
@@ -289,6 +336,9 @@ export default function TVPage() {
             "& .center-aligned-cell": {
               justifyContent: "center",
               paddingY: 1,
+            },
+            "& .editable-cell": {
+              backgroundColor: "background.paper",
             },
           }}
         />
