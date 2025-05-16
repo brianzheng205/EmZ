@@ -1,4 +1,6 @@
 "use client";
+import { ArrowDropDown } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Autocomplete,
   Box,
@@ -8,10 +10,10 @@ import {
   Chip,
   Select,
   MenuItem,
-  Button,
+  IconButton,
 } from "@mui/material";
-import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import { debounce } from "lodash";
+import { DataGrid, GridRowsProp, GridValidRowModel } from "@mui/x-data-grid";
+import { isEqual, debounce } from "lodash";
 import { useState, useMemo, useEffect } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
@@ -43,15 +45,23 @@ export default function TVPage() {
   const [genres, setGenres] = useState<Record<number, TMDBGenre> | null>(null);
   const [who, setWho] = useState<WhoSelection>("Both");
 
+  const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
+
   const addContent = async (value: Content, who: WhoSelection) => {
     value["who"] = who;
     value["watched"] = 0;
 
-    const data = await fetchDataFromTMDB(
-      `https://api.themoviedb.org/3/tv/${value.id}`
-    );
-    value["episodes"] = data.number_of_episodes;
-    value["ongoing"] = data.in_production;
+    if (value.media_type === "tv") {
+      const data = await fetchDataFromTMDB(
+        `https://api.themoviedb.org/3/tv/${value.id}`
+      );
+
+      value["episodes"] = data.number_of_episodes;
+      value["ongoing"] = data.in_production;
+    } else {
+      value["episodes"] = 1;
+      value["ongoing"] = false;
+    }
     addContentToFirebase(value as EmZContent);
     fetchData();
   };
@@ -60,16 +70,21 @@ export default function TVPage() {
 
     const genreData = genres ? genres : await fetchGenres();
 
+    const showMenuItems = {};
     const rowsData = data.docs.map((doc) => {
       const docData = doc.data();
+      showMenuItems[docData.id] = false;
       return {
         ...docData,
+        name: docData.media_type === "tv" ? docData.name : docData.title,
         genre: docData.genre_ids.map((id: number) => {
           return genreData[id];
         }),
       };
     });
-    if (!genres) setGenres(genreData);
+    if (!genres) {
+      setGenres(genreData);
+    }
     setRows(rowsData);
   };
 
@@ -163,26 +178,62 @@ export default function TVPage() {
           }}
           sx={{ width: "10%" }}
         >
-          <MenuItem value="Emily">Emily</MenuItem>
-          <MenuItem value="Brian">Brian</MenuItem>
-          <MenuItem value="Both">Both</MenuItem>
+          {whoOptions.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
         </Select>
       </Stack>
       <Box sx={{ height: 400, marginTop: "3%" }}>
         <DataGrid
           getRowHeight={() => "auto"}
+          processRowUpdate={(
+            newRow: GridValidRowModel,
+            oldRow: GridValidRowModel
+          ) => {
+            if (!isEqual(newRow, oldRow)) {
+              addContentToFirebase(newRow as EmZContent);
+              fetchData();
+            }
+            return newRow;
+          }}
           rows={rows}
           columns={[
             {
               field: "name",
               headerName: "Name",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
-            { field: "who", headerName: "Who", cellClassName: "centered-cell" },
+            {
+              field: "who",
+              headerName: "Who",
+              cellClassName: "base-cell center-aligned-cell editable-cell",
+              valueOptions: whoOptions,
+              type: "singleSelect",
+
+              editable: true,
+              renderCell: (params) => {
+                return (
+                  <Chip
+                    label={params.row.who}
+                    onDelete={() => {}}
+                    deleteIcon={<ArrowDropDown />}
+                    color={
+                      params.row.who === "Emily"
+                        ? "primary"
+                        : params.row.who === "Brian"
+                        ? "secondary"
+                        : "default"
+                    }
+                  />
+                );
+              },
+            },
             {
               field: "media_type",
               headerName: "Type",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "genre",
@@ -201,17 +252,18 @@ export default function TVPage() {
                   ))}
                 </Box>
               ),
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
             },
             {
               field: "ongoing",
               headerName: "Ongoing",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
+              type: "boolean",
             },
             {
               field: "status",
               headerName: "Status",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
               width: 130,
               renderCell: (params) => {
                 return (
@@ -223,6 +275,13 @@ export default function TVPage() {
                         ? "In Progress"
                         : "Completed"
                     }
+                    color={
+                      params.row.watched === 0
+                        ? "default"
+                        : params.row.watched < params.row.episodes
+                        ? "info"
+                        : "success"
+                    }
                   />
                 );
               },
@@ -230,17 +289,19 @@ export default function TVPage() {
             {
               field: "watched",
               headerName: "Watched",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell editable-cell",
+              editable: true,
+              type: "number",
             },
             {
               field: "episodes",
               headerName: "Total",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell left-aligned-cell",
             },
             {
               field: "progress",
               headerName: "Progress",
-              cellClassName: "centered-cell",
+              cellClassName: "base-cell center-aligned-cell",
               renderCell: (params) => {
                 return (
                   <CircularProgressWithLabel
@@ -251,25 +312,33 @@ export default function TVPage() {
             },
             {
               field: "actions",
-              headerName: "Actions",
+              headerName: "",
               width: 150,
               renderCell: (params) => (
-                <Button
-                  color="error"
-                  variant="contained"
+                <IconButton
+                  aria-label="delete"
                   onClick={() => handleDelete(params.row.id)}
                 >
-                  Delete
-                </Button>
+                  <DeleteIcon />
+                </IconButton>
               ),
+              cellClassName: "base-cell center-aligned-cell",
             },
           ]}
           sx={{
-            "& .centered-cell": {
+            "& .base-cell": {
               display: "flex",
-              justifyContent: "center",
               alignItems: "center",
-              marginY: 1, // Adds vertical margin to the cell
+            },
+            "& .left-aligned-cell": {
+              justifyContent: "left",
+            },
+            "& .center-aligned-cell": {
+              justifyContent: "center",
+              paddingY: 1,
+            },
+            "& .editable-cell": {
+              backgroundColor: "background.paper",
             },
           }}
         />
