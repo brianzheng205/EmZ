@@ -10,10 +10,15 @@ import * as R from "ramda";
 import db from "@firebase";
 
 // FIREBASE
-export const fetchDocumentIds = async (collectionName: string) => {
+export const fetchDocuments = async (collectionName: string) => {
   const collectionRef = collection(db, collectionName);
   const querySnapshot = await getDocs(collectionRef);
-  return querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+  const docs = {};
+
+  querySnapshot.docs.forEach((doc) => {
+    docs[doc.id] = doc.data();
+  });
+  return docs;
 };
 
 export const fetchDocument = async (docRef: DocumentReference) => {

@@ -8,10 +8,12 @@ import * as R from "ramda";
 
 import { capitalizeFirstLetter } from "@/utils";
 
+import { AllBudgetsBoth } from "./FinancePage";
+
 // TYPES
 export type Time = "month" | "year";
 
-type BudgetItem = {
+export type BudgetItem = {
   amount: number;
   time: Time;
   isRecurring?: boolean;
@@ -61,6 +63,10 @@ type CombinedBudget = CombinedMetadata & {
     expenses: CombinedCategoryItems;
     savings: CombinedCategoryItems;
   };
+};
+
+export type IdToBudget = {
+  [id: string]: Budget;
 };
 
 export type Category = keyof CombinedBudget["categories"];
@@ -174,23 +180,17 @@ export const getPersonFromColumnHeader = (
   return "";
 };
 
+export const getActiveBudgets = (budgets: AllBudgetsBoth) => {
+  const emilyBudget: Budget = budgets.emily.budgets[budgets.emily.active.id];
+  const brianBudget: Budget = budgets.brian.budgets[budgets.brian.active.id];
+  return { emilyBudget, brianBudget };
+};
+
 /**
  * Creates a new budget by removing the old path and adding the new path with the given object.
  * If the old path and new path are the same, it simply updates the value at that path.
- *
- * @example
- *
- * const budget = { gross: { item1: { amount: 1, time: "year" }, item2: { amount: 2, time: "year" } }, deductions: {}, expenses: {}, savings: {} };
- *
- * // creating a new budget by setting item1's amount to 3
- * getUpdatedBudget(budget, ["gross", "item1"], ["gross", "item1"], { amount: 3, time: "year" });
- * //=> { gross: { item1: { amount: 3, time: "year" }, item2: { amount: 2, time: "year" } }, ... };
- *
- * // creating a new budget by renaming item1 to item3
- * getUpdatedBudget(budget, ["gross", "item1"], ["gross", "item3"], { amount: 1, time: "year" });
- * //=> { gross: { item1: { amount: 1, time: "year" }, item3: { amount: 2, time: "year" } }, ... };
  */
-export const getUpdatedBudget = (
+const getBudgetWithUpdatedItem = (
   budget: Budget,
   oldPath: string[],
   newPath: string[],
@@ -202,6 +202,36 @@ export const getUpdatedBudget = (
         R.dissocPath(oldPath),
         R.assocPath(newPath, object)
       )(budget) as Budget);
+
+export const getBudgetsWithUpdatedItem = (
+  budgets: AllBudgetsBoth,
+  oldPath: string[],
+  newPath: string[],
+  objectEm: object | null,
+  objectZ: object | null
+) => {
+  const newBudgets = {
+    emily: {
+      active: budgets.emily.active,
+      budgets: R.clone(budgets.emily.budgets),
+    },
+    brian: {
+      active: budgets.brian.active,
+      budgets: R.clone(budgets.brian.budgets),
+    },
+  };
+  const { emilyBudget, brianBudget } = getActiveBudgets(newBudgets);
+
+  const newEmilyBudget = objectEm
+    ? getBudgetWithUpdatedItem(emilyBudget, oldPath, newPath, objectEm)
+    : emilyBudget;
+  const newBrianBudget = objectZ
+    ? getBudgetWithUpdatedItem(brianBudget, oldPath, newPath, objectZ)
+    : brianBudget;
+  newBudgets.emily.budgets[newBudgets.emily.active.id] = newEmilyBudget;
+  newBudgets.brian.budgets[newBudgets.brian.active.id] = newBrianBudget;
+  return newBudgets;
+};
 
 /**
  * Returns the time unit for the changed cell based on the header.

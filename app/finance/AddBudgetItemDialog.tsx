@@ -95,7 +95,7 @@ const DEFAULTS = {
   time: "year" as Time,
 };
 
-export default function AddBudgetRowDialog({
+export default function AddBudgetItemDialog({
   open,
   onClose,
   onSubmit,
