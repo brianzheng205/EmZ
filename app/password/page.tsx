@@ -7,7 +7,6 @@ import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 function hashValue(value: string): string {
@@ -17,7 +16,6 @@ function hashValue(value: string): string {
 export default function PasswordPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +25,7 @@ export default function PasswordPage() {
 
     if (hashValue(password) === hashedPassword) {
       document.cookie = "accessGranted=true; path=/";
-      router.push("/");
+      window.location.href = "/";
     } else {
       setError("Invalid password. Please try again.");
     }
