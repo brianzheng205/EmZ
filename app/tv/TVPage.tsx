@@ -1,17 +1,7 @@
 "use client";
 import { ArrowDropDown } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import {
-  Autocomplete,
-  Box,
-  TextField,
-  Stack,
-  Avatar,
-  Chip,
-  Select,
-  MenuItem,
-  IconButton,
-} from "@mui/material";
+import { Box, TextField, Stack, Chip, IconButton } from "@mui/material";
 import {
   DataGrid,
   GridRowsProp,
@@ -20,8 +10,8 @@ import {
   GridCellParams,
   GridCellModes,
 } from "@mui/x-data-grid";
-import { isEqual, debounce } from "lodash";
-import { useState, useMemo, useEffect, MouseEvent } from "react";
+import { isEqual } from "lodash";
+import { useState, useEffect, MouseEvent } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
@@ -30,30 +20,19 @@ import {
   deleteContentFromFirebase,
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
+import SearchBar from "./SearchBar";
 import {
-  TMDBSearchMultiResponse,
-  Content,
-  TVShow,
-  Movie,
-  fetchSearchResults,
-  fetchGenres,
-  WhoSelection,
-  TMDBGenre,
   EmZContent,
-  fetchDataFromTMDB,
+  whoOptions,
+  fetchGenres,
+  EmZGenre, //Filter
 } from "./utils";
 
 export default function TVPage() {
-  const [options, setOptions] = useState<Content[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [inputValue, setInputValue] = useState("");
-  const [loading, setLoading] = useState<boolean>(false);
   const [rows, setRows] = useState<GridRowsProp>([]);
-  const [genres, setGenres] = useState<Record<number, TMDBGenre> | null>(null);
-  const [who, setWho] = useState<WhoSelection>("Both");
+  const [genres, setGenres] = useState<Record<number, EmZGenre> | null>(null);
   const [cellModesModel, setCellModesModel] = useState<GridCellModesModel>({});
-
-  const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
+  //const [filters, setFilters] = useState<Filter<EmZContent>[]>([]);
 
   const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
     if (!params.isEditable) {
@@ -99,24 +78,6 @@ export default function TVPage() {
     setCellModesModel(newModel);
   };
 
-  const addContent = async (value: Content, who: WhoSelection) => {
-    value["who"] = who;
-    value["watched"] = 0;
-
-    if (value.media_type === "tv") {
-      const data = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/tv/${value.id}`
-      );
-
-      value["episodes"] = data.number_of_episodes;
-      value["ongoing"] = data.in_production;
-    } else {
-      value["episodes"] = 1;
-      value["ongoing"] = false;
-    }
-    addContentToFirebase(value as EmZContent);
-    fetchData();
-  };
   const fetchData = async () => {
     const data = await fetchAllContentFromFirebase();
 
@@ -128,11 +89,10 @@ export default function TVPage() {
       showMenuItems[docData.id] = false;
       return {
         ...docData,
-        name: docData.media_type === "tv" ? docData.name : docData.title,
       };
     });
     if (!genres) {
-      setGenres(genreData);
+      setGenres(genreData as Record<number, EmZGenre>);
     }
     setRows(rowsData);
   };
@@ -141,101 +101,25 @@ export default function TVPage() {
     fetchData();
   });
 
-  const fetchResults = async (query) => {
-    setLoading(true);
-    const data: TMDBSearchMultiResponse = await fetchSearchResults(query);
-    setOptions(data.results.filter((item) => item.media_type !== "person"));
-    setLoading(false);
-  };
-
-  const debouncedFetch = useMemo(() => {
-    return debounce((query: string) => {
-      fetchResults(query);
-    }, 300);
-  }, []);
-
-  const handleInputChange = (event, value: string) => {
-    setInputValue(value);
-    debouncedFetch(value);
-  };
-
   const handleDelete = (id: number) => {
     deleteContentFromFirebase(id);
     fetchData();
   };
+
   return (
     <Stack sx={{ alignItems: "center" }}>
-      <Stack
-        direction={"row"}
-        sx={{
-          gap: 2,
-          marginTop: "3%",
-          width: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Autocomplete
-          freeSolo
-          options={options}
-          getOptionLabel={(option) => {
-            return typeof option === "string"
-              ? option
-              : option.media_type === "tv"
-              ? (option as TVShow).name
-              : (option as Movie).title;
-          }}
-          onInputChange={handleInputChange}
-          onChange={(event, value) => {
-            if (value) {
-              addContent(value as Content, who);
-            }
-          }}
-          loading={loading}
-          sx={{ width: "80%" }}
-          renderInput={(params) => (
-            <TextField {...params} label="Search Content" />
-          )}
-          renderOption={(props, option) => (
-            <Box
-              component="li"
-              {...props}
-              key={`${option.media_type}-${option.id}`}
-              sx={{ display: "flex", gap: 2 }}
-            >
-              <Avatar
-                alt={
-                  option.media_type === "tv"
-                    ? (option as TVShow).name
-                    : (option as Movie).title
-                }
-                key={option.id}
-                src={`https://image.tmdb.org/t/p/w500/${option.poster_path}`}
-                variant="square"
-                sx={{ height: 50, width: "auto" }}
-              />
-              {option.media_type === "tv"
-                ? (option as TVShow).name
-                : (option as Movie).title}
-            </Box>
-          )}
-        />
-        <Select
-          value={who}
-          onChange={(event) => {
-            setWho(event.target.value as WhoSelection);
-          }}
-          sx={{ width: "10%" }}
-        >
-          {whoOptions.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </Select>
-      </Stack>
-      <Box sx={{ height: 400, marginTop: "3%" }}>
+      <SearchBar fetchData={fetchData} rows={rows} />
+      <Stack sx={{ height: "70vh", width: "80%", marginTop: "3%" }}>
+        {/*<Stack direction={"row"}>
+          <Button></Button>
+        </Stack>*/}
         <DataGrid
+          showToolbar
+          initialState={{
+            sorting: {
+              sortModel: [{ field: "status", sort: "asc" }],
+            },
+          }}
           getRowHeight={() => "auto"}
           cellModesModel={cellModesModel}
           onCellModesModelChange={handleCellModesModelChange}
@@ -244,8 +128,6 @@ export default function TVPage() {
             newRow: GridValidRowModel,
             oldRow: GridValidRowModel
           ) => {
-            console.log("newRow", newRow);
-
             if (!isEqual(newRow, oldRow)) {
               addContentToFirebase(newRow as EmZContent);
               fetchData();
@@ -258,6 +140,13 @@ export default function TVPage() {
               field: "name",
               headerName: "Name",
               cellClassName: "base-cell left-aligned-cell",
+              flex: 2,
+              valueGetter: (value, row) => {
+                if (row.media_type === "movie") {
+                  return row.title;
+                }
+                return row.name;
+              },
             },
             {
               field: "who",
@@ -265,8 +154,8 @@ export default function TVPage() {
               cellClassName: "base-cell center-aligned-cell editable-cell",
               valueOptions: whoOptions,
               type: "singleSelect",
-
               editable: true,
+              flex: 1,
               renderCell: (params) => {
                 return (
                   <Chip
@@ -293,7 +182,7 @@ export default function TVPage() {
             {
               field: "genre",
               headerName: "Genre",
-              width: 200,
+              flex: 2,
               valueGetter: (value, row) => {
                 return row.genre_ids.map((id: number) => {
                   return genres ? genres[id] : id;
@@ -308,23 +197,42 @@ export default function TVPage() {
                   }}
                 >
                   {params.value.map((g, index) => (
-                    <Chip key={index} label={g} />
+                    <Chip
+                      key={index}
+                      label={g.name}
+                      sx={{ backgroundColor: g.color }}
+                    />
                   ))}
                 </Box>
               ),
-              cellClassName: "base-cell left-aligned-cell",
+              cellClassName: "base-cell left-aligned-cell vertical-padding",
             },
             {
               field: "ongoing",
               headerName: "Ongoing",
               cellClassName: "base-cell center-aligned-cell",
               type: "boolean",
+              flex: 1,
             },
             {
               field: "status",
               headerName: "Status",
               cellClassName: "base-cell center-aligned-cell",
-              width: 130,
+              flex: 2,
+              sortComparator: (v1, v2) => {
+                if (v1 === v2) {
+                  return 0;
+                }
+                if (v1 === "Not Started") {
+                  return 1;
+                }
+                if (v1 === "Completed" && v2 === "In Progress") {
+                  return 1;
+                }
+
+                return -1;
+              },
+
               valueGetter: (value, row) => {
                 return row.watched === 0
                   ? "Not Started"
@@ -353,6 +261,7 @@ export default function TVPage() {
               cellClassName: "base-cell left-aligned-cell editable-cell",
               editable: true,
               type: "number",
+              flex: 1,
 
               renderEditCell: (params) => (
                 <TextField
@@ -364,16 +273,15 @@ export default function TVPage() {
                     },
                   }}
                   defaultValue={params.value}
-                  onChange={(e) => {
-                    const value = Math.max(
-                      0,
-                      Math.min(Number(e.target.value), params.row.episodes)
-                    );
-                    params.api.setEditCellValue({
-                      id: params.id,
-                      field: params.field,
-                      value,
-                    });
+                  onBlur={(event) => {
+                    const value = Number(event.target.value);
+                    if (value > 0 && value <= params.row.episodes) {
+                      params.api.setEditCellValue({
+                        id: params.id,
+                        field: params.field,
+                        value,
+                      });
+                    }
                   }}
                   sx={{
                     "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
@@ -396,6 +304,7 @@ export default function TVPage() {
               field: "progress",
               headerName: "Progress",
               cellClassName: "base-cell center-aligned-cell",
+              flex: 1,
               valueGetter: (value, row) => {
                 return (row.watched * 100) / row.episodes;
               },
@@ -406,7 +315,7 @@ export default function TVPage() {
             {
               field: "actions",
               headerName: "",
-              width: 150,
+              width: 50,
               renderCell: (params) => (
                 <IconButton
                   aria-label="delete"
@@ -428,6 +337,8 @@ export default function TVPage() {
             },
             "& .center-aligned-cell": {
               justifyContent: "center",
+            },
+            "& .vertical-padding": {
               paddingY: 1,
             },
             "& .editable-cell": {
@@ -435,7 +346,7 @@ export default function TVPage() {
             },
           }}
         />
-      </Box>
+      </Stack>
     </Stack>
   );
 }
