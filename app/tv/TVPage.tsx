@@ -109,7 +109,7 @@ export default function TVPage() {
   return (
     <Stack sx={{ alignItems: "center" }}>
       <SearchBar fetchData={fetchData} rows={rows} />
-      <Stack sx={{ height: 600, marginTop: "3%" }}>
+      <Stack sx={{ height: "70vh", width: "80%", marginTop: "3%" }}>
         <Stack direction={"row"}>
           <Button></Button>
         </Stack>
@@ -140,6 +140,7 @@ export default function TVPage() {
               field: "name",
               headerName: "Name",
               cellClassName: "base-cell left-aligned-cell",
+              flex: 2,
               valueGetter: (value, row) => {
                 if (row.media_type === "movie") {
                   return row.title;
@@ -154,6 +155,7 @@ export default function TVPage() {
               valueOptions: whoOptions,
               type: "singleSelect",
               editable: true,
+              flex: 1,
               renderCell: (params) => {
                 return (
                   <Chip
@@ -180,7 +182,7 @@ export default function TVPage() {
             {
               field: "genre",
               headerName: "Genre",
-              width: 200,
+              flex: 2,
               valueGetter: (value, row) => {
                 return row.genre_ids.map((id: number) => {
                   return genres ? genres[id] : id;
@@ -210,12 +212,13 @@ export default function TVPage() {
               headerName: "Ongoing",
               cellClassName: "base-cell center-aligned-cell",
               type: "boolean",
+              flex: 1,
             },
             {
               field: "status",
               headerName: "Status",
               cellClassName: "base-cell center-aligned-cell",
-              width: 130,
+              flex: 2,
               sortComparator: (v1, v2) => {
                 if (v1 === v2) {
                   return 0;
@@ -258,6 +261,7 @@ export default function TVPage() {
               cellClassName: "base-cell left-aligned-cell editable-cell",
               editable: true,
               type: "number",
+              flex: 1,
 
               renderEditCell: (params) => (
                 <TextField
@@ -300,6 +304,7 @@ export default function TVPage() {
               field: "progress",
               headerName: "Progress",
               cellClassName: "base-cell center-aligned-cell",
+              flex: 1,
               valueGetter: (value, row) => {
                 return (row.watched * 100) / row.episodes;
               },
@@ -310,7 +315,7 @@ export default function TVPage() {
             {
               field: "actions",
               headerName: "",
-              width: 150,
+              width: 50,
               renderCell: (params) => (
                 <IconButton
                   aria-label="delete"
