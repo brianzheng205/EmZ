@@ -79,7 +79,6 @@ export default function ValentinesPage() {
       height="100%"
       justifyContent="center"
       alignItems="center"
-      mb={6}
     >
       <Image
         className="w-[300px] h-[300px] object-contain"
