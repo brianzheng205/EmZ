@@ -80,7 +80,7 @@ export const fetchGenres = async () => {
   return [...movieGenres, ...tvGenres].reduce((prev, curr) => {
     prev[curr.id] = {
       name: curr.name,
-      color: `hsl(${(curr.id * 50) % 360}, 70%, 85%)`,
+      color: `hsl(${(curr.id * 50) % 360}, 70%, 80%)`,
     };
     return prev;
   }, {});

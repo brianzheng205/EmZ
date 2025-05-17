@@ -75,6 +75,27 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
       value["ongoing"] = tvData.in_production;
       value["next_episode_to_air"] = tvData.next_episode_to_air;
     } else {
+      const movieData = await fetchDataFromTMDB(
+        `https://api.themoviedb.org/3/movie/${value.id}`
+      );
+
+      if (movieData.belongs_to_collection) {
+        const collection = await fetchDataFromTMDB(
+          `https://api.themoviedb.org/3/collection/${movieData.belongs_to_collection.id}?language=en-US`
+        );
+
+        for (const part of collection.parts) {
+          if (part.id !== value.id) {
+            part["who"] = who;
+            part["watched"] = 0;
+            part["episodes"] = 1;
+            part["ongoing"] = false;
+            console.log("Adding part to firebase", part);
+            addContentToFirebase(part as EmZContent);
+          }
+        }
+      }
+
       value["episodes"] = 1;
       value["ongoing"] = false;
     }

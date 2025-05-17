@@ -260,10 +260,10 @@ export default function TVPage() {
                   }}
                   defaultValue={params.value}
                   onChange={(e) => {
-                    const value = Math.max(
-                      0,
-                      Math.min(Number(e.target.value), params.row.episodes)
-                    );
+                    const value = Number(e.target.value);
+                    if (value < 0 || value > params.row.episodes) {
+                      return;
+                    }
                     params.api.setEditCellValue({
                       id: params.id,
                       field: params.field,
