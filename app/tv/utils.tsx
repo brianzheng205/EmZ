@@ -24,6 +24,7 @@ export interface TVShow extends Content {
   original_name: string;
   first_air_date: string;
   name: string;
+  next_episode_to_air: string | null;
 }
 
 export interface Movie extends Content {
@@ -40,10 +41,15 @@ export type TMDBSearchMultiResponse = {
   total_results: number;
 };
 
-export type TMDBGenre = {
+export interface TMDBGenre {
   id: number;
   name: string;
-};
+}
+
+export interface EmZGenre {
+  name: string;
+  color: string;
+}
 
 export type WhoSelection = "Emily" | "Brian" | "Both";
 export const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
@@ -72,9 +78,12 @@ export const fetchGenres = async () => {
   );
 
   return [...movieGenres, ...tvGenres].reduce((prev, curr) => {
-    prev[curr.id] = curr.name;
+    prev[curr.id] = {
+      name: curr.name,
+      color: `hsl(${(curr.id * 50) % 360}, 70%, 85%)`,
+    };
     return prev;
-  });
+  }, {});
 };
 
 export const fetchDataFromTMDB = async (url: string) => {

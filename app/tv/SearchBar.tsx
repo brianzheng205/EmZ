@@ -67,12 +67,13 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
     value["watched"] = 0;
 
     if (value.media_type === "tv") {
-      const data = await fetchDataFromTMDB(
+      const tvData = await fetchDataFromTMDB(
         `https://api.themoviedb.org/3/tv/${value.id}`
       );
 
-      value["episodes"] = data.number_of_episodes;
-      value["ongoing"] = data.in_production;
+      value["episodes"] = tvData.number_of_episodes;
+      value["ongoing"] = tvData.in_production;
+      value["next_episode_to_air"] = tvData.next_episode_to_air;
     } else {
       value["episodes"] = 1;
       value["ongoing"] = false;

@@ -21,11 +21,11 @@ import {
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
 import SearchBar from "./SearchBar";
-import { TMDBGenre, EmZContent, whoOptions, fetchGenres } from "./utils";
+import { EmZContent, whoOptions, fetchGenres, EmZGenre } from "./utils";
 
 export default function TVPage() {
   const [rows, setRows] = useState<GridRowsProp>([]);
-  const [genres, setGenres] = useState<Record<number, TMDBGenre> | null>(null);
+  const [genres, setGenres] = useState<Record<number, EmZGenre> | null>(null);
   const [cellModesModel, setCellModesModel] = useState<GridCellModesModel>({});
 
   const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
@@ -83,11 +83,10 @@ export default function TVPage() {
       showMenuItems[docData.id] = false;
       return {
         ...docData,
-        name: docData.media_type === "tv" ? docData.name : docData.title,
       };
     });
     if (!genres) {
-      setGenres(genreData);
+      setGenres(genreData as Record<number, EmZGenre>);
     }
     setRows(rowsData);
   };
@@ -106,6 +105,11 @@ export default function TVPage() {
       <SearchBar fetchData={fetchData} rows={rows} />
       <Box sx={{ height: 600, marginTop: "3%" }}>
         <DataGrid
+          initialState={{
+            sorting: {
+              sortModel: [{ field: "status", sort: "asc" }],
+            },
+          }}
           getRowHeight={() => "auto"}
           cellModesModel={cellModesModel}
           onCellModesModelChange={handleCellModesModelChange}
@@ -126,6 +130,12 @@ export default function TVPage() {
               field: "name",
               headerName: "Name",
               cellClassName: "base-cell left-aligned-cell",
+              valueGetter: (value, row) => {
+                if (row.media_type === "movie") {
+                  return row.title;
+                }
+                return row.name;
+              },
             },
             {
               field: "who",
@@ -175,7 +185,11 @@ export default function TVPage() {
                   }}
                 >
                   {params.value.map((g, index) => (
-                    <Chip key={index} label={g} />
+                    <Chip
+                      key={index}
+                      label={g.name}
+                      sx={{ backgroundColor: g.color }}
+                    />
                   ))}
                 </Box>
               ),
@@ -192,6 +206,20 @@ export default function TVPage() {
               headerName: "Status",
               cellClassName: "base-cell center-aligned-cell",
               width: 130,
+              sortComparator: (v1, v2) => {
+                if (v1 === v2) {
+                  return 0;
+                }
+                if (v1 === "Not Started") {
+                  return 1;
+                }
+                if (v1 === "Completed" && v2 === "In Progress") {
+                  return 1;
+                }
+
+                return -1;
+              },
+
               valueGetter: (value, row) => {
                 return row.watched === 0
                   ? "Not Started"
