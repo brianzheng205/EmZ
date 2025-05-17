@@ -1,17 +1,14 @@
 import {
   setDoc,
-  getFirestore,
   doc,
   getDocs,
   collection,
   deleteDoc,
 } from "firebase/firestore";
 
-import app from "@firebase";
+import db from "@firebase";
 
 import { Content } from "./utils";
-
-const db = getFirestore(app);
 
 export function addContentToFirebase(content: Content) {
   // const cleanedContent: EmZContent = filterToInterface<EmZContent>(content, [

@@ -14,7 +14,7 @@ import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
 import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";

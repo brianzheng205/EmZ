@@ -11,7 +11,7 @@ import {
   GridCellModes,
 } from "@mui/x-data-grid";
 import { isEqual } from "lodash";
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect, MouseEvent, useCallback } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
@@ -78,7 +78,7 @@ export default function TVPage() {
     setCellModesModel(newModel);
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const data = await fetchAllContentFromFirebase();
 
     const genreData = genres ? genres : await fetchGenres();
@@ -95,11 +95,11 @@ export default function TVPage() {
       setGenres(genreData as Record<number, EmZGenre>);
     }
     setRows(rowsData);
-  };
+  }, [genres]);
 
   useEffect(() => {
     fetchData();
-  });
+  }, [fetchData]);
 
   const handleDelete = (id: number) => {
     deleteContentFromFirebase(id);
@@ -115,9 +115,15 @@ export default function TVPage() {
         </Stack>*/}
         <DataGrid
           showToolbar
+          disableVirtualization
+          disableRowSelectionOnClick
+          disableColumnResize
           initialState={{
             sorting: {
               sortModel: [{ field: "status", sort: "asc" }],
+            },
+            pagination: {
+              paginationModel: { pageSize: 20, page: 0 },
             },
           }}
           getRowHeight={() => "auto"}
@@ -140,7 +146,7 @@ export default function TVPage() {
               field: "name",
               headerName: "Name",
               cellClassName: "base-cell left-aligned-cell",
-              flex: 2,
+              flex: 1,
               valueGetter: (value, row) => {
                 if (row.media_type === "movie") {
                   return row.title;
@@ -155,7 +161,7 @@ export default function TVPage() {
               valueOptions: whoOptions,
               type: "singleSelect",
               editable: true,
-              flex: 1,
+              width: 100,
               renderCell: (params) => {
                 return (
                   <Chip
@@ -178,11 +184,12 @@ export default function TVPage() {
               field: "media_type",
               headerName: "Type",
               cellClassName: "base-cell left-aligned-cell",
+              width: 100,
             },
             {
               field: "genre",
               headerName: "Genre",
-              flex: 2,
+              flex: 1,
               valueGetter: (value, row) => {
                 return row.genre_ids.map((id: number) => {
                   return genres ? genres[id] : id;
@@ -212,21 +219,21 @@ export default function TVPage() {
               headerName: "Ongoing",
               cellClassName: "base-cell center-aligned-cell",
               type: "boolean",
-              flex: 1,
+              width: 100,
             },
             {
               field: "status",
               headerName: "Status",
               cellClassName: "base-cell center-aligned-cell",
-              flex: 2,
+              width: 150,
               sortComparator: (v1, v2) => {
                 if (v1 === v2) {
                   return 0;
                 }
-                if (v1 === "Not Started") {
+                if (v1 === "Completed") {
                   return 1;
                 }
-                if (v1 === "Completed" && v2 === "In Progress") {
+                if (v1 === "Not Started" && v2 === "In Progress") {
                   return 1;
                 }
 
@@ -261,8 +268,7 @@ export default function TVPage() {
               cellClassName: "base-cell left-aligned-cell editable-cell",
               editable: true,
               type: "number",
-              flex: 1,
-
+              width: 100,
               renderEditCell: (params) => (
                 <TextField
                   type="number"
@@ -299,12 +305,13 @@ export default function TVPage() {
               field: "episodes",
               headerName: "Total",
               cellClassName: "base-cell left-aligned-cell",
+              width: 100,
             },
             {
               field: "progress",
               headerName: "Progress",
               cellClassName: "base-cell center-aligned-cell",
-              flex: 1,
+              width: 100,
               valueGetter: (value, row) => {
                 return (row.watched * 100) / row.episodes;
               },

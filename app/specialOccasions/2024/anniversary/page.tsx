@@ -1,4 +1,4 @@
-import Box from "@mui/material/Box";
+import { Box } from "@mui/material";
 
 import VideoPage from "@/components/pages/VideoPage";
 import ShadowedText from "@/components/ShadowedText";
