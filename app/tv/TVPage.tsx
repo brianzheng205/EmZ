@@ -110,9 +110,9 @@ export default function TVPage() {
     <Stack sx={{ alignItems: "center" }}>
       <SearchBar fetchData={fetchData} rows={rows} />
       <Stack sx={{ height: "70vh", width: "80%", marginTop: "3%" }}>
-        <Stack direction={"row"}>
+        {/*<Stack direction={"row"}>
           <Button></Button>
-        </Stack>
+        </Stack>*/}
         <DataGrid
           showToolbar
           initialState={{
