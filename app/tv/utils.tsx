@@ -54,6 +54,8 @@ export interface EmZGenre {
 export type WhoSelection = "Emily" | "Brian" | "Both";
 export const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
 
+export type Filter<T> = (items: T[]) => T[];
+
 export const fetchSearchResults = async (query: string) => {
   const url = `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(
     query

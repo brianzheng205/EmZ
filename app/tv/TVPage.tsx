@@ -1,7 +1,7 @@
 "use client";
 import { ArrowDropDown } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Box, TextField, Stack, Chip, IconButton } from "@mui/material";
+import { Box, TextField, Stack, Chip, IconButton, Button } from "@mui/material";
 import {
   DataGrid,
   GridRowsProp,
@@ -21,12 +21,18 @@ import {
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
 import SearchBar from "./SearchBar";
-import { EmZContent, whoOptions, fetchGenres, EmZGenre } from "./utils";
+import {
+  EmZContent,
+  whoOptions,
+  fetchGenres,
+  EmZGenre, //Filter
+} from "./utils";
 
 export default function TVPage() {
   const [rows, setRows] = useState<GridRowsProp>([]);
   const [genres, setGenres] = useState<Record<number, EmZGenre> | null>(null);
   const [cellModesModel, setCellModesModel] = useState<GridCellModesModel>({});
+  //const [filters, setFilters] = useState<Filter<EmZContent>[]>([]);
 
   const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
     if (!params.isEditable) {
@@ -103,8 +109,12 @@ export default function TVPage() {
   return (
     <Stack sx={{ alignItems: "center" }}>
       <SearchBar fetchData={fetchData} rows={rows} />
-      <Box sx={{ height: 600, marginTop: "3%" }}>
+      <Stack sx={{ height: 600, marginTop: "3%" }}>
+        <Stack direction={"row"}>
+          <Button></Button>
+        </Stack>
         <DataGrid
+          showToolbar
           initialState={{
             sorting: {
               sortModel: [{ field: "status", sort: "asc" }],
@@ -259,16 +269,15 @@ export default function TVPage() {
                     },
                   }}
                   defaultValue={params.value}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    if (value < 0 || value > params.row.episodes) {
-                      return;
+                  onBlur={(event) => {
+                    const value = Number(event.target.value);
+                    if (value > 0 && value <= params.row.episodes) {
+                      params.api.setEditCellValue({
+                        id: params.id,
+                        field: params.field,
+                        value,
+                      });
                     }
-                    params.api.setEditCellValue({
-                      id: params.id,
-                      field: params.field,
-                      value,
-                    });
                   }}
                   sx={{
                     "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
@@ -332,7 +341,7 @@ export default function TVPage() {
             },
           }}
         />
-      </Box>
+      </Stack>
     </Stack>
   );
 }
