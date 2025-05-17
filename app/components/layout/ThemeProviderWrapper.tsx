@@ -19,6 +19,8 @@ const theme = createTheme({
       default: "#ECCFC3",
       paper: "#ECBBA5",
     },
+    success: { main: "#9ACD32" },
+    info: { main: "#F0E68C" },
   },
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
