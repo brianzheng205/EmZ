@@ -1,6 +1,6 @@
 import { Stack, TextField, Typography } from "@mui/material";
 import * as R from "ramda";
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 

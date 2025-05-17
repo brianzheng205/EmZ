@@ -1,8 +1,7 @@
 import { FiHeart } from "react-icons/fi";
 import { IoRose } from "react-icons/io5";
 
-import RoutePage from "../../components/pages/RoutePage";
-import { Route } from "../../components/pages/RoutePage";
+import RoutePage, { Route } from "@/components/pages/RoutePage";
 
 export const generateMetadata = () => ({
   title: "2024 Special Occasions",

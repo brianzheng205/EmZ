@@ -1,7 +1,7 @@
 "use client";
 
 import { Add } from "@mui/icons-material";
-import { Button, Container, Stack, Grid2 as Grid } from "@mui/material";
+import { Button, Container, Stack, Grid } from "@mui/material";
 import {
   collection,
   getDocs,
