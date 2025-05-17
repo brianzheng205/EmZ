@@ -103,7 +103,7 @@ export default function TVPage() {
 
   return (
     <Stack sx={{ alignItems: "center" }}>
-      <SearchBar fetchData={fetchData} />
+      <SearchBar fetchData={fetchData} rows={rows} />
       <Box sx={{ height: 600, marginTop: "3%" }}>
         <DataGrid
           getRowHeight={() => "auto"}

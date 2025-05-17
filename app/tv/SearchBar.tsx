@@ -9,6 +9,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
+import { GridRowsProp } from "@mui/x-data-grid";
 import { debounce } from "lodash";
 import { useState, useMemo } from "react";
 
@@ -27,27 +28,34 @@ import {
 
 type SearchBarProps = {
   fetchData: () => void;
+  rows: GridRowsProp;
 };
 
-export default function SearchBar({ fetchData }: SearchBarProps) {
+export default function SearchBar({ fetchData, rows }: SearchBarProps) {
   const [inputValue, setInputValue] = useState("");
   const [options, setOptions] = useState<Content[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [who, setWho] = useState<WhoSelection>("Both");
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
 
-  const fetchResults = async (query) => {
-    setLoading(true);
-    const data: TMDBSearchMultiResponse = await fetchSearchResults(query);
-    setOptions(data.results.filter((item) => item.media_type !== "person"));
-    setLoading(false);
-  };
-
   const debouncedFetch = useMemo(() => {
+    const fetchResults = async (query) => {
+      setLoading(true);
+      const data: TMDBSearchMultiResponse = await fetchSearchResults(query);
+      const rowIds = new Set(rows.map((row) => row.id));
+
+      setOptions(
+        data.results.filter(
+          (item) => item.media_type !== "person" && !rowIds.has(item.id)
+        )
+      );
+      setLoading(false);
+    };
+
     return debounce((query: string) => {
       fetchResults(query);
     }, 300);
-  }, []);
+  }, [rows]);
 
   const handleInputChange = (event, value: string) => {
     setInputValue(value);
