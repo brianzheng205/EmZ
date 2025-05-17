@@ -1,10 +1,13 @@
-export type ActvityType = "Bulk" | "Fun" | "Other";
+export type StartTimeType = "fixed" | "calculated";
+
+export type ActvityType = "Prepare" | "Bulk" | "Fun" | "Other" | "";
 
 export type Row = {
   id: number;
   startTime: string;
+  startTimeType: StartTimeType;
   duration: number;
   activity: string;
-  type: string;
+  type: ActvityType;
   notes: string;
 };

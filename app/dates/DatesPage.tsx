@@ -2,6 +2,7 @@
 
 import { ArrowDropDown } from "@mui/icons-material";
 import { Container, Chip } from "@mui/material";
+import { Theme, styled, darken } from "@mui/material/styles";
 import {
   DataGrid,
   GridColDef,
@@ -10,14 +11,17 @@ import {
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 import { ActvityType, Row } from "./types";
 import {
-  convertTo12HourFormat,
+  convert24To12HourFormat,
   convertToDate,
-  convertTo24HourFormat,
-} from "./utls";
+  convertDateTo24HourFormat,
+  calculateDuration,
+  addMinutes,
+  convertNumberTo24HourFormat,
+} from "./utils";
 
 function StartTimePicker(params: GridRenderEditCellParams) {
   return (
@@ -27,7 +31,7 @@ function StartTimePicker(params: GridRenderEditCellParams) {
         onChange={(newDate) => {
           if (!newDate) return;
 
-          const updatedDate = convertTo24HourFormat(newDate);
+          const updatedDate = convertDateTo24HourFormat(newDate);
 
           params.api.setEditCellValue({
             id: params.id,
@@ -40,6 +44,22 @@ function StartTimePicker(params: GridRenderEditCellParams) {
   );
 }
 
+const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
+  "& .fixed": {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+    "&:hover": {
+      backgroundColor: darken(theme.palette.primary.main, 0.1),
+    },
+    "&.Mui-selected": {
+      backgroundColor: theme.palette.primary.main,
+      "&:hover": {
+        backgroundColor: darken(theme.palette.primary.main, 0.1),
+      },
+    },
+  },
+}));
+
 const columns: GridColDef[] = [
   {
     field: "startTime",
@@ -50,7 +70,7 @@ const columns: GridColDef[] = [
     editable: true,
     type: "string",
     valueFormatter: (value: string) =>
-      value !== "" ? convertTo12HourFormat(value) : "",
+      value !== "" ? convert24To12HourFormat(value) : "",
     renderEditCell: StartTimePicker,
   },
   {
@@ -61,6 +81,7 @@ const columns: GridColDef[] = [
     align: "left",
     editable: true,
     flex: 1,
+    valueFormatter: convertNumberTo24HourFormat,
   },
   {
     field: "activity",
@@ -75,12 +96,13 @@ const columns: GridColDef[] = [
     type: "singleSelect",
     flex: 1,
     editable: true,
-    valueOptions: ["Work", "Personal", "Other"] as ActvityType[],
+    valueOptions: ["Prepare", "Bulk", "Fun", "Other"] as ActvityType[],
     renderCell: (params) => {
       const colorMap = {
-        Work: "primary",
-        Exercise: "success",
-        Personal: "warning",
+        Prepare: "primary",
+        Bulk: "success",
+        Fun: "warning",
+        Other: "error",
       };
 
       return (
@@ -110,49 +132,89 @@ const emptyRow: Row = {
   activity: "",
   type: "",
   notes: "",
+  startTimeType: "calculated",
 };
-let nextId = 2;
+
+const initialRows: Row[] = [
+  {
+    id: 1,
+    startTime: "10:00",
+    duration: 0,
+    activity: "Get Ready",
+    type: "Prepare",
+    notes: "",
+    startTimeType: "fixed",
+  },
+  { ...emptyRow, startTime: "10:00", id: 2 },
+];
 
 export default function DatesPage() {
-  const [rows, setRows] = useState<Row[]>([
-    {
-      id: 1,
-      startTime: "10:00",
-      duration: 60,
-      activity: "Meeting",
-      type: "Work",
-      notes: "Meeting with client",
-    },
-    { ...emptyRow },
-  ]);
+  const [rows, setRows] = useState(initialRows);
+
+  const processRowUpdate = (newRow: Row, oldRow: Row) => {
+    const updatedRows = [...rows];
+    const idx = newRow.id - 1;
+
+    // If editing the last row, add a new row
+    if (idx === updatedRows.length - 1) {
+      updatedRows[idx] = { ...newRow };
+      updatedRows.push({ ...emptyRow, id: updatedRows.length + 1 });
+    }
+
+    // Update the row
+    updatedRows[idx] = { ...updatedRows[idx], ...newRow };
+
+    if (
+      // 1. If editing startTime of a calculated row, convert it to fixed
+      newRow.startTime !== oldRow.startTime &&
+      oldRow.startTimeType === "calculated"
+    ) {
+      updatedRows[idx].startTimeType = "fixed";
+    } else if (
+      // 2. If editing duration of a row before a fixed row, convert next row to calculated
+      newRow.duration !== oldRow.duration &&
+      newRow.id < updatedRows.length && // not last (empty) row
+      updatedRows[idx + 1].startTimeType === "fixed"
+    ) {
+      updatedRows[idx + 1].startTimeType = "calculated";
+    }
+
+    // Always enforce: first row is fixed, last (empty) row is calculated
+    if (updatedRows.length > 1) {
+      updatedRows[0].startTimeType = "fixed";
+      updatedRows[updatedRows.length - 1].startTimeType = "calculated";
+    }
+
+    // Recalculate startTimes/durations as needed
+    for (let i = 1; i < updatedRows.length; i++) {
+      const prev = updatedRows[i - 1];
+      const curr = updatedRows[i];
+
+      if (curr.startTimeType === "fixed") {
+        // Duration of previous row = curr.startTime - prev.startTime
+        const prevDuration = calculateDuration(prev.startTime, curr.startTime);
+        if (prevDuration < 0) {
+          return oldRow; // Invalid duration, revert to old row
+        }
+        prev.duration = prevDuration;
+      } else {
+        // Flexible: curr.startTime = prev.startTime + prev.duration
+        curr.startTime = addMinutes(prev.startTime, prev.duration);
+      }
+    }
+
+    setRows(updatedRows);
+    return updatedRows[idx];
+  };
 
   console.log(
     "Rows",
-    rows.map((row) => row.startTime)
+    rows.map((row) => row.startTimeType)
   );
-
-  const processRowUpdate = useCallback((newRow: Row) => {
-    if (newRow.id === emptyRow.id) {
-      // Promote to real row and append another empty row
-      const newId = nextId++;
-      setRows((prev) => [
-        ...prev.slice(0, -1),
-        { ...newRow, id: newId },
-        { ...emptyRow, startTime: newRow.startTime },
-      ]);
-    } else {
-      // Just update existing row
-      setRows((prev) =>
-        prev.map((row) => (row.id === newRow.id ? newRow : row))
-      );
-    }
-
-    return newRow;
-  }, []);
 
   return (
     <Container>
-      <DataGrid
+      <StyledDataGrid
         rows={rows}
         columns={columns}
         processRowUpdate={processRowUpdate}
@@ -161,6 +223,7 @@ export default function DatesPage() {
         disableColumnSorting
         disableColumnMenu
         hideFooter
+        getRowClassName={(params) => params.row.startTimeType}
       />
     </Container>
   );
