@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDropDown } from "@mui/icons-material";
-import { Container, Chip } from "@mui/material";
+import { ArrowDropDown, Delete } from "@mui/icons-material";
+import { Container, Chip, Button } from "@mui/material";
 import { Theme, styled, darken } from "@mui/material/styles";
 import {
   DataGrid,
@@ -18,9 +18,9 @@ import {
   convert24To12HourFormat,
   convertToDate,
   convertDateTo24HourFormat,
-  calculateDuration,
-  addMinutes,
   convertNumberTo24HourFormat,
+  getNextAvailableId,
+  recalculateRows,
 } from "./utils";
 
 function StartTimePicker(params: GridRenderEditCellParams) {
@@ -60,72 +60,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-const columns: GridColDef[] = [
-  {
-    field: "startTime",
-    headerName: "Start Time",
-    headerAlign: "left",
-    align: "left",
-    width: 150,
-    editable: true,
-    type: "string",
-    valueFormatter: (value: string) =>
-      value !== "" ? convert24To12HourFormat(value) : "",
-    renderEditCell: StartTimePicker,
-  },
-  {
-    field: "duration",
-    headerName: "Duration",
-    type: "number",
-    headerAlign: "left",
-    align: "left",
-    editable: true,
-    flex: 1,
-    valueFormatter: convertNumberTo24HourFormat,
-  },
-  {
-    field: "activity",
-    headerName: "Activity",
-    type: "string",
-    editable: true,
-    flex: 2,
-  },
-  {
-    field: "type",
-    headerName: "Type",
-    type: "singleSelect",
-    flex: 1,
-    editable: true,
-    valueOptions: ["Prepare", "Bulk", "Fun", "Other"] as ActvityType[],
-    renderCell: (params) => {
-      const colorMap = {
-        Prepare: "primary",
-        Bulk: "success",
-        Fun: "warning",
-        Other: "error",
-      };
-
-      return (
-        <Chip
-          label={params.value}
-          color={colorMap[params.value] || "default"}
-          size="small"
-          // TODO: make this appear
-          deleteIcon={<ArrowDropDown />}
-        />
-      );
-    },
-  },
-  {
-    field: "notes",
-    headerName: "Notes",
-    type: "string",
-    editable: true,
-    flex: 3,
-  },
-];
-
-const emptyRow: Row = {
+const lastRow: Row = {
   id: -1,
   startTime: "",
   duration: 0,
@@ -145,20 +80,109 @@ const initialRows: Row[] = [
     notes: "",
     startTimeType: "fixed",
   },
-  { ...emptyRow, startTime: "10:00", id: 2 },
+  { ...lastRow, startTime: "10:00", id: 2 },
 ];
 
 export default function DatesPage() {
   const [rows, setRows] = useState(initialRows);
 
+  const columns: GridColDef[] = [
+    {
+      field: "startTime",
+      headerName: "Start Time",
+      headerAlign: "left",
+      align: "left",
+      width: 150,
+      editable: true,
+      type: "string",
+      valueFormatter: (value: string) =>
+        value !== "" ? convert24To12HourFormat(value) : "",
+      renderEditCell: StartTimePicker,
+    },
+    {
+      field: "duration",
+      headerName: "Duration",
+      type: "number",
+      headerAlign: "left",
+      align: "left",
+      editable: true,
+      flex: 1,
+      valueFormatter: convertNumberTo24HourFormat,
+    },
+    {
+      field: "activity",
+      headerName: "Activity",
+      type: "string",
+      editable: true,
+      flex: 2,
+    },
+    {
+      field: "type",
+      headerName: "Type",
+      type: "singleSelect",
+      flex: 1,
+      editable: true,
+      valueOptions: ["Prepare", "Bulk", "Fun", "Other"] as ActvityType[],
+      renderCell: (params) => {
+        const colorMap = {
+          Prepare: "primary",
+          Bulk: "success",
+          Fun: "warning",
+          Other: "error",
+        };
+
+        return (
+          <Chip
+            label={params.value}
+            color={colorMap[params.value] || "default"}
+            size="small"
+            // TODO: make this appear
+            deleteIcon={<ArrowDropDown />}
+          />
+        );
+      },
+    },
+    {
+      field: "notes",
+      headerName: "Notes",
+      type: "string",
+      editable: true,
+      flex: 3,
+    },
+    {
+      field: "delete",
+      headerName: "",
+      sortable: false,
+      width: 50,
+      renderCell: (params) =>
+        params.row.id !== rows[0].id &&
+        params.row.id !== rows[rows.length - 1].id && (
+          <Button
+            variant="text"
+            onClick={() => handleDeleteRow(params.row)}
+            sx={{ minWidth: 0, padding: 0 }}
+          >
+            <Delete />
+          </Button>
+        ),
+    },
+  ];
+
+  const handleDeleteRow = (row: Row) => {
+    const updatedRows = rows.filter((r) => r.id !== row.id);
+    const isValid = recalculateRows(updatedRows);
+    if (!isValid) return;
+    setRows(updatedRows);
+  };
+
   const processRowUpdate = (newRow: Row, oldRow: Row) => {
     const updatedRows = [...rows];
-    const idx = newRow.id - 1;
+    const idx = updatedRows.findIndex((r) => r.id === newRow.id);
 
     // If editing the last row, add a new row
-    if (idx === updatedRows.length - 1) {
+    if (newRow.id === rows[rows.length - 1].id) {
       updatedRows[idx] = { ...newRow };
-      updatedRows.push({ ...emptyRow, id: updatedRows.length + 1 });
+      updatedRows.push({ ...lastRow, id: getNextAvailableId(updatedRows) });
     }
 
     // Update the row
@@ -186,31 +210,12 @@ export default function DatesPage() {
     }
 
     // Recalculate startTimes/durations as needed
-    for (let i = 1; i < updatedRows.length; i++) {
-      const prev = updatedRows[i - 1];
-      const curr = updatedRows[i];
-
-      if (curr.startTimeType === "fixed") {
-        // Duration of previous row = curr.startTime - prev.startTime
-        const prevDuration = calculateDuration(prev.startTime, curr.startTime);
-        if (prevDuration < 0) {
-          return oldRow; // Invalid duration, revert to old row
-        }
-        prev.duration = prevDuration;
-      } else {
-        // Flexible: curr.startTime = prev.startTime + prev.duration
-        curr.startTime = addMinutes(prev.startTime, prev.duration);
-      }
-    }
+    const isValid = recalculateRows(updatedRows);
+    if (!isValid) return oldRow;
 
     setRows(updatedRows);
     return updatedRows[idx];
   };
-
-  console.log(
-    "Rows",
-    rows.map((row) => row.startTimeType)
-  );
 
   return (
     <Container>
