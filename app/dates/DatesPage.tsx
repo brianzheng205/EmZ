@@ -21,7 +21,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
@@ -33,6 +33,7 @@ import {
   updateActiveDate,
   createDate,
   deleteDate,
+  updateDateSchedule,
 } from "./firebaseUtils";
 import {
   ActvityType,
@@ -207,13 +208,10 @@ export default function DatesPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const activeDate: FirebaseDate = useMemo(
-    () => (activeDateRef ? dates[activeDateRef.id] : ({} as FirebaseDate)),
-    [dates, activeDateRef]
-  );
-
-  console.log("dates", dates);
-  console.log("activeDate", activeDate);
+  // const activeDate: FirebaseDate = useMemo(
+  //   () => (activeDateRef ? dates[activeDateRef.id] : ({} as FirebaseDate)),
+  //   [dates, activeDateRef]
+  // );
 
   useEffect(() => {
     const fetchDates = async () => {
@@ -332,14 +330,20 @@ export default function DatesPage() {
     },
   ];
 
-  const handleDeleteRow = (row: Row) => {
+  const handleDeleteRow = async (row: Row) => {
+    if (!activeDateRef) return;
+
     const updatedRows = rows.filter((r) => r.id !== row.id);
     const isValid = recalculateRows(updatedRows);
     if (!isValid) return;
+
+    await updateDateSchedule(activeDateRef, updatedRows);
     setRows(updatedRows);
   };
 
-  const processRowUpdate = (newRow: Row, oldRow: Row) => {
+  const processRowUpdate = async (newRow: Row, oldRow: Row) => {
+    if (!activeDateRef) return oldRow;
+
     const updatedRows = [...rows];
     const idx = updatedRows.findIndex((r) => r.id === newRow.id);
 
@@ -377,6 +381,7 @@ export default function DatesPage() {
     const isValid = recalculateRows(updatedRows);
     if (!isValid) return oldRow;
 
+    await updateDateSchedule(activeDateRef, updatedRows);
     setRows(updatedRows);
     return updatedRows[idx];
   };
@@ -409,7 +414,7 @@ export default function DatesPage() {
   return (
     <Container>
       <Stack sx={{ gap: 1 }}>
-        <Stack sx={{ flexDirection: "row", gap: 1 }}>
+        <Stack sx={{ flexDirection: "row", gap: 1, height: 50 }}>
           <DateSelector
             docRef={activeDateRef}
             setDocRef={setDocRef}
@@ -418,6 +423,7 @@ export default function DatesPage() {
             onDelete={handleDeleteDate}
           />
         </Stack>
+
         <StyledDataGrid
           rows={rows}
           columns={columns}

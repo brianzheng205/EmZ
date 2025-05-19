@@ -101,7 +101,7 @@ export const updateDateSchedule = async (
   schedule: FirebaseScheduleItem[]
 ) => {
   try {
-    await updateDoc(dateRef, { schedule });
+    await updateDoc(dateRef, { schedule: schedule.slice(0, -1) });
   } catch (error) {
     console.error("Error updating date schedule:", error);
   }
