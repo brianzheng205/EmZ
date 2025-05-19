@@ -10,7 +10,9 @@ import * as R from "ramda";
 import db from "@firebase";
 
 // FIREBASE
-export const fetchDocuments = async (collectionName: string) => {
+export const fetchDocuments = async (
+  collectionName: string
+): Promise<{ [id: string]: object }> => {
   const collectionRef = collection(db, collectionName);
   const querySnapshot = await getDocs(collectionRef);
   const docs = {};

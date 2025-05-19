@@ -1,7 +1,15 @@
 "use client";
 
 import { ArrowDropDown, Delete } from "@mui/icons-material";
-import { Container, Chip, Button } from "@mui/material";
+import {
+  Container,
+  Chip,
+  Button,
+  Box,
+  Select,
+  MenuItem,
+  Stack,
+} from "@mui/material";
 import { Theme, styled, darken } from "@mui/material/styles";
 import {
   DataGrid,
@@ -11,9 +19,29 @@ import {
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { useState } from "react";
+import { DocumentReference, doc } from "firebase/firestore";
+import * as R from "ramda";
+import { useState, useEffect, useMemo } from "react";
 
-import { ActvityType, Row } from "./types";
+import useDialog from "@/hooks/useDialog";
+import db from "@firebase";
+
+import AddDateDialog from "./dialogs/AddDateDialog";
+import {
+  fetchAllDates,
+  fetchActiveDateRef,
+  updateActiveDate,
+  createDate,
+  deleteDate,
+} from "./firebaseUtils";
+import {
+  ActvityType,
+  Row,
+  FirebaseIdToDate,
+  FirebaseDate,
+  FirebaseScheduleItem,
+  FirebaseMetadata,
+} from "./types";
 import {
   convert24To12HourFormat,
   convertToDate,
@@ -21,7 +49,109 @@ import {
   convertNumberTo24HourFormat,
   getNextAvailableId,
   recalculateRows,
+  addMinutes,
 } from "./utils";
+
+interface DateSelectorProps {
+  docRef: DocumentReference | null;
+  setDocRef: (docRef: DocumentReference) => void;
+  dates: FirebaseIdToDate | null;
+  onAdd: (metadata: FirebaseMetadata) => void;
+  onDelete: (docRef: DocumentReference) => void;
+}
+
+function DateSelector({
+  docRef,
+  setDocRef,
+  dates,
+  onAdd,
+  onDelete,
+}: DateSelectorProps) {
+  const {
+    isDialogOpen: isAddDateDialogOpen,
+    openDialog: openAddDateDialog,
+    closeDialog: closeAddDateDialog,
+  } = useDialog();
+
+  return (
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <Select
+        sx={{ width: 200, height: "100%" }}
+        value={docRef ? docRef.id : ""}
+        displayEmpty
+        margin="dense"
+        renderValue={(selectedId) =>
+          dates?.[selectedId] ? dates[selectedId].name : "+ New date"
+        }
+      >
+        <MenuItem value="add-new" onClick={openAddDateDialog}>
+          + New date
+        </MenuItem>
+
+        {dates &&
+          R.pipe(
+            R.mapObjIndexed((date: FirebaseDate, dateId) => (
+              <MenuItem
+                key={dateId}
+                value={dateId}
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  width: 200,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (R.isNil(docRef) || dateId !== docRef.id) {
+                    setDocRef(doc(db, "dates", dateId));
+                  }
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 160,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {date.name}
+                </Box>
+                <Button
+                  sx={{
+                    width: 40,
+                    minWidth: 0,
+                    padding: 0.5,
+                    margin: 0,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  variant="text"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(doc(db, "dates", dateId));
+                  }}
+                  disabled={R.isNotNil(docRef) && dateId === docRef.id}
+                >
+                  <Delete fontSize="small" />
+                </Button>
+              </MenuItem>
+            )),
+            R.values
+          )(dates)}
+      </Select>
+      {dates && (
+        <AddDateDialog
+          open={isAddDateDialogOpen}
+          dates={dates}
+          onClose={closeAddDateDialog}
+          onSubmit={onAdd}
+        />
+      )}
+    </Box>
+  );
+}
 
 function StartTimePicker(params: GridRenderEditCellParams) {
   return (
@@ -60,31 +190,65 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-const lastRow: Row = {
-  id: -1,
+const lastRow: FirebaseScheduleItem = {
   startTime: "",
   duration: 0,
   activity: "",
-  type: "",
+  activtyType: "",
   notes: "",
-  startTimeType: "calculated",
+  startTimeFixed: false,
 };
 
-const initialRows: Row[] = [
-  {
-    id: 1,
-    startTime: "10:00",
-    duration: 0,
-    activity: "Get Ready",
-    type: "Prepare",
-    notes: "",
-    startTimeType: "fixed",
-  },
-  { ...lastRow, startTime: "10:00", id: 2 },
-];
-
 export default function DatesPage() {
-  const [rows, setRows] = useState(initialRows);
+  const [dates, setDates] = useState<FirebaseIdToDate>({});
+  const [activeDateRef, setActiveDateRef] = useState<DocumentReference | null>(
+    null
+  );
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const activeDate: FirebaseDate = useMemo(
+    () => (activeDateRef ? dates[activeDateRef.id] : ({} as FirebaseDate)),
+    [dates, activeDateRef]
+  );
+
+  console.log("dates", dates);
+  console.log("activeDate", activeDate);
+
+  useEffect(() => {
+    const fetchDates = async () => {
+      const fetchedDates = await fetchAllDates();
+      setDates(fetchedDates);
+
+      const fetchedActiveDateRef = await fetchActiveDateRef();
+      setActiveDateRef(fetchedActiveDateRef);
+
+      setLoading(false);
+    };
+
+    fetchDates();
+  }, []);
+
+  useEffect(() => {
+    if (!activeDateRef) return;
+
+    const activeDate = dates[activeDateRef.id];
+    if (!activeDate) return;
+
+    const schedule = activeDate.schedule.map((item, index) => ({
+      ...item,
+      id: index,
+    }));
+    schedule.push({
+      ...lastRow,
+      id: getNextAvailableId(schedule),
+      startTime: addMinutes(
+        schedule[schedule.length - 1].startTime,
+        schedule[schedule.length - 1].duration
+      ),
+    });
+    setRows(schedule);
+  }, [dates, activeDateRef]);
 
   const columns: GridColDef[] = [
     {
@@ -189,24 +353,24 @@ export default function DatesPage() {
     updatedRows[idx] = { ...updatedRows[idx], ...newRow };
 
     if (
-      // 1. If editing startTime of a calculated row, convert it to fixed
+      // 1. If editing startTime of a not fixed row, convert it to fixed
       newRow.startTime !== oldRow.startTime &&
-      oldRow.startTimeType === "calculated"
+      !oldRow.startTimeFixed
     ) {
-      updatedRows[idx].startTimeType = "fixed";
+      updatedRows[idx].startTimeFixed = true;
     } else if (
-      // 2. If editing duration of a row before a fixed row, convert next row to calculated
+      // 2. If editing duration of a row before a fixed row, convert next row to not fixed
       newRow.duration !== oldRow.duration &&
       newRow.id < updatedRows.length && // not last (empty) row
-      updatedRows[idx + 1].startTimeType === "fixed"
+      updatedRows[idx + 1].startTimeFixed
     ) {
-      updatedRows[idx + 1].startTimeType = "calculated";
+      updatedRows[idx + 1].startTimeFixed = false;
     }
 
-    // Always enforce: first row is fixed, last (empty) row is calculated
+    // Always enforce: first row is fixed, last (empty) row is not fixed
     if (updatedRows.length > 1) {
-      updatedRows[0].startTimeType = "fixed";
-      updatedRows[updatedRows.length - 1].startTimeType = "calculated";
+      updatedRows[0].startTimeFixed = true;
+      updatedRows[updatedRows.length - 1].startTimeFixed = false;
     }
 
     // Recalculate startTimes/durations as needed
@@ -217,19 +381,56 @@ export default function DatesPage() {
     return updatedRows[idx];
   };
 
+  const setDocRef = async (docRef: DocumentReference) => {
+    setActiveDateRef(docRef);
+    await updateActiveDate(docRef);
+  };
+
+  const handleAddDate = async (metadata: FirebaseMetadata) => {
+    const newDate = await createDate(metadata);
+    if (!newDate) return;
+
+    setDates((prev) => ({
+      ...prev,
+      [newDate.id]: newDate.newDate,
+    }));
+    setActiveDateRef(doc(db, "dates", newDate.id));
+  };
+
+  const handleDeleteDate = async (docRef: DocumentReference) => {
+    setDates((prev) => R.dissoc(docRef.id, prev));
+    if (activeDateRef?.id === docRef.id) {
+      setActiveDateRef(null);
+    }
+
+    await deleteDate(docRef);
+  };
+
   return (
     <Container>
-      <StyledDataGrid
-        rows={rows}
-        columns={columns}
-        processRowUpdate={processRowUpdate}
-        disableColumnResize
-        disableAutosize
-        disableColumnSorting
-        disableColumnMenu
-        hideFooter
-        getRowClassName={(params) => params.row.startTimeType}
-      />
+      <Stack sx={{ gap: 1 }}>
+        <Stack sx={{ flexDirection: "row", gap: 1 }}>
+          <DateSelector
+            docRef={activeDateRef}
+            setDocRef={setDocRef}
+            dates={dates}
+            onAdd={handleAddDate}
+            onDelete={handleDeleteDate}
+          />
+        </Stack>
+        <StyledDataGrid
+          rows={rows}
+          columns={columns}
+          processRowUpdate={processRowUpdate}
+          loading={loading}
+          getRowClassName={(params) => params.row.startTimeType}
+          disableColumnResize
+          disableAutosize
+          disableColumnSorting
+          disableColumnMenu
+          hideFooter
+        />
+      </Stack>
     </Container>
   );
 }

@@ -46,7 +46,7 @@ const calculateDuration = (start: string, end: string) => {
   return eh * 60 + em - (sh * 60 + sm);
 };
 
-const addMinutes = (time: string, minutes: number) => {
+export const addMinutes = (time: string, minutes: number) => {
   const [h, m] = time.split(":").map(Number);
   const total = h * 60 + m + minutes;
   const nh = Math.floor(total / 60) % 24;
@@ -61,6 +61,16 @@ export const convertNumberTo24HourFormat = (number: number): string => {
     ? `${hours.toString()}:${minutes.toString().padStart(2, "0")}`
     : minutes.toString();
 };
+
+/**
+ * Converts a Date object to a string in the format "MM/DD/YYYY".
+ */
+export const convertDateToString = (date: Date): string =>
+  `${date.toLocaleString("en-US", {
+    month: "numeric",
+  })}/${date.toLocaleString("en-US", {
+    day: "numeric",
+  })}/${date.toLocaleString("en-US", { year: "numeric" })}`;
 
 /**
  * Returns the next available ID for a new row.
@@ -79,7 +89,7 @@ export const recalculateRows = (rows: Row[]): boolean => {
     const prev = rows[i - 1];
     const curr = rows[i];
 
-    if (curr.startTimeType === "fixed") {
+    if (curr.startTimeFixed) {
       // Duration of previous row = curr.startTime - prev.startTime
       const prevDuration = calculateDuration(prev.startTime, curr.startTime);
       if (prevDuration < 0) return false; // Invalid duration

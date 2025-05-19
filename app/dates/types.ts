@@ -1,14 +1,25 @@
-export type StartTimeType = "fixed" | "calculated";
-
 export type ActvityType = "Prepare" | "Bulk" | "Fun" | "Other" | "";
 
-export type Row = {
-  id: number;
-  status?: string;
+export type FirebaseScheduleItem = {
   startTime: string;
-  startTimeType: StartTimeType;
+  startTimeFixed: boolean;
   duration: number;
   activity: string;
-  type: ActvityType;
+  activtyType: ActvityType;
   notes: string;
 };
+
+export type Row = FirebaseScheduleItem & {
+  id: number;
+};
+
+export type FirebaseMetadata = {
+  name: string;
+  date: string;
+};
+
+export type FirebaseDate = FirebaseMetadata & {
+  schedule: FirebaseScheduleItem[];
+};
+
+export type FirebaseIdToDate = { [id: string]: FirebaseDate };
