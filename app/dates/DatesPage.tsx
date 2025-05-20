@@ -11,7 +11,7 @@ enum TabValue {
 }
 
 export default function DatesPage() {
-  const [activeTab, setActiveTab] = useState(TabValue.PLANNER);
+  const [activeTab, setActiveTab] = useState(TabValue.LIST);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: TabValue) => {
     setActiveTab(newValue);
@@ -22,13 +22,13 @@ export default function DatesPage() {
       <Stack sx={{ height: "100%", gap: 2 }}>
         <Stack sx={{ flexDirection: "row", justifyContent: "center" }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="Planner" value={TabValue.PLANNER} />
             <Tab label="List" value={TabValue.LIST} />
+            <Tab label="Planner" value={TabValue.PLANNER} />
           </Tabs>
         </Stack>
         <>
-          {activeTab === TabValue.PLANNER && <DatePlanner />}
           {activeTab === TabValue.LIST && <DateList />}
+          {activeTab === TabValue.PLANNER && <DatePlanner />}
         </>
       </Stack>
     </Container>
