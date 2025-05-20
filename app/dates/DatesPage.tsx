@@ -22,8 +22,8 @@ export default function DatesPage() {
       <Stack sx={{ height: "100%", gap: 2 }}>
         <Stack sx={{ flexDirection: "row", justifyContent: "center" }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="List" value={TabValue.LIST} />
-            <Tab label="Planner" value={TabValue.PLANNER} />
+            <Tab label={TabValue.LIST} value={TabValue.LIST} />
+            <Tab label={TabValue.PLANNER} value={TabValue.PLANNER} />
           </Tabs>
         </Stack>
         <>

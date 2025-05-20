@@ -1,4 +1,114 @@
-import { Row } from "./types";
+import { ArrowDropDown, Delete } from "@mui/icons-material";
+import { Button, Chip } from "@mui/material";
+import { GridColDef } from "@mui/x-data-grid";
+
+import { ActvityType, Row } from "./types";
+
+export const getCommonColumns = (
+  handleDeleteRow: (row) => void
+): { [key: string]: GridColDef } => ({
+  name: {
+    field: "name",
+    headerName: "Name",
+    type: "string",
+    editable: true,
+    flex: 1,
+  },
+  location: {
+    field: "location",
+    headerName: "Location",
+    // TODO
+    width: 200,
+  },
+  duration: {
+    field: "duration",
+    headerName: "Duration",
+    type: "number",
+    headerAlign: "left",
+    editable: true,
+    width: 100,
+    valueFormatter: convertNumberTo24HourFormat,
+  },
+  cost: {
+    field: "cost",
+    headerName: "Cost",
+    headerAlign: "left",
+    type: "number",
+    editable: true,
+    width: 100,
+    valueFormatter: (value: number) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value),
+  },
+  activityType: {
+    field: "activityType",
+    headerName: "Type",
+    type: "singleSelect",
+    width: 100,
+    editable: true,
+    valueOptions: [
+      "Prepare",
+      "Bulk",
+      "Fun",
+      "Public Transport",
+      "Uber",
+      "Walk",
+      "Other",
+    ] as ActvityType[],
+    renderCell: (params) => {
+      if (params.value === "") return null;
+
+      const colorMap = {
+        Fun: "primary",
+        Bulk: "success",
+        "Public Transport": "warning",
+        Uber: "warning",
+        Walk: "warning",
+        Prepare: "info",
+        Other: "info",
+      };
+
+      return (
+        <Chip
+          label={params.value}
+          color={colorMap[params.value] || "default"}
+          size="small"
+          // TODO: make this appear
+          deleteIcon={<ArrowDropDown />}
+        />
+      );
+    },
+  },
+  notes: {
+    field: "notes",
+    headerName: "Notes",
+    type: "string",
+    editable: true,
+    flex: 1,
+  },
+  delete: {
+    field: "delete",
+    headerName: "",
+    sortable: false,
+    width: 50,
+    renderCell: (params) => (
+      <Button
+        sx={{
+          minWidth: 0,
+          padding: 0,
+        }}
+        variant="text"
+        onClick={() => handleDeleteRow(params.row)}
+      >
+        <Delete />
+      </Button>
+    ),
+  },
+});
 
 /**
  * Converts a Date object to a string in the format "MM/DD/YYYY".

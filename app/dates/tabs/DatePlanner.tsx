@@ -1,21 +1,14 @@
 "use client";
 
-import { ArrowDropDown, Delete, Edit, Refresh } from "@mui/icons-material";
-import {
-  Chip,
-  Button,
-  Box,
-  Select,
-  MenuItem,
-  Stack,
-  CircularProgress,
-} from "@mui/material";
+import { Delete, Edit, Refresh } from "@mui/icons-material";
+import { Button, Box, Select, MenuItem, Stack } from "@mui/material";
 import { Theme, styled, darken } from "@mui/material/styles";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
 import { useState, useEffect } from "react";
 
+import CenteredLoader from "@/components/CenteredLoader";
 import { TimePickerEditCell } from "@/components/dataGrid";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
@@ -30,16 +23,9 @@ import {
   updateDateMetadata,
   deleteDate,
 } from "../firebaseUtils";
+import { Row, IdToDate, EmZDate, ScheduleItem, Metadata } from "../types";
 import {
-  ActvityType,
-  Row,
-  IdToDate,
-  EmZDate,
-  ScheduleItem,
-  Metadata,
-} from "../types";
-import {
-  convertNumberTo24HourFormat,
+  getCommonColumns,
   getNextAvailableId,
   recalculateRows,
   addMinutes,
@@ -230,6 +216,19 @@ export default function DatesPlanner() {
     setRows(schedule);
   }, [dates, activeDateRef]);
 
+  const handleDeleteRow = async (row: Row) => {
+    if (!activeDateRef) return;
+
+    const updatedRows = rows.filter((r) => r.id !== row.id);
+    const isValid = recalculateRows(updatedRows);
+    if (!isValid) return;
+
+    await updateDateSchedule(activeDateRef, updatedRows);
+    setRows(updatedRows);
+  };
+
+  const commonColumns = getCommonColumns(handleDeleteRow);
+
   const columns: GridColDef[] = [
     {
       field: "startTime",
@@ -247,98 +246,35 @@ export default function DatesPlanner() {
         }),
       renderEditCell: TimePickerEditCell,
     },
+    commonColumns.duration,
     {
-      field: "duration",
-      headerName: "Duration",
-      type: "number",
-      headerAlign: "left",
-      align: "left",
-      editable: true,
-      flex: 1,
-      valueFormatter: convertNumberTo24HourFormat,
-    },
-    {
+      ...commonColumns.name,
       field: "activity",
       headerName: "Activity",
-      type: "string",
-      editable: true,
-      flex: 2,
     },
+    commonColumns.activityType,
+    commonColumns.notes,
     {
-      field: "activityType",
-      headerName: "Type",
-      type: "singleSelect",
-      flex: 1,
-      editable: true,
-      valueOptions: [
-        "Prepare",
-        "Bulk",
-        "Fun",
-        "Public Transport",
-        "Uber",
-        "Walk",
-        "Other",
-      ] as ActvityType[],
+      ...commonColumns.delete,
       renderCell: (params) => {
-        if (params.value === "") return null;
+        const row = params.row as Row;
 
-        const colorMap = {
-          Fun: "primary",
-          Bulk: "success",
-          "Public Transport": "warning",
-          Uber: "warning",
-          Walk: "warning",
-          Prepare: "info",
-          Other: "info",
-        };
-
-        return (
-          <Chip
-            label={params.value}
-            color={colorMap[params.value] || "default"}
-            size="small"
-            // TODO: make this appear
-            deleteIcon={<ArrowDropDown />}
-          />
-        );
-      },
-    },
-    {
-      field: "notes",
-      headerName: "Notes",
-      type: "string",
-      editable: true,
-      flex: 3,
-    },
-    {
-      field: "delete",
-      headerName: "",
-      sortable: false,
-      width: 50,
-      renderCell: (params) =>
-        params.row.id !== rows[0].id &&
-        params.row.id !== rows[rows.length - 1].id && (
+        return row.id !== rows[0].id && row.id !== rows[rows.length - 1].id ? (
           <Button
+            sx={{
+              color: row.startTimeFixed ? "secondary.main" : "primary.main",
+              minWidth: 0,
+              padding: 0,
+            }}
             variant="text"
             onClick={() => handleDeleteRow(params.row)}
-            sx={{ minWidth: 0, padding: 0 }}
           >
             <Delete />
           </Button>
-        ),
+        ) : null;
+      },
     },
   ];
-
-  const handleDeleteRow = async (row: Row) => {
-    if (!activeDateRef) return;
-
-    const updatedRows = rows.filter((r) => r.id !== row.id);
-    const isValid = recalculateRows(updatedRows);
-    if (!isValid) return;
-
-    await updateDateSchedule(activeDateRef, updatedRows);
-    setRows(updatedRows);
-  };
 
   const processRowUpdate = async (newRow: Row, oldRow: Row) => {
     if (!activeDateRef || R.equals(newRow, oldRow)) return oldRow;
@@ -432,20 +368,7 @@ export default function DatesPlanner() {
     } catch {}
   };
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100%",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading) return <CenteredLoader />;
 
   return (
     <>
@@ -479,20 +402,22 @@ export default function DatesPlanner() {
         </Stack>
       </Stack>
 
-      <StyledDataGrid
-        rows={rows}
-        columns={columns}
-        processRowUpdate={processRowUpdate}
-        getRowClassName={(params) => {
-          const row: Row = params.row as Row;
-          return row.startTimeFixed ? "fixed" : "";
-        }}
-        disableColumnResize
-        disableAutosize
-        disableColumnSorting
-        disableColumnMenu
-        hideFooter
-      />
+      <Box>
+        <StyledDataGrid
+          rows={rows}
+          columns={columns}
+          processRowUpdate={processRowUpdate}
+          getRowClassName={(params) => {
+            const row: Row = params.row as Row;
+            return row.startTimeFixed ? "fixed" : "";
+          }}
+          disableColumnResize
+          disableAutosize
+          disableColumnSorting
+          disableColumnMenu
+          hideFooter
+        />
+      </Box>
 
       {activeDateRef && (
         <EditDateDialog
