@@ -7,24 +7,61 @@ import {
   doc,
   DocumentReference,
 } from "firebase/firestore";
+import * as R from "ramda";
 
 import { fetchDocuments, fetchData } from "@/utils";
 import db from "@firebase";
 
 import {
-  FirebaseScheduleItem,
-  FirebaseMetadata,
-  FirebaseDate,
-  FirebaseIdToDate,
+  FirestoreScheduleItem,
+  FirestoreMetadata,
+  FirestoreDate,
+  FirestoreIdToDate,
+  ScheduleItem,
+  Metadata,
+  EmZDate,
+  IdToDate,
 } from "./types";
+import {
+  convertDateStrToDate,
+  convertTimeStrToDate,
+  convertDateToTimeStr,
+} from "./utils";
 
-export const fetchAllDates = async (): Promise<FirebaseIdToDate> => {
+const convertToMetadata = (metadata: FirestoreMetadata): Metadata => ({
+  ...metadata,
+  date: convertDateStrToDate(metadata.date),
+});
+
+const convertToFirestoreMetadata = (metadata: Metadata): FirestoreMetadata => ({
+  ...metadata,
+  date: convertDateToTimeStr(metadata.date),
+});
+
+const convertToSchedule = (schedule: FirestoreScheduleItem[]): ScheduleItem[] =>
+  schedule.map((s) => ({ ...s, startTime: convertTimeStrToDate(s.startTime) }));
+
+const convertToFirestoreSchedule = (
+  schedule: ScheduleItem[]
+): FirestoreScheduleItem[] =>
+  schedule.map((s) => ({ ...s, startTime: convertDateToTimeStr(s.startTime) }));
+
+const convertToEmZDate = (date: FirestoreDate): EmZDate => ({
+  ...convertToMetadata(date),
+  schedule: convertToSchedule(date.schedule),
+});
+
+export const fetchAllDates = async (): Promise<IdToDate> => {
   try {
-    const dates = await fetchDocuments("dates");
-    return dates as FirebaseIdToDate;
+    const dates = (await fetchDocuments("dates")) as FirestoreIdToDate;
+    const datesConverted: IdToDate = R.mapObjIndexed(
+      (d) => convertToEmZDate(d),
+      dates
+    );
+    return datesConverted;
   } catch (error) {
     console.error("Error fetching all dates:", error);
-    return {} as FirebaseIdToDate;
+    return {} as IdToDate;
   }
 };
 
@@ -45,8 +82,10 @@ export const fetchActiveDateRef =
     }
   };
 
-export const createDate = async (metadata: FirebaseMetadata) => {
-  const newSchedule: FirebaseScheduleItem[] = [
+export const createDate = async (
+  metadata: Metadata
+): Promise<[dateRef: DocumentReference, date: EmZDate] | null> => {
+  const newSchedule: FirestoreScheduleItem[] = [
     {
       startTime: "10:00",
       duration: 0,
@@ -58,15 +97,16 @@ export const createDate = async (metadata: FirebaseMetadata) => {
   ];
 
   try {
-    const newDateData: FirebaseDate = {
-      ...metadata,
+    const newDateData: FirestoreDate = {
+      ...convertToFirestoreMetadata(metadata),
       schedule: newSchedule,
     };
 
     const newDateRef = await addDoc(collection(db, "dates"), newDateData);
     const newDateSnap = await getDoc(newDateRef);
-    const newDate = newDateSnap.data() as FirebaseDate;
-    return { id: newDateRef.id, newDate };
+    const newDate = newDateSnap.data() as FirestoreDate;
+    const newDateConverted = convertToEmZDate(newDate);
+    return [newDateRef, newDateConverted];
   } catch (error) {
     console.error("Error creating new date:", error);
     return null;
@@ -85,12 +125,12 @@ export const updateActiveDate = async (
 
 export const updateDateMetadata = async (
   id: string,
-  metadata: FirebaseMetadata
+  metadata: Metadata
 ): Promise<void> => {
   const dateRef = doc(db, "dates", id);
 
   try {
-    await updateDoc(dateRef, metadata);
+    await updateDoc(dateRef, convertToFirestoreMetadata(metadata));
   } catch (error) {
     console.error("Error updating date metadata:", error);
   }
@@ -98,10 +138,12 @@ export const updateDateMetadata = async (
 
 export const updateDateSchedule = async (
   dateRef: DocumentReference,
-  schedule: FirebaseScheduleItem[]
+  schedule: ScheduleItem[]
 ) => {
   try {
-    await updateDoc(dateRef, { schedule: schedule.slice(0, -1) });
+    await updateDoc(dateRef, {
+      schedule: convertToFirestoreSchedule(schedule.slice(0, -1)),
+    });
   } catch (error) {
     console.error("Error updating date schedule:", error);
   }

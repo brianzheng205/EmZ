@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDropDown, Delete } from "@mui/icons-material";
+import { ArrowDropDown, Delete, Edit, Refresh } from "@mui/icons-material";
 import {
   Container,
   Chip,
@@ -27,26 +27,25 @@ import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
 import AddDateDialog from "./dialogs/AddDateDialog";
+import EditDateDialog from "./dialogs/EditDateDialog";
 import {
   fetchAllDates,
   fetchActiveDateRef,
-  updateActiveDate,
   createDate,
-  deleteDate,
+  updateActiveDate,
   updateDateSchedule,
+  updateDateMetadata,
+  deleteDate,
 } from "./firebaseUtils";
 import {
   ActvityType,
   Row,
-  FirebaseIdToDate,
-  FirebaseDate,
-  FirebaseScheduleItem,
-  FirebaseMetadata,
+  IdToDate,
+  EmZDate,
+  ScheduleItem,
+  Metadata,
 } from "./types";
 import {
-  convert24To12HourFormat,
-  convertToDate,
-  convertDateTo24HourFormat,
   convertNumberTo24HourFormat,
   getNextAvailableId,
   recalculateRows,
@@ -56,8 +55,8 @@ import {
 interface DateSelectorProps {
   docRef: DocumentReference | null;
   setDocRef: (docRef: DocumentReference) => void;
-  dates: FirebaseIdToDate | null;
-  onAdd: (metadata: FirebaseMetadata) => void;
+  dates: IdToDate | null;
+  onAdd: (metadata: Metadata) => void;
   onDelete: (docRef: DocumentReference) => void;
 }
 
@@ -91,7 +90,7 @@ function DateSelector({
 
         {dates &&
           R.pipe(
-            R.mapObjIndexed((date: FirebaseDate, dateId) => (
+            R.mapObjIndexed((date: EmZDate, dateId) => (
               <MenuItem
                 key={dateId}
                 value={dateId}
@@ -158,16 +157,12 @@ function StartTimePicker(params: GridRenderEditCellParams) {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <TimePicker
-        value={params.value ? convertToDate(params.value) : new Date()}
+        value={params.value}
         onChange={(newDate) => {
-          if (!newDate) return;
-
-          const updatedDate = convertDateTo24HourFormat(newDate);
-
           params.api.setEditCellValue({
             id: params.id,
             field: params.field,
-            value: updatedDate,
+            value: newDate,
           });
         }}
       />
@@ -191,8 +186,8 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-const lastRow: FirebaseScheduleItem = {
-  startTime: "",
+const lastRow: ScheduleItem = {
+  startTime: new Date(),
   duration: 0,
   activity: "",
   activtyType: "",
@@ -201,29 +196,35 @@ const lastRow: FirebaseScheduleItem = {
 };
 
 export default function DatesPage() {
-  const [dates, setDates] = useState<FirebaseIdToDate>({});
+  const [dates, setDates] = useState<IdToDate>({});
   const [activeDateRef, setActiveDateRef] = useState<DocumentReference | null>(
     null
   );
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // const activeDate: FirebaseDate = useMemo(
-  //   () => (activeDateRef ? dates[activeDateRef.id] : ({} as FirebaseDate)),
+  // const activeDate: EmZDate = useMemo(
+  //   () => (activeDateRef ? dates[activeDateRef.id] : ({} as EmZDate)),
   //   [dates, activeDateRef]
   // );
+  const {
+    isDialogOpen: isEditDateDialogOpen,
+    openDialog: openEditDateDialog,
+    closeDialog: closeEditDateDialog,
+  } = useDialog();
+
+  const fetchDates = async () => {
+    setLoading(true);
+    const fetchedDates = await fetchAllDates();
+    setDates(fetchedDates);
+
+    const fetchedActiveDateRef = await fetchActiveDateRef();
+    setActiveDateRef(fetchedActiveDateRef);
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchDates = async () => {
-      const fetchedDates = await fetchAllDates();
-      setDates(fetchedDates);
-
-      const fetchedActiveDateRef = await fetchActiveDateRef();
-      setActiveDateRef(fetchedActiveDateRef);
-
-      setLoading(false);
-    };
-
     fetchDates();
   }, []);
 
@@ -256,9 +257,15 @@ export default function DatesPage() {
       align: "left",
       width: 150,
       editable: true,
-      type: "string",
-      valueFormatter: (value: string) =>
-        value !== "" ? convert24To12HourFormat(value) : "",
+      type: "dateTime",
+      // valueFormatter: (value: Date) =>
+      //   value !== "" ? convert24To12HourFormat(value) : "",
+      valueFormatter: (value: Date) =>
+        value.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
       renderEditCell: StartTimePicker,
     },
     {
@@ -391,30 +398,55 @@ export default function DatesPage() {
     await updateActiveDate(docRef);
   };
 
-  const handleAddDate = async (metadata: FirebaseMetadata) => {
-    const newDate = await createDate(metadata);
-    if (!newDate) return;
+  const handleAddDate = async (metadata: Metadata) => {
+    try {
+      const newDateCreation = await createDate(metadata);
+      if (!newDateCreation) return;
+      const [dateRef, date] = newDateCreation;
 
-    setDates((prev) => ({
-      ...prev,
-      [newDate.id]: newDate.newDate,
-    }));
-    setActiveDateRef(doc(db, "dates", newDate.id));
+      setDates((prev) => ({
+        ...prev,
+        [dateRef.id]: date,
+      }));
+      setActiveDateRef(dateRef);
+    } catch {}
   };
 
   const handleDeleteDate = async (docRef: DocumentReference) => {
-    setDates((prev) => R.dissoc(docRef.id, prev));
-    if (activeDateRef?.id === docRef.id) {
-      setActiveDateRef(null);
-    }
+    try {
+      await deleteDate(docRef);
+      setDates((prev) => R.dissoc(docRef.id, prev));
+      if (activeDateRef?.id === docRef.id) {
+        setActiveDateRef(null);
+      }
+    } catch {}
+  };
 
-    await deleteDate(docRef);
+  const handleEditDate = async (metadata: Metadata) => {
+    if (!activeDateRef) return;
+
+    try {
+      await updateDateMetadata(activeDateRef.id, metadata);
+      setDates((prev) =>
+        R.assoc(
+          activeDateRef.id,
+          R.mergeRight(prev[activeDateRef.id], metadata),
+          prev
+        )
+      );
+    } catch {}
   };
 
   return (
     <Container>
       <Stack sx={{ gap: 1 }}>
-        <Stack sx={{ flexDirection: "row", gap: 1, height: 50 }}>
+        <Stack
+          sx={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            height: 40,
+          }}
+        >
           <DateSelector
             docRef={activeDateRef}
             setDocRef={setDocRef}
@@ -422,6 +454,20 @@ export default function DatesPage() {
             onAdd={handleAddDate}
             onDelete={handleDeleteDate}
           />
+
+          <Stack
+            sx={{
+              flexDirection: "row-reverse",
+              gap: 1,
+            }}
+          >
+            <Button startIcon={<Refresh />} onClick={fetchDates}>
+              Refresh
+            </Button>
+            <Button startIcon={<Edit />} onClick={openEditDateDialog}>
+              Edit
+            </Button>
+          </Stack>
         </Stack>
 
         <StyledDataGrid
@@ -436,6 +482,16 @@ export default function DatesPage() {
           disableColumnMenu
           hideFooter
         />
+
+        {activeDateRef && (
+          <EditDateDialog
+            open={isEditDateDialogOpen}
+            onClose={closeEditDateDialog}
+            onSubmit={handleEditDate}
+            dates={dates}
+            initialMetadata={dates[activeDateRef.id]}
+          />
+        )}
       </Stack>
     </Container>
   );

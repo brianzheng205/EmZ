@@ -1,6 +1,7 @@
 export type ActvityType = "Prepare" | "Bulk" | "Fun" | "Other" | "";
 
-export type FirebaseScheduleItem = {
+// BACKEND TYPES
+export type FirestoreScheduleItem = {
   startTime: string;
   startTimeFixed: boolean;
   duration: number;
@@ -9,17 +10,32 @@ export type FirebaseScheduleItem = {
   notes: string;
 };
 
-export type Row = FirebaseScheduleItem & {
-  id: number;
-};
-
-export type FirebaseMetadata = {
+export type FirestoreMetadata = {
   name: string;
   date: string;
 };
 
-export type FirebaseDate = FirebaseMetadata & {
-  schedule: FirebaseScheduleItem[];
+export type FirestoreDate = FirestoreMetadata & {
+  schedule: FirestoreScheduleItem[];
 };
 
-export type FirebaseIdToDate = { [id: string]: FirebaseDate };
+export type FirestoreIdToDate = { [id: string]: FirestoreDate };
+
+// FRONTEND TYPES
+export type ScheduleItem = Omit<FirestoreScheduleItem, "startTime"> & {
+  startTime: Date;
+};
+
+export type Metadata = Omit<FirestoreMetadata, "date"> & {
+  date: Date;
+};
+
+export type EmZDate = Metadata & {
+  schedule: ScheduleItem[];
+};
+
+export type IdToDate = { [id: string]: EmZDate };
+
+export type Row = ScheduleItem & {
+  id: number;
+};
