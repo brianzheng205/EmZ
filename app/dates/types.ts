@@ -1,4 +1,6 @@
-export type ActvityType = "Prepare" | "Bulk" | "Fun" | "Other" | "";
+type Commute = "Public Transport" | "Uber" | "Walk";
+
+export type ActvityType = "Prepare" | "Bulk" | "Fun" | Commute | "Other" | "";
 
 // BACKEND TYPES
 export type FirestoreScheduleItem = {

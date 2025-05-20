@@ -9,20 +9,15 @@ import {
   Select,
   MenuItem,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { Theme, styled, darken } from "@mui/material/styles";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderEditCellParams,
-} from "@mui/x-data-grid";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
 import { useState, useEffect } from "react";
 
+import { TimePickerEditCell } from "@/components/dataGrid";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
@@ -162,23 +157,6 @@ function DateSelector({
   );
 }
 
-function StartTimePicker(params: GridRenderEditCellParams) {
-  return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <TimePicker
-        value={params.value}
-        onChange={(newDate) => {
-          params.api.setEditCellValue({
-            id: params.id,
-            field: params.field,
-            value: newDate,
-          });
-        }}
-      />
-    </LocalizationProvider>
-  );
-}
-
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .fixed": {
     backgroundColor: theme.palette.primary.main,
@@ -258,8 +236,6 @@ export default function DatesPage() {
     setRows(schedule);
   }, [dates, activeDateRef]);
 
-  console.log("rows", rows);
-
   const columns: GridColDef[] = [
     {
       field: "startTime",
@@ -269,15 +245,13 @@ export default function DatesPage() {
       width: 150,
       editable: true,
       type: "dateTime",
-      // valueFormatter: (value: Date) =>
-      //   value !== "" ? convert24To12HourFormat(value) : "",
       valueFormatter: (value: Date) =>
         value.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
         }),
-      renderEditCell: StartTimePicker,
+      renderEditCell: TimePickerEditCell,
     },
     {
       field: "duration",
@@ -302,15 +276,26 @@ export default function DatesPage() {
       type: "singleSelect",
       flex: 1,
       editable: true,
-      valueOptions: ["Prepare", "Bulk", "Fun", "Other"] as ActvityType[],
+      valueOptions: [
+        "Prepare",
+        "Bulk",
+        "Fun",
+        "Public Transport",
+        "Uber",
+        "Walk",
+        "Other",
+      ] as ActvityType[],
       renderCell: (params) => {
         if (params.value === "") return null;
 
         const colorMap = {
-          Prepare: "primary",
+          Fun: "primary",
           Bulk: "success",
-          Fun: "warning",
-          Other: "error",
+          "Public Transport": "warning",
+          Uber: "warning",
+          Walk: "warning",
+          Prepare: "default",
+          Other: "default",
         };
 
         return (
@@ -407,8 +392,10 @@ export default function DatesPage() {
   };
 
   const setDocRef = async (docRef: DocumentReference) => {
-    setActiveDateRef(docRef);
-    await updateActiveDate(docRef);
+    try {
+      await updateActiveDate(docRef);
+      setActiveDateRef(docRef);
+    } catch {}
   };
 
   const handleAddDate = async (metadata: Metadata) => {
@@ -450,6 +437,21 @@ export default function DatesPage() {
     } catch {}
   };
 
+  if (loading) {
+    return (
+      <Container
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Stack sx={{ gap: 1 }}>
@@ -487,7 +489,6 @@ export default function DatesPage() {
           rows={rows}
           columns={columns}
           processRowUpdate={processRowUpdate}
-          loading={loading}
           getRowClassName={(params) => params.row.startTimeType}
           disableColumnResize
           disableAutosize
