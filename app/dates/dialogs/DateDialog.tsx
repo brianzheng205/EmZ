@@ -3,7 +3,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import * as R from "ramda";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 
@@ -35,6 +35,13 @@ export default function DateDialog({
     initialMetadata ? initialMetadata.date : null
   );
 
+  useEffect(() => {
+    if (initialMetadata) {
+      setName(initialMetadata.name);
+      setDate(initialMetadata.date);
+    }
+  }, [initialMetadata]);
+
   const nameExists = Object.values(dates).some((d) => name === d.name);
   const dateExists = Object.values(dates).some(
     (d) => R.isNotNil(date) && date === d.date
@@ -53,8 +60,6 @@ export default function DateDialog({
       name,
       date,
     });
-    setName(name);
-    setDate(date);
     onClose();
   };
 

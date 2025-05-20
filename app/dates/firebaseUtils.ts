@@ -25,7 +25,7 @@ import {
 import {
   convertDateStrToDate,
   convertTimeStrToDate,
-  convertDateToTimeStr,
+  convertDateToDateStr,
 } from "./utils";
 
 const convertToMetadata = (metadata: FirestoreMetadata): Metadata => ({
@@ -35,7 +35,7 @@ const convertToMetadata = (metadata: FirestoreMetadata): Metadata => ({
 
 const convertToFirestoreMetadata = (metadata: Metadata): FirestoreMetadata => ({
   ...metadata,
-  date: convertDateToTimeStr(metadata.date),
+  date: convertDateToDateStr(metadata.date),
 });
 
 const convertToSchedule = (schedule: FirestoreScheduleItem[]): ScheduleItem[] =>
@@ -44,7 +44,7 @@ const convertToSchedule = (schedule: FirestoreScheduleItem[]): ScheduleItem[] =>
 const convertToFirestoreSchedule = (
   schedule: ScheduleItem[]
 ): FirestoreScheduleItem[] =>
-  schedule.map((s) => ({ ...s, startTime: convertDateToTimeStr(s.startTime) }));
+  schedule.map((s) => ({ ...s, startTime: convertDateToDateStr(s.startTime) }));
 
 const convertToEmZDate = (date: FirestoreDate): EmZDate => ({
   ...convertToMetadata(date),
@@ -90,7 +90,7 @@ export const createDate = async (
       startTime: "10:00",
       duration: 0,
       activity: "Get Ready",
-      activtyType: "Prepare",
+      activityType: "Prepare",
       notes: "",
       startTimeFixed: true,
     },

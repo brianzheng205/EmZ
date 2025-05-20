@@ -190,7 +190,7 @@ const lastRow: ScheduleItem = {
   startTime: new Date(),
   duration: 0,
   activity: "",
-  activtyType: "",
+  activityType: "",
   notes: "",
   startTimeFixed: false,
 };
@@ -249,6 +249,8 @@ export default function DatesPage() {
     setRows(schedule);
   }, [dates, activeDateRef]);
 
+  console.log("rows", rows);
+
   const columns: GridColDef[] = [
     {
       field: "startTime",
@@ -286,13 +288,15 @@ export default function DatesPage() {
       flex: 2,
     },
     {
-      field: "type",
+      field: "activityType",
       headerName: "Type",
       type: "singleSelect",
       flex: 1,
       editable: true,
       valueOptions: ["Prepare", "Bulk", "Fun", "Other"] as ActvityType[],
       renderCell: (params) => {
+        if (params.value === "") return null;
+
         const colorMap = {
           Prepare: "primary",
           Bulk: "success",
@@ -349,7 +353,7 @@ export default function DatesPage() {
   };
 
   const processRowUpdate = async (newRow: Row, oldRow: Row) => {
-    if (!activeDateRef) return oldRow;
+    if (!activeDateRef || R.equals(newRow, oldRow)) return oldRow;
 
     const updatedRows = [...rows];
     const idx = updatedRows.findIndex((r) => r.id === newRow.id);

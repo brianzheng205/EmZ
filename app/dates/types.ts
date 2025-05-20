@@ -6,7 +6,7 @@ export type FirestoreScheduleItem = {
   startTimeFixed: boolean;
   duration: number;
   activity: string;
-  activtyType: ActvityType;
+  activityType: ActvityType;
   notes: string;
 };
 
