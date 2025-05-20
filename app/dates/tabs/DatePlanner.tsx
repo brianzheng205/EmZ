@@ -2,7 +2,6 @@
 
 import { ArrowDropDown, Delete, Edit, Refresh } from "@mui/icons-material";
 import {
-  Container,
   Chip,
   Button,
   Box,
@@ -289,8 +288,8 @@ export default function DatesPlanner() {
           "Public Transport": "warning",
           Uber: "warning",
           Walk: "warning",
-          Prepare: "default",
-          Other: "default",
+          Prepare: "info",
+          Other: "info",
         };
 
         return (
@@ -435,7 +434,7 @@ export default function DatesPlanner() {
 
   if (loading) {
     return (
-      <Container
+      <Box
         sx={{
           display: "flex",
           justifyContent: "center",
@@ -444,7 +443,7 @@ export default function DatesPlanner() {
         }}
       >
         <CircularProgress />
-      </Container>
+      </Box>
     );
   }
 
@@ -484,7 +483,10 @@ export default function DatesPlanner() {
         rows={rows}
         columns={columns}
         processRowUpdate={processRowUpdate}
-        getRowClassName={(params) => params.row.startTimeType}
+        getRowClassName={(params) => {
+          const row: Row = params.row as Row;
+          return row.startTimeFixed ? "fixed" : "";
+        }}
         disableColumnResize
         disableAutosize
         disableColumnSorting

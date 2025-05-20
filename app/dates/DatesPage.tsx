@@ -5,25 +5,30 @@ import { useState } from "react";
 
 import { DatePlanner, DateList } from "./tabs";
 
-export default function DatesPage() {
-  const [activeTab, setActiveTab] = useState("planner");
+enum TabValue {
+  PLANNER = "planner",
+  LIST = "list",
+}
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+export default function DatesPage() {
+  const [activeTab, setActiveTab] = useState(TabValue.PLANNER);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: TabValue) => {
     setActiveTab(newValue);
   };
 
   return (
-    <Container>
-      <Stack sx={{ gap: 2 }}>
+    <Container sx={{ height: "100%", padding: 2 }}>
+      <Stack sx={{ height: "100%", gap: 2 }}>
         <Stack sx={{ flexDirection: "row", justifyContent: "center" }}>
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label="Planner" value="planner" />
-            <Tab label="List" value="list" />
+            <Tab label="Planner" value={TabValue.PLANNER} />
+            <Tab label="List" value={TabValue.LIST} />
           </Tabs>
         </Stack>
         <>
-          {activeTab === "planner" && <DatePlanner />}
-          {activeTab === "list" && <DateList />}
+          {activeTab === TabValue.PLANNER && <DatePlanner />}
+          {activeTab === TabValue.LIST && <DateList />}
         </>
       </Stack>
     </Container>
