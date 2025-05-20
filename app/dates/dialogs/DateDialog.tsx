@@ -36,11 +36,11 @@ export default function DateDialog({
   );
 
   useEffect(() => {
-    if (initialMetadata) {
-      setName(initialMetadata.name);
-      setDate(initialMetadata.date);
+    if (open) {
+      setName(initialMetadata ? initialMetadata.name : "");
+      setDate(initialMetadata ? initialMetadata.date : null);
     }
-  }, [initialMetadata]);
+  }, [open, initialMetadata]);
 
   const nameExists = Object.values(dates).some((d) => name === d.name);
   const dateExists = Object.values(dates).some(
@@ -63,17 +63,11 @@ export default function DateDialog({
     onClose();
   };
 
-  const handleClose = () => {
-    setName(initialMetadata ? initialMetadata.name : "");
-    setDate(initialMetadata ? initialMetadata.date : null);
-    onClose();
-  };
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <DialogWrapper
         open={open}
-        onClose={handleClose}
+        onClose={onClose}
         onSubmit={handleSubmit}
         title={title}
         submitText={submitText}

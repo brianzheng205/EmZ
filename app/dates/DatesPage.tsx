@@ -50,6 +50,7 @@ import {
   getNextAvailableId,
   recalculateRows,
   addMinutes,
+  convertDateToDateStr,
 } from "./utils";
 
 interface DateSelectorProps {
@@ -73,6 +74,11 @@ function DateSelector({
     closeDialog: closeAddDateDialog,
   } = useDialog();
 
+  const convertToDisplayValue = (date: EmZDate) =>
+    `${convertDateToDateStr(date.date)}${
+      date.name !== "" ? ` - ${date.name}` : ""
+    }`;
+
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Select
@@ -81,7 +87,9 @@ function DateSelector({
         displayEmpty
         margin="dense"
         renderValue={(selectedId) =>
-          dates?.[selectedId] ? dates[selectedId].name : "+ New date"
+          dates?.[selectedId]
+            ? convertToDisplayValue(dates[selectedId])
+            : "+ New date"
         }
       >
         <MenuItem value="add-new" onClick={openAddDateDialog}>
@@ -90,7 +98,9 @@ function DateSelector({
 
         {dates &&
           R.pipe(
-            R.mapObjIndexed((date: EmZDate, dateId) => (
+            R.toPairs,
+            R.sortBy(([, d]: [string, EmZDate]) => d.date), // Sort by date
+            R.map(([dateId, date]: [string, EmZDate]) => (
               <MenuItem
                 key={dateId}
                 value={dateId}
@@ -115,7 +125,7 @@ function DateSelector({
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {date.name}
+                  {convertToDisplayValue(date)}
                 </Box>
                 <Button
                   sx={{
@@ -137,8 +147,7 @@ function DateSelector({
                   <Delete fontSize="small" />
                 </Button>
               </MenuItem>
-            )),
-            R.values
+            ))
           )(dates)}
       </Select>
       {dates && (
