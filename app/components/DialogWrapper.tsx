@@ -13,6 +13,7 @@ interface DialogWrapperProps {
   onClose: () => void;
   onSubmit: () => void;
   title: string;
+  submitText?: string;
   disabled: boolean;
   children: React.ReactNode;
   sx?: SxProps<Theme>;
@@ -24,6 +25,7 @@ export default function DialogWrapper({
   onClose,
   onSubmit,
   title,
+  submitText,
   disabled,
   children,
   sx,
@@ -46,7 +48,7 @@ export default function DialogWrapper({
           Cancel
         </Button>
         <Button onClick={onSubmit} disabled={disabled}>
-          Save
+          {submitText || "Submit"}
         </Button>
       </DialogActions>
     </Dialog>
