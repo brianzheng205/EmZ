@@ -26,6 +26,7 @@ import {
   convertDateStrToDate,
   convertTimeStrToDate,
   convertDateToDateStr,
+  convertDateToTimeStr,
 } from "./utils";
 
 const convertToMetadata = (metadata: FirestoreMetadata): Metadata => ({
@@ -44,7 +45,7 @@ const convertToSchedule = (schedule: FirestoreScheduleItem[]): ScheduleItem[] =>
 const convertToFirestoreSchedule = (
   schedule: ScheduleItem[]
 ): FirestoreScheduleItem[] =>
-  schedule.map((s) => ({ ...s, startTime: convertDateToDateStr(s.startTime) }));
+  schedule.map((s) => ({ ...s, startTime: convertDateToTimeStr(s.startTime) }));
 
 const convertToEmZDate = (date: FirestoreDate): EmZDate => ({
   ...convertToMetadata(date),

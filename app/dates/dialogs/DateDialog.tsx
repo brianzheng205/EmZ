@@ -42,14 +42,11 @@ export default function DateDialog({
     }
   }, [open, initialMetadata]);
 
-  const nameExists = Object.values(dates).some((d) => name === d.name);
-  const dateExists = Object.values(dates).some(
-    (d) => R.isNotNil(date) && date === d.date
+  const nameAndDateComboExists = Object.values(dates).some(
+    (d) => name === d.name && R.isNotNil(date) && date === d.date
   );
   const areSomeInputsInvalid =
-    (name.length > 0 && name.trim() === "") ||
-    (nameExists && dateExists) ||
-    !date;
+    (name.length > 0 && name.trim() === "") || nameAndDateComboExists || !date;
 
   const handleSubmit = () => {
     if (!date) {

@@ -403,6 +403,7 @@ export default function DatesPage() {
       const newDateCreation = await createDate(metadata);
       if (!newDateCreation) return;
       const [dateRef, date] = newDateCreation;
+      await updateActiveDate(dateRef);
 
       setDates((prev) => ({
         ...prev,
