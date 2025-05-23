@@ -2,8 +2,13 @@ type Commute = "Public Transport" | "Uber" | "Walk";
 
 export type ActvityType = "Prepare" | "Bulk" | "Fun" | Commute | "Other" | "";
 
-// BACKEND TYPES
-export type FirestoreScheduleItem = {
+/*****************/
+/* BACKEND TYPES */
+/*****************/
+
+// DATES PLANNER
+
+export type FirestorePlannerItem = {
   startTime: string;
   startTimeFixed: boolean;
   duration: number;
@@ -12,32 +17,56 @@ export type FirestoreScheduleItem = {
   notes: string;
 };
 
-export type FirestoreMetadata = {
+export type FirestorePlannerMetadata = {
   name: string;
   date: string;
 };
 
-export type FirestoreDate = FirestoreMetadata & {
-  schedule: FirestoreScheduleItem[];
+export type FirestoreDate = FirestorePlannerMetadata & {
+  schedule: FirestorePlannerItem[];
 };
 
-export type FirestoreIdToDate = { [id: string]: FirestoreDate };
+export type FirestoreIdToPlannerDate = Record<string, FirestoreDate>;
 
-// FRONTEND TYPES
-export type ScheduleItem = Omit<FirestoreScheduleItem, "startTime"> & {
+// DATES LIST
+
+export type FirestoreListItem = {
+  name: string;
+  placeId: string;
+  duration: number;
+  cost: number;
+  activityType: ActvityType;
+  notes: string;
+};
+
+export type FirestoreIdToListItem = Record<string, FirestoreListItem>;
+
+/******************/
+/* FRONTEND TYPES */
+/******************/
+
+// DATES PLANNER
+
+export type PlannerItem = Omit<FirestorePlannerItem, "startTime"> & {
   startTime: Date;
 };
 
-export type Metadata = Omit<FirestoreMetadata, "date"> & {
+export type PlannerMetadata = Omit<FirestorePlannerMetadata, "date"> & {
   date: Date;
 };
 
-export type EmZDate = Metadata & {
-  schedule: ScheduleItem[];
+export type PlannerDate = PlannerMetadata & {
+  schedule: PlannerItem[];
 };
 
-export type IdToDate = { [id: string]: EmZDate };
+export type IdToPlannerDate = { [id: string]: PlannerDate };
 
-export type Row = ScheduleItem & {
+export type PlannerRow = PlannerItem & {
+  id: number;
+};
+
+// DATES LIST
+
+export type ListItem = FirestoreListItem & {
   id: number;
 };

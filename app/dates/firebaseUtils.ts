@@ -13,14 +13,16 @@ import { fetchDocuments, fetchData } from "@/utils";
 import db from "@firebase";
 
 import {
-  FirestoreScheduleItem,
-  FirestoreMetadata,
+  FirestorePlannerItem,
+  FirestorePlannerMetadata,
   FirestoreDate,
-  FirestoreIdToDate,
-  ScheduleItem,
-  Metadata,
-  EmZDate,
-  IdToDate,
+  FirestoreIdToPlannerDate,
+  PlannerItem,
+  PlannerMetadata,
+  PlannerDate,
+  IdToPlannerDate,
+  FirestoreListItem,
+  FirestoreIdToListItem,
 } from "./types";
 import {
   convertDateStrToDate,
@@ -29,40 +31,46 @@ import {
   convertDateToTimeStr,
 } from "./utils";
 
-const convertToMetadata = (metadata: FirestoreMetadata): Metadata => ({
+// DATE PLANNER
+
+const convertToMetadata = (
+  metadata: FirestorePlannerMetadata
+): PlannerMetadata => ({
   ...metadata,
   date: convertDateStrToDate(metadata.date),
 });
 
-const convertToFirestoreMetadata = (metadata: Metadata): FirestoreMetadata => ({
+const convertToFirestoreMetadata = (
+  metadata: PlannerMetadata
+): FirestorePlannerMetadata => ({
   ...metadata,
   date: convertDateToDateStr(metadata.date),
 });
 
-const convertToSchedule = (schedule: FirestoreScheduleItem[]): ScheduleItem[] =>
+const convertToSchedule = (schedule: FirestorePlannerItem[]): PlannerItem[] =>
   schedule.map((s) => ({ ...s, startTime: convertTimeStrToDate(s.startTime) }));
 
 const convertToFirestoreSchedule = (
-  schedule: ScheduleItem[]
-): FirestoreScheduleItem[] =>
+  schedule: PlannerItem[]
+): FirestorePlannerItem[] =>
   schedule.map((s) => ({ ...s, startTime: convertDateToTimeStr(s.startTime) }));
 
-const convertToEmZDate = (date: FirestoreDate): EmZDate => ({
+const convertToPlannerDate = (date: FirestoreDate): PlannerDate => ({
   ...convertToMetadata(date),
   schedule: convertToSchedule(date.schedule),
 });
 
-export const fetchAllDates = async (): Promise<IdToDate> => {
+export const fetchAllDates = async (): Promise<IdToPlannerDate> => {
   try {
-    const dates = (await fetchDocuments("dates")) as FirestoreIdToDate;
-    const datesConverted: IdToDate = R.mapObjIndexed(
-      (d) => convertToEmZDate(d),
+    const dates = (await fetchDocuments("dates")) as FirestoreIdToPlannerDate;
+    const datesConverted: IdToPlannerDate = R.mapObjIndexed(
+      (d) => convertToPlannerDate(d),
       dates
     );
     return datesConverted;
   } catch (error) {
     console.error("Error fetching all dates:", error);
-    return {} as IdToDate;
+    return {} as IdToPlannerDate;
   }
 };
 
@@ -84,9 +92,9 @@ export const fetchActiveDateRef =
   };
 
 export const createDate = async (
-  metadata: Metadata
-): Promise<[dateRef: DocumentReference, date: EmZDate] | null> => {
-  const newSchedule: FirestoreScheduleItem[] = [
+  metadata: PlannerMetadata
+): Promise<[dateRef: DocumentReference, date: PlannerDate] | null> => {
+  const newSchedule: FirestorePlannerItem[] = [
     {
       startTime: "10:00",
       duration: 0,
@@ -106,7 +114,7 @@ export const createDate = async (
     const newDateRef = await addDoc(collection(db, "dates"), newDateData);
     const newDateSnap = await getDoc(newDateRef);
     const newDate = newDateSnap.data() as FirestoreDate;
-    const newDateConverted = convertToEmZDate(newDate);
+    const newDateConverted = convertToPlannerDate(newDate);
     return [newDateRef, newDateConverted];
   } catch (error) {
     console.error("Error creating new date:", error);
@@ -126,7 +134,7 @@ export const updateActiveDate = async (
 
 export const updateDateMetadata = async (
   id: string,
-  metadata: Metadata
+  metadata: PlannerMetadata
 ): Promise<void> => {
   const dateRef = doc(db, "dates", id);
 
@@ -139,7 +147,7 @@ export const updateDateMetadata = async (
 
 export const updateDateSchedule = async (
   dateRef: DocumentReference,
-  schedule: ScheduleItem[]
+  schedule: PlannerItem[]
 ) => {
   try {
     await updateDoc(dateRef, {
@@ -155,5 +163,50 @@ export const deleteDate = async (dateRef: DocumentReference) => {
     return await deleteDoc(dateRef);
   } catch (error) {
     console.error("Error deleting date:", error);
+  }
+};
+
+// DATE SCHEDULE
+
+export const fetchDateList = async (): Promise<FirestoreIdToListItem> => {
+  try {
+    const list = (await fetchDocuments("datesList")) as FirestoreIdToListItem;
+    return list;
+  } catch (error) {
+    console.error("Error fetching date list:", error);
+    return {};
+  }
+};
+
+export const createDateListItem = async (
+  item: FirestoreListItem
+): Promise<void> => {
+  try {
+    await addDoc(collection(db, "datesList"), item);
+  } catch (error) {
+    console.error("Error creating date list item:", error);
+  }
+};
+
+export const updateDateListItem = async (
+  id: string,
+  item: FirestoreListItem
+): Promise<void> => {
+  const listItemRef = doc(db, "datesList", id);
+
+  try {
+    await updateDoc(listItemRef, item);
+  } catch (error) {
+    console.error("Error updating date list item:", error);
+  }
+};
+
+export const deleteDateListItem = async (id: string): Promise<void> => {
+  const listItemRef = doc(db, "datesList", id);
+
+  try {
+    await deleteDoc(listItemRef);
+  } catch (error) {
+    console.error("Error deleting date list item:", error);
   }
 };

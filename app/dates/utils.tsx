@@ -1,25 +1,19 @@
 import { ArrowDropDown, Delete } from "@mui/icons-material";
 import { Button, Chip } from "@mui/material";
-import { GridColDef } from "@mui/x-data-grid";
+import { GridColDef, GridValidRowModel } from "@mui/x-data-grid";
 
-import { ActvityType, Row } from "./types";
+import { ActvityType, PlannerRow } from "./types";
 
 export const getCommonColumns = (
-  handleDeleteRow: (row) => void
-): { [key: string]: GridColDef } => ({
+  handleDeleteRow: (row: GridValidRowModel) => void
+) => ({
   name: {
     field: "name",
     headerName: "Name",
     type: "string",
     editable: true,
     flex: 1,
-  },
-  location: {
-    field: "location",
-    headerName: "Location",
-    // TODO
-    width: 200,
-  },
+  } as GridColDef,
   duration: {
     field: "duration",
     headerName: "Duration",
@@ -28,7 +22,7 @@ export const getCommonColumns = (
     editable: true,
     width: 100,
     valueFormatter: convertNumberTo24HourFormat,
-  },
+  } as GridColDef,
   cost: {
     field: "cost",
     headerName: "Cost",
@@ -43,7 +37,7 @@ export const getCommonColumns = (
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(value),
-  },
+  } as GridColDef,
   activityType: {
     field: "activityType",
     headerName: "Type",
@@ -77,19 +71,19 @@ export const getCommonColumns = (
           label={params.value}
           color={colorMap[params.value] || "default"}
           size="small"
-          // TODO: make this appear
+          // TODO: MAKE THIS APPEAR
           deleteIcon={<ArrowDropDown />}
         />
       );
     },
-  },
+  } as GridColDef,
   notes: {
     field: "notes",
     headerName: "Notes",
     type: "string",
     editable: true,
     flex: 1,
-  },
+  } as GridColDef,
   delete: {
     field: "delete",
     headerName: "",
@@ -107,7 +101,7 @@ export const getCommonColumns = (
         <Delete />
       </Button>
     ),
-  },
+  } as GridColDef,
 });
 
 /**
@@ -172,7 +166,7 @@ export const convertNumberTo24HourFormat = (number: number): string => {
 /**
  * Returns the next available ID for a new row.
  */
-export const getNextAvailableId = (rows: Row[]): number => {
+export const getNextAvailableId = (rows: PlannerRow[]): number => {
   const ids = new Set(rows.map((row) => row.id));
   let nextId = 1;
   while (ids.has(nextId)) {
@@ -181,7 +175,7 @@ export const getNextAvailableId = (rows: Row[]): number => {
   return nextId;
 };
 
-export const recalculateRows = (rows: Row[]): boolean => {
+export const recalculateRows = (rows: PlannerRow[]): boolean => {
   for (let i = 1; i < rows.length; i++) {
     const prev = rows[i - 1];
     const curr = rows[i];

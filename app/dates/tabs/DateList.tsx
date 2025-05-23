@@ -19,7 +19,6 @@ export default function DatePlanner() {
   const commonColumns = getCommonColumns(() => {});
   const columns: GridColDef[] = [
     commonColumns.name,
-    commonColumns.location,
     commonColumns.duration,
     commonColumns.cost,
     commonColumns.activityType,

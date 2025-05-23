@@ -1,13 +1,13 @@
-import { IdToDate, Metadata } from "../types";
+import { IdToPlannerDate, PlannerMetadata } from "../types";
 
 import DateDialog from "./DateDialog";
 
 interface EditDateDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (metadata: Metadata) => void;
-  dates: IdToDate;
-  initialMetadata: Metadata;
+  onSubmit: (metadata: PlannerMetadata) => void;
+  dates: IdToPlannerDate;
+  initialMetadata: PlannerMetadata;
 }
 
 export default function EditDateDialog({

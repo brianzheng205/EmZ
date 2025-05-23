@@ -23,7 +23,13 @@ import {
   updateDateMetadata,
   deleteDate,
 } from "../firebaseUtils";
-import { Row, IdToDate, EmZDate, ScheduleItem, Metadata } from "../types";
+import {
+  PlannerRow,
+  IdToPlannerDate,
+  PlannerDate,
+  PlannerItem,
+  PlannerMetadata,
+} from "../types";
 import {
   getCommonColumns,
   getNextAvailableId,
@@ -35,8 +41,8 @@ import {
 interface DateSelectorProps {
   docRef: DocumentReference | null;
   setDocRef: (docRef: DocumentReference) => void;
-  dates: IdToDate | null;
-  onAdd: (metadata: Metadata) => void;
+  dates: IdToPlannerDate | null;
+  onAdd: (metadata: PlannerMetadata) => void;
   onDelete: (docRef: DocumentReference) => void;
 }
 
@@ -53,7 +59,7 @@ function DateSelector({
     closeDialog: closeAddDateDialog,
   } = useDialog();
 
-  const convertToDisplayValue = (date: EmZDate) =>
+  const convertToDisplayValue = (date: PlannerDate) =>
     `${convertDateToDateStr(date.date)}${
       date.name !== "" ? ` - ${date.name}` : ""
     }`;
@@ -78,8 +84,8 @@ function DateSelector({
         {dates &&
           R.pipe(
             R.toPairs,
-            R.sortBy(([, d]: [string, EmZDate]) => d.date), // Sort by date
-            R.map(([dateId, date]: [string, EmZDate]) => (
+            R.sortBy(([, d]: [string, PlannerDate]) => d.date), // Sort by date
+            R.map(([dateId, date]: [string, PlannerDate]) => (
               <MenuItem
                 key={dateId}
                 value={dateId}
@@ -157,7 +163,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-const lastRow: ScheduleItem = {
+const lastRow: PlannerItem = {
   startTime: new Date(),
   duration: 0,
   activity: "",
@@ -167,11 +173,11 @@ const lastRow: ScheduleItem = {
 };
 
 export default function DatesPlanner() {
-  const [dates, setDates] = useState<IdToDate>({});
+  const [dates, setDates] = useState<IdToPlannerDate>({});
   const [activeDateRef, setActiveDateRef] = useState<DocumentReference | null>(
     null
   );
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<PlannerRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const {
@@ -216,7 +222,7 @@ export default function DatesPlanner() {
     setRows(schedule);
   }, [dates, activeDateRef]);
 
-  const handleDeleteRow = async (row: Row) => {
+  const handleDeleteRow = async (row: PlannerRow) => {
     if (!activeDateRef) return;
 
     const updatedRows = rows.filter((r) => r.id !== row.id);
@@ -257,7 +263,7 @@ export default function DatesPlanner() {
     {
       ...commonColumns.delete,
       renderCell: (params) => {
-        const row = params.row as Row;
+        const row = params.row as PlannerRow;
 
         return row.id !== rows[0].id && row.id !== rows[rows.length - 1].id ? (
           <Button
@@ -276,7 +282,7 @@ export default function DatesPlanner() {
     },
   ];
 
-  const processRowUpdate = async (newRow: Row, oldRow: Row) => {
+  const processRowUpdate = async (newRow: PlannerRow, oldRow: PlannerRow) => {
     if (!activeDateRef || R.equals(newRow, oldRow)) return oldRow;
 
     const updatedRows = [...rows];
@@ -328,7 +334,7 @@ export default function DatesPlanner() {
     } catch {}
   };
 
-  const handleAddDate = async (metadata: Metadata) => {
+  const handleAddDate = async (metadata: PlannerMetadata) => {
     try {
       const newDateCreation = await createDate(metadata);
       if (!newDateCreation) return;
@@ -353,7 +359,7 @@ export default function DatesPlanner() {
     } catch {}
   };
 
-  const handleEditDate = async (metadata: Metadata) => {
+  const handleEditDate = async (metadata: PlannerMetadata) => {
     if (!activeDateRef) return;
 
     try {
@@ -408,7 +414,7 @@ export default function DatesPlanner() {
           columns={columns}
           processRowUpdate={processRowUpdate}
           getRowClassName={(params) => {
-            const row: Row = params.row as Row;
+            const row: PlannerRow = params.row as PlannerRow;
             return row.startTimeFixed ? "fixed" : "";
           }}
           disableColumnResize
