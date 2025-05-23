@@ -57,3 +57,7 @@ export async function addProviderToFirebase(provider: Provider) {
     provider
   );
 }
+
+export async function deleteProviderFromFirebase(id: number) {
+  return await deleteDoc(doc(db, "tv-providers", String(id)));
+}
