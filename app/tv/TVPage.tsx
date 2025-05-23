@@ -34,7 +34,7 @@ import {
   fetchAllProvidersFromFirebase,
 } from "./firebaseUtils";
 import NetworkPage from "./NetworkPage";
-import TableToolbar, { TableToolbarProps } from "./TableToolbar";
+import TableToolbar, { CustomToolbarProps } from "./TableToolbar";
 import {
   EmZContent,
   whoOptions,
@@ -213,9 +213,11 @@ export default function TVPage() {
             disableColumnResize
             slotProps={{
               toolbar: {
+                rows,
+                genres,
                 filters,
                 setFilters,
-              } as TableToolbarProps,
+              } as CustomToolbarProps,
             }}
             initialState={{
               pagination: {
