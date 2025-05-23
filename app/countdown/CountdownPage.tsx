@@ -1,9 +1,8 @@
 "use client";
 
 import { Add } from "@mui/icons-material";
-import { Button, Container, Stack, Grid2 as Grid } from "@mui/material";
+import { Button, Container, Stack, Grid } from "@mui/material";
 import {
-  getFirestore,
   collection,
   getDocs,
   doc,
@@ -18,7 +17,7 @@ import { useState, useEffect } from "react";
 
 import { CountdownEvent, SubmitEventFn, EditEventFn } from "@/types";
 import { getAdjustedDate } from "@/utils";
-import app from "@firebase";
+import db from "@firebase";
 
 import AddCountdownDialog from "./AddCountdownDialog";
 import CountdownEventCard from "./CountdownEventCard";
@@ -30,8 +29,6 @@ function getDateString(date: Date): string {
   const year = date.getFullYear();
   return `${month}-${day}-${year}`;
 }
-
-const db = getFirestore(app);
 
 export default function CountdownPage() {
   const [events, setEvents] = useState<CountdownEvent[]>([]);

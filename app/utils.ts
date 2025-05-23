@@ -1,19 +1,26 @@
 import {
-  getFirestore,
   doc,
   getDoc,
   DocumentReference,
+  getDocs,
+  collection,
 } from "firebase/firestore";
 import * as R from "ramda";
 
-import app from "@firebase";
+import db from "@firebase";
 
 // FIREBASE
-const db = getFirestore(app);
+export const fetchDocuments = async (
+  collectionName: string
+): Promise<{ [id: string]: object }> => {
+  const collectionRef = collection(db, collectionName);
+  const querySnapshot = await getDocs(collectionRef);
+  const docs = {};
 
-export const fetchData = async (path: string) => {
-  const docRef = doc(db, path);
-  return await fetchDocument(docRef);
+  querySnapshot.docs.forEach((doc) => {
+    docs[doc.id] = doc.data();
+  });
+  return docs;
 };
 
 export const fetchDocument = async (docRef: DocumentReference) => {
@@ -25,6 +32,11 @@ export const fetchDocument = async (docRef: DocumentReference) => {
     console.error("Document does not exist", docRef.path);
     return null;
   }
+};
+
+export const fetchData = async (path: string) => {
+  const docRef = doc(db, path);
+  return await fetchDocument(docRef);
 };
 
 // DATES

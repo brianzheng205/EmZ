@@ -13,6 +13,7 @@ import { FiHome, FiCalendar } from "react-icons/fi";
 import { HiOutlineBanknotes } from "react-icons/hi2";
 import { LuTv } from "react-icons/lu";
 import { MdOutlineTimer } from "react-icons/md";
+import { TbLocationHeart } from "react-icons/tb";
 
 import { Route } from "../pages/RoutePage";
 import StyledLink from "../StyledLink";
@@ -37,6 +38,11 @@ export const ROUTES_WITHOUT_HOME: Route[] = [
     route: "/tv",
     label: "TV",
     icon: <LuTv />,
+  },
+  {
+    route: "/dates",
+    label: "Dates",
+    icon: <TbLocationHeart />,
   },
 ];
 

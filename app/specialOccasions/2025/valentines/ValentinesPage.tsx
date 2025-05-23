@@ -7,8 +7,8 @@ import {
   Slider,
   Fade,
   LinearProgress,
+  Stack,
 } from "@mui/material";
-import Stack from "@mui/material/Stack";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";

@@ -1,10 +1,8 @@
 "use client";
 
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
+import { Box, Button, Typography } from "@mui/material";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import { prompts, PromptId } from "./data";
 
@@ -79,7 +77,6 @@ export default function ValentinesPage() {
       height="100%"
       justifyContent="center"
       alignItems="center"
-      mb={6}
     >
       <Image
         className="w-[300px] h-[300px] object-contain"

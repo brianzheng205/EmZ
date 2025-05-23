@@ -8,98 +8,21 @@ import * as R from "ramda";
 
 import { capitalizeFirstLetter } from "@/utils";
 
-// TYPES
-
-type BudgetItem = {
-  amount: number;
-  time: "month" | "year";
-  isRecurring?: boolean;
-};
-
-type CategoryItems = {
-  [name: string]: BudgetItem;
-};
-
-export type Metadata = {
-  numMonths: number;
-};
-
-export type Budget = {
-  gross: CategoryItems;
-  deductions: CategoryItems;
-  expenses: CategoryItems;
-  savings: CategoryItems;
-  metadata?: Metadata;
-};
-
-type CombinedBudgetItem = {
-  emily: BudgetItem;
-  brian: BudgetItem;
-};
-
-type CombinedCategoryItems = {
-  [name: string]: CombinedBudgetItem;
-};
-
-export type CombinedMetadata = {
-  emily: Metadata;
-  brian: Metadata;
-};
-
-type CombinedBudget = {
-  gross: CombinedCategoryItems;
-  deductions: CombinedCategoryItems;
-  expenses: CombinedCategoryItems;
-  savings: CombinedCategoryItems;
-};
-
-type CombinedBudgetWithMetadata = CombinedBudget & {
-  metadata: {
-    brian: Metadata;
-    emily: Metadata;
-  };
-};
-
-type BudgetItemRowWithoutDividers = {
-  id: string;
-  status?: string;
-  category?: string;
-  name: string;
-  isRecurring: boolean;
-  monthlyEmAmount: number;
-  yearlyEmAmount: number;
-  monthlyZAmount: number;
-  yearlyZAmount: number;
-  yearlySalaryEm?: number;
-  yearlySalaryZ?: number;
-};
-
-export type BudgetItemRow = Required<Pick<BudgetSumsRow, "category">> &
-  Omit<BudgetSumsRow, "category">;
-
-type BudgetSumsRow = BudgetItemRowWithoutDividers & {
-  monthlyEmDivider: number;
-  yearlyEmDivider: number;
-  monthlyZDivider: number;
-  yearlyZDivider: number;
-};
-
-type Dividers = {
-  monthlyGross: number;
-  yearlyGross: number;
-  monthlyTakeHome: number;
-  yearlyTakeHome: number;
-};
-
-type TaxBracket = {
-  cap: number | "Infinity";
-  rate: number;
-};
-
-type TaxBracketFinite = {
-  cap: number;
-  rate: number;
-};
+import { AllBudgetsBoth } from "./FinancePage";
+import {
+  BudgetItem,
+  Budget,
+  CombinedBudget,
+  CombinedBudgetItem,
+  CombinedCategoryItems,
+  Dividers,
+  BudgetItemRow,
+  BudgetItemRowWithoutDividers,
+  BudgetSumsRow,
+  Metadata,
+  TaxBracket,
+  TaxBracketFinite,
+} from "./types";
 
 const NUM_MONTHS = 12;
 
@@ -113,17 +36,17 @@ const NUM_MONTHS = 12;
 export const getCombinedBudgets = (
   budget1: Budget,
   budget2: Budget
-): CombinedBudgetWithMetadata => {
-  const combinedBudget: CombinedBudget = {
+): CombinedBudget => {
+  const combinedBudgetCategories: CombinedBudget["categories"] = {
     gross: {},
     deductions: {},
     expenses: {},
     savings: {},
   };
 
-  R.forEach((category) => {
-    const cat1 = budget1[category];
-    const cat2 = budget2[category];
+  R.forEachObjIndexed((_, category) => {
+    const cat1 = budget1.categories[category];
+    const cat2 = budget2.categories[category];
     const itemNames = R.union(R.keys(cat1), R.keys(cat2));
 
     const combinedItems: CombinedCategoryItems = {};
@@ -140,15 +63,13 @@ export const getCombinedBudgets = (
       };
       combinedItems[item] = { emily: item1, brian: item2 };
     }, itemNames);
-    combinedBudget[category] = combinedItems;
-  }, R.keys(combinedBudget));
+    combinedBudgetCategories[category] = combinedItems;
+  }, combinedBudgetCategories);
 
   return {
-    ...combinedBudget,
-    metadata: {
-      emily: { ...budget1?.metadata } as Metadata,
-      brian: { ...budget2?.metadata } as Metadata,
-    },
+    categories: combinedBudgetCategories,
+    emilyMetadata: R.dissoc("categories", budget1) as Metadata,
+    brianMetadata: R.dissoc("categories", budget2) as Metadata,
   };
 };
 
@@ -171,23 +92,17 @@ export const getPersonFromColumnHeader = (
   return "";
 };
 
+export const getActiveBudgets = (budgets: AllBudgetsBoth) => {
+  const emilyBudget: Budget = budgets.emily.budgets[budgets.emily.active.id];
+  const brianBudget: Budget = budgets.brian.budgets[budgets.brian.active.id];
+  return { emilyBudget, brianBudget };
+};
+
 /**
  * Creates a new budget by removing the old path and adding the new path with the given object.
  * If the old path and new path are the same, it simply updates the value at that path.
- *
- * @example
- *
- * const budget = { gross: { item1: { amount: 1, time: "year" }, item2: { amount: 2, time: "year" } }, deductions: {}, expenses: {}, savings: {} };
- *
- * // creating a new budget by setting item1's amount to 3
- * getUpdatedBudget(budget, ["gross", "item1"], ["gross", "item1"], { amount: 3, time: "year" });
- * //=> { gross: { item1: { amount: 3, time: "year" }, item2: { amount: 2, time: "year" } }, ... };
- *
- * // creating a new budget by renaming item1 to item3
- * getUpdatedBudget(budget, ["gross", "item1"], ["gross", "item3"], { amount: 1, time: "year" });
- * //=> { gross: { item1: { amount: 1, time: "year" }, item3: { amount: 2, time: "year" } }, ... };
  */
-export const getUpdatedBudget = (
+const getBudgetWithUpdatedItem = (
   budget: Budget,
   oldPath: string[],
   newPath: string[],
@@ -199,6 +114,36 @@ export const getUpdatedBudget = (
         R.dissocPath(oldPath),
         R.assocPath(newPath, object)
       )(budget) as Budget);
+
+export const getBudgetsWithUpdatedItem = (
+  budgets: AllBudgetsBoth,
+  oldPath: string[],
+  newPath: string[],
+  objectEm: object | null,
+  objectZ: object | null
+) => {
+  const newBudgets = {
+    emily: {
+      active: budgets.emily.active,
+      budgets: R.clone(budgets.emily.budgets),
+    },
+    brian: {
+      active: budgets.brian.active,
+      budgets: R.clone(budgets.brian.budgets),
+    },
+  };
+  const { emilyBudget, brianBudget } = getActiveBudgets(newBudgets);
+
+  const newEmilyBudget = objectEm
+    ? getBudgetWithUpdatedItem(emilyBudget, oldPath, newPath, objectEm)
+    : emilyBudget;
+  const newBrianBudget = objectZ
+    ? getBudgetWithUpdatedItem(brianBudget, oldPath, newPath, objectZ)
+    : brianBudget;
+  newBudgets.emily.budgets[newBudgets.emily.active.id] = newEmilyBudget;
+  newBudgets.brian.budgets[newBudgets.brian.active.id] = newBrianBudget;
+  return newBudgets;
+};
 
 /**
  * Returns the time unit for the changed cell based on the header.
@@ -325,7 +270,7 @@ const getMonthlyTakeHomeAndTax = async (
 /**
  * Returns if the category is taxable.
  */
-const isTaxable = (category: keyof CombinedBudget) =>
+const isTaxable = (category: keyof CombinedBudget["categories"]) =>
   ["expenses", "savings"].includes(category);
 
 const currencyFormatter: GridValueFormatter = (value: number, row) =>
@@ -446,13 +391,13 @@ export const columns: GridColDef[] = R.flatten([
  * Converts a category of the combined budget into a format that can be used by the data grid.
  */
 const getCategoryRows = (
-  combinedBudget: CombinedBudgetWithMetadata,
-  category: keyof CombinedBudget,
+  combinedBudget: CombinedBudget,
+  category: keyof CombinedBudget["categories"],
   emilyDividers?: Dividers,
   brianDividers?: Dividers
 ): { itemRows: BudgetItemRow[]; sumsRow: BudgetSumsRow } => {
-  const emilyNumMonths = combinedBudget.metadata.emily.numMonths;
-  const brianNumMonths = combinedBudget.metadata.brian.numMonths;
+  const emilyNumMonths = combinedBudget.emilyMetadata.numMonths;
+  const brianNumMonths = combinedBudget.brianMetadata.numMonths;
 
   let monthlyEmSum = 0;
   let yearlyEmSum = 0;
@@ -473,28 +418,21 @@ const getCategoryRows = (
     let yearlySalaryZ: number | undefined = undefined;
 
     if (category === "gross" && itemName === "Base") {
+      const grossBudget = combinedBudget.categories.gross;
       const grossEm = getProratedSalary(
-        R.pathOr(0, ["Base", "emily", "amount"], combinedBudget.gross),
+        R.pathOr(0, ["Base", "emily", "amount"], grossBudget),
         emilyNumMonths
       );
       monthlyEm = Math.round(grossEm / emilyNumMonths);
       yearlyEm = grossEm;
       const grossZ = getProratedSalary(
-        R.pathOr(0, ["Base", "brian", "amount"], combinedBudget.gross),
+        R.pathOr(0, ["Base", "brian", "amount"], grossBudget),
         brianNumMonths
       );
       monthlyZ = Math.round(grossZ / brianNumMonths);
       yearlyZ = grossZ;
-      yearlySalaryEm = R.pathOr(
-        0,
-        ["Base", "emily", "amount"],
-        combinedBudget.gross
-      );
-      yearlySalaryZ = R.pathOr(
-        0,
-        ["Base", "brian", "amount"],
-        combinedBudget.gross
-      );
+      yearlySalaryEm = R.pathOr(0, ["Base", "emily", "amount"], grossBudget);
+      yearlySalaryZ = R.pathOr(0, ["Base", "brian", "amount"], grossBudget);
     } else {
       monthlyEm = convertCurrency(item.emily, "month", emilyNumMonths);
       yearlyEm = convertCurrency(item.emily, "year", emilyNumMonths);
@@ -522,7 +460,7 @@ const getCategoryRows = (
       yearlySalaryEm,
       yearlySalaryZ,
     });
-  }, combinedBudget[category]);
+  }, R.path(["categories", category], combinedBudget));
 
   const monthlyEmDivider = emilyDividers
     ? isTaxable(category)
@@ -588,10 +526,10 @@ const getCategoryRows = (
  */
 const getTakeHomeAndTaxTotalRows = async (
   grossTotalRow: BudgetSumsRow,
-  combinedBudget: CombinedBudgetWithMetadata
+  combinedBudget: CombinedBudget
 ): Promise<{ takeHomeRow: BudgetSumsRow; taxRow: BudgetSumsRow }> => {
-  const numMonthsEm = combinedBudget.metadata.emily.numMonths;
-  const numMonthsZ = combinedBudget.metadata.brian.numMonths;
+  const numMonthsEm = combinedBudget.emilyMetadata.numMonths;
+  const numMonthsZ = combinedBudget.brianMetadata.numMonths;
 
   // Assume that you earn this monthly amount for the whole year even if you don't
   let monthyEmTaxable = grossTotalRow.monthlyEmAmount;
@@ -603,7 +541,7 @@ const getTakeHomeAndTaxTotalRows = async (
       monthyEmTaxable -= convertCurrency(item.emily, "month", numMonthsEm);
       monthlyZTaxable -= convertCurrency(item.brian, "month", numMonthsZ);
     }
-  }, combinedBudget.deductions);
+  }, combinedBudget.categories.deductions);
 
   // Calculate the yearly bonus amounts for Emily and Brian to add back later
   // (only to yearly take-home) with a standard 22% withholding rate
@@ -616,7 +554,7 @@ const getTakeHomeAndTaxTotalRows = async (
       bonusEm += convertCurrency(item.emily, "year");
       bonusZ += convertCurrency(item.brian, "year");
     }
-  }, combinedBudget.gross);
+  }, combinedBudget.categories.gross);
 
   // Calculate monthly FICA tax based on monthly gross income
   const ficaTaxRate = 0.0765;
@@ -743,7 +681,7 @@ const getRemainingSavingsRow = (
  * The rows are calculated based on the combined budget.
  */
 export const getRows = async (
-  combinedBudget: CombinedBudgetWithMetadata
+  combinedBudget: CombinedBudget
 ): Promise<(BudgetItemRow | BudgetSumsRow)[]> => {
   const { itemRows: gross, sumsRow: grossSums } = getCategoryRows(
     combinedBudget,
