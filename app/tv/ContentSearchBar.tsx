@@ -23,15 +23,19 @@ import {
   whoOptions,
   fetchDataFromTMDB,
   EmZContent,
-  fetchSearchResults,
 } from "./utils";
 
-type SearchBarProps = {
+type SearchBarProps<T> = {
   fetchData: () => void;
   rows: GridRowsProp;
+  fetchSearchResults: (query: string) => Promise<T>;
 };
 
-export default function SearchBar({ fetchData, rows }: SearchBarProps) {
+export default function ContentSearchBar({
+  fetchData,
+  rows,
+  fetchSearchResults,
+}: SearchBarProps<TMDBSearchMultiResponse>) {
   const [inputValue, setInputValue] = useState("");
   const [options, setOptions] = useState<Content[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,7 +45,7 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
   const debouncedFetch = useMemo(() => {
     const fetchResults = async (query) => {
       setLoading(true);
-      const data: TMDBSearchMultiResponse = await fetchSearchResults(query);
+      const data = await fetchSearchResults(query);
       const rowIds = new Set(rows.map((row) => row.id));
 
       setOptions(
@@ -68,20 +72,22 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
 
     if (value.media_type === "tv") {
       const tvData = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/tv/${value.id}`
+        `https://api.themoviedb.org/3/tv/${value.id}?append_to_response=watch%2Fproviders&language=en-US`
       );
 
       value["episodes"] = tvData.number_of_episodes;
       value["ongoing"] = tvData.in_production;
       value["next_episode_to_air"] = tvData.next_episode_to_air;
+      value["seasons"] = tvData.seasons;
+      value["watch_providers"] = tvData["watch/providers"].results?.US || [];
     } else {
       const movieData = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/movie/${value.id}`
+        `https://api.themoviedb.org/3/movie/${value.id}?append_to_response=watch%2Fproviders&language=en-US`
       );
 
       if (movieData.belongs_to_collection) {
         const collection = await fetchDataFromTMDB(
-          `https://api.themoviedb.org/3/collection/${movieData.belongs_to_collection.id}?language=en-US`
+          `https://api.themoviedb.org/3/collection/${movieData.belongs_to_collection.id}?append_to_response=watch%2Fproviders&language=en-US`
         );
 
         for (const part of collection.parts) {
@@ -90,7 +96,9 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
             part["watched"] = 0;
             part["episodes"] = 1;
             part["ongoing"] = false;
-            console.log("Adding part to firebase", part);
+            part["watch_providers"] =
+              collection["watch/providers"].results?.US || [];
+
             addContentToFirebase(part as EmZContent);
           }
         }
@@ -98,6 +106,7 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
 
       value["episodes"] = 1;
       value["ongoing"] = false;
+      value["watch_providers"] = movieData["watch/providers"].results?.US || [];
     }
     addContentToFirebase(value as EmZContent);
     fetchData();
@@ -107,7 +116,6 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
       direction={"row"}
       sx={{
         gap: 2,
-        marginTop: "3%",
         width: "100%",
         justifyContent: "center",
         alignItems: "center",
@@ -130,7 +138,7 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
           setSelectedContent(value as Content | null);
         }}
         loading={loading}
-        sx={{ width: "60%" }}
+        sx={{ flex: 1 }}
         renderInput={(params) => (
           <TextField {...params} label="Search Content" />
         )}
@@ -163,7 +171,6 @@ export default function SearchBar({ fetchData, rows }: SearchBarProps) {
         onChange={(event) => {
           setWho(event.target.value as WhoSelection);
         }}
-        sx={{ width: "10%" }}
       >
         {whoOptions.map((option) => (
           <MenuItem key={option} value={option}>
