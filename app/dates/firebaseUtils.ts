@@ -23,6 +23,7 @@ import {
   IdToPlannerDate,
   FirestoreListItem,
   FirestoreIdToListItem,
+  ListRow,
 } from "./types";
 import {
   convertDateStrToDate,
@@ -168,30 +169,38 @@ export const deleteDate = async (dateRef: DocumentReference) => {
 
 // DATE SCHEDULE
 
-export const fetchDateList = async (): Promise<FirestoreIdToListItem> => {
+export const fetchDateList = async (): Promise<ListRow[]> => {
   try {
-    const list = (await fetchDocuments("datesList")) as FirestoreIdToListItem;
+    const idToListItem = (await fetchDocuments(
+      "datesList"
+    )) as FirestoreIdToListItem;
+    const list: ListRow[] = [];
+
+    R.forEachObjIndexed((item, id) => {
+      list.push({ ...item, id });
+    }, idToListItem);
+
     return list;
   } catch (error) {
     console.error("Error fetching date list:", error);
-    return {};
+    return [];
   }
 };
 
 export const createDateListItem = async (
   item: FirestoreListItem
-): Promise<void> => {
+): Promise<string | null> => {
   try {
-    await addDoc(collection(db, "datesList"), item);
+    const docRef = await addDoc(collection(db, "datesList"), item);
+    return docRef.id;
   } catch (error) {
     console.error("Error creating date list item:", error);
+    return null;
   }
 };
 
-export const updateDateListItem = async (
-  id: string,
-  item: FirestoreListItem
-): Promise<void> => {
+export const updateDateListItem = async (itemRow: ListRow): Promise<void> => {
+  const { id, ...item } = itemRow;
   const listItemRef = doc(db, "datesList", id);
 
   try {

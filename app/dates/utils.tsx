@@ -1,8 +1,9 @@
 import { ArrowDropDown, Delete } from "@mui/icons-material";
 import { Button, Chip } from "@mui/material";
 import { GridColDef, GridValidRowModel } from "@mui/x-data-grid";
+import * as R from "ramda";
 
-import { ActvityType, PlannerRow } from "./types";
+import { ActivityType, PlannerRow, ListRow } from "./types";
 
 export const getCommonColumns = (
   handleDeleteRow: (row: GridValidRowModel) => void
@@ -52,7 +53,7 @@ export const getCommonColumns = (
       "Uber",
       "Walk",
       "Other",
-    ] as ActvityType[],
+    ] as ActivityType[],
     renderCell: (params) => {
       if (params.value === "") return null;
 
@@ -188,6 +189,32 @@ export const recalculateRows = (rows: PlannerRow[]): boolean => {
     } else {
       // Flexible: curr.startTime = prev.startTime + prev.duration
       curr.startTime = addMinutes(prev.startTime, prev.duration);
+    }
+  }
+
+  return true;
+};
+
+// DATE LIST
+
+export const isValidListItem = (
+  list: ListRow[],
+  item: ListRow,
+  silent = false
+): boolean => {
+  if (R.isEmpty(item.name) || item.duration <= 0) {
+    if (!silent)
+      console.error("Invalid item: name is empty or duration is non-positive");
+    return false;
+  }
+
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].name === item.name && list[i].placeId === item.placeId) {
+      if (!silent)
+        console.error(
+          "Invalid item: name and placeId already exist in the list"
+        );
+      return false;
     }
   }
 
