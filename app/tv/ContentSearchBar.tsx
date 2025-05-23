@@ -59,7 +59,7 @@ export default function ContentSearchBar({
     return debounce((query: string) => {
       fetchResults(query);
     }, 300);
-  }, [rows]);
+  }, [rows, fetchSearchResults]);
 
   const handleInputChange = (event, value: string) => {
     setInputValue(value);
