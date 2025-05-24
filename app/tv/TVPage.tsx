@@ -34,7 +34,7 @@ import {
   fetchAllProvidersFromFirebase,
 } from "./firebaseUtils";
 import NetworkPage from "./NetworkPage";
-import TableToolbar, { TableToolbarProps } from "./TableToolbar";
+import TableToolbar, { CustomToolbarProps } from "./TableToolbar";
 import {
   EmZContent,
   whoOptions,
@@ -174,22 +174,13 @@ export default function TVPage() {
     <Stack
       sx={{ alignItems: "center", marginTop: "3%", width: "100%", gap: 4 }}
     >
-      <Accordion sx={{ width: "95%" }} defaultExpanded>
-        <AccordionSummary expandIcon={<ArrowDropDown />}>
-          <Typography>Content</Typography>
-        </AccordionSummary>
-        <AccordionDetails
-          sx={{
-            width: "100%",
-          }}
-        >
-          <Stack sx={{ gap: 2, width: "100%", alignItems: "center" }}>
-            <ContentSearchBar
-              fetchData={fetchData}
-              rows={rows}
-              fetchSearchResults={fetchContentSearchResults}
-            />
-            {/* <Button
+      <Stack sx={{ gap: 2, width: "95%", alignItems: "center" }}>
+        <ContentSearchBar
+          fetchData={fetchData}
+          rows={rows}
+          fetchSearchResults={fetchContentSearchResults}
+        />
+        {/* <Button
               onClick={() => {
                 const func = async () => {
                   const data = await fetchAllContentFromFirebase();
@@ -216,309 +207,323 @@ export default function TVPage() {
                 func();
               }}
             /> */}
-            <DataGrid
-              slots={{ toolbar: TableToolbar }}
-              disableColumnResize
-              slotProps={{
-                toolbar: {
-                  filters,
-                  setFilters,
-                } as TableToolbarProps,
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 20, page: 0 },
+        <Box sx={{ height: "80vh", width: "100%", justifyItems: "center" }}>
+          <DataGrid
+            slots={{ toolbar: TableToolbar }}
+            disableColumnResize
+            slotProps={{
+              toolbar: {
+                rows,
+                genres,
+                filters,
+                setFilters,
+              } as CustomToolbarProps,
+            }}
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 20, page: 0 },
+              },
+            }}
+            pageSizeOptions={[20, 50, 100]}
+            showToolbar
+            disableVirtualization
+            getRowHeight={() => "auto"}
+            cellModesModel={cellModesModel}
+            onCellModesModelChange={handleCellModesModelChange}
+            onCellClick={handleCellClick}
+            processRowUpdate={(
+              newRow: GridValidRowModel,
+              oldRow: GridValidRowModel
+            ) => {
+              if (!isEqual(newRow, oldRow)) {
+                addContentToFirebase(newRow as EmZContent);
+                fetchData();
+              }
+              return newRow;
+            }}
+            rows={applyFiltersAndSorts(rows, filters)}
+            columns={[
+              {
+                field: "name",
+                headerName: "Name",
+                cellClassName: "base-cell left-aligned-cell",
+                flex: 1,
+                valueGetter: (value, row) => {
+                  if (row.media_type === "movie") {
+                    return row.title;
+                  }
+                  return row.name;
                 },
-              }}
-              pageSizeOptions={[20, 50, 100]}
-              showToolbar
-              disableVirtualization
-              getRowHeight={() => "auto"}
-              cellModesModel={cellModesModel}
-              onCellModesModelChange={handleCellModesModelChange}
-              onCellClick={handleCellClick}
-              processRowUpdate={(
-                newRow: GridValidRowModel,
-                oldRow: GridValidRowModel
-              ) => {
-                if (!isEqual(newRow, oldRow)) {
-                  addContentToFirebase(newRow as EmZContent);
-                  fetchData();
-                }
-                return newRow;
-              }}
-              rows={applyFiltersAndSorts(rows, filters)}
-              columns={[
-                {
-                  field: "name",
-                  headerName: "Name",
-                  cellClassName: "base-cell left-aligned-cell",
-                  flex: 1,
-                  valueGetter: (value, row) => {
-                    if (row.media_type === "movie") {
-                      return row.title;
-                    }
-                    return row.name;
-                  },
+              },
+              {
+                field: "who",
+                headerName: "Who",
+                cellClassName: "base-cell center-aligned-cell editable-cell",
+                valueOptions: whoOptions,
+                type: "singleSelect",
+                editable: true,
+                width: 100,
+                renderCell: (params) => {
+                  return (
+                    <Chip
+                      label={params.row.who}
+                      onDelete={(event) => handleCellClick(params, event)}
+                      deleteIcon={<ArrowDropDown />}
+                      onClick={(event) => handleCellClick(params, event)}
+                      color={
+                        params.row.who === "Emily"
+                          ? "primary"
+                          : params.row.who === "Brian"
+                          ? "secondary"
+                          : "default"
+                      }
+                    />
+                  );
                 },
-                {
-                  field: "who",
-                  headerName: "Who",
-                  cellClassName: "base-cell center-aligned-cell editable-cell",
-                  valueOptions: whoOptions,
-                  type: "singleSelect",
-                  editable: true,
-                  width: 100,
-                  renderCell: (params) => {
-                    return (
+              },
+              {
+                field: "media_type",
+                headerName: "Type",
+                cellClassName: "base-cell left-aligned-cell",
+                width: 50,
+              },
+              {
+                field: "genre",
+                headerName: "Genre",
+                flex: 1,
+                valueGetter: (value, row) => {
+                  return row.genre_ids.map((id: number) => {
+                    return genres ? genres[id] : id;
+                  });
+                },
+                renderCell: (params) => (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {params.value.map((g, index) => (
                       <Chip
-                        label={params.row.who}
-                        onDelete={(event) => handleCellClick(params, event)}
-                        deleteIcon={<ArrowDropDown />}
-                        onClick={(event) => handleCellClick(params, event)}
-                        color={
-                          params.row.who === "Emily"
-                            ? "primary"
-                            : params.row.who === "Brian"
-                            ? "secondary"
-                            : "default"
-                        }
+                        key={index}
+                        label={g.name}
+                        sx={{ backgroundColor: g.color }}
                       />
-                    );
-                  },
+                    ))}
+                  </Box>
+                ),
+                cellClassName: "base-cell left-aligned-cell vertical-padding",
+              },
+              {
+                field: "ongoing",
+                headerName: "Ongoing",
+                cellClassName: "base-cell center-aligned-cell",
+                type: "boolean",
+                width: 80,
+              },
+              {
+                field: "status",
+                headerName: "Status",
+                cellClassName: "base-cell center-aligned-cell",
+                width: 120,
+                sortComparator: (v1, v2) => {
+                  if (v1 === v2) {
+                    return 0;
+                  }
+                  if (v1 === "Not Started") {
+                    return 1;
+                  }
+                  if (v1 === "Completed" && v2 === "In Progress") {
+                    return 1;
+                  }
+
+                  return -1;
                 },
-                {
-                  field: "media_type",
-                  headerName: "Type",
-                  cellClassName: "base-cell left-aligned-cell",
-                  width: 50,
+
+                valueGetter: (value, row) => {
+                  return row.watched === 0
+                    ? "Not Started"
+                    : row.watched < row.episodes
+                    ? "In Progress"
+                    : "Completed";
                 },
-                {
-                  field: "genre",
-                  headerName: "Genre",
-                  flex: 1,
-                  valueGetter: (value, row) => {
-                    return row.genre_ids.map((id: number) => {
-                      return genres ? genres[id] : id;
-                    });
-                  },
-                  renderCell: (params) => (
-                    <Box
+                renderCell: (params) => {
+                  return (
+                    <Chip
+                      label={params.value}
+                      color={
+                        params.value === "Not Started"
+                          ? "default"
+                          : params.value === "In Progress"
+                          ? "info"
+                          : "success"
+                      }
+                    />
+                  );
+                },
+              },
+              {
+                field: "watched_name",
+                headerName: "Watched Episode Name",
+                cellClassName: "base-cell left-aligned-cell",
+                flex: 1,
+              },
+              {
+                field: "watched",
+                headerName: "Watched",
+                cellClassName: "base-cell left-aligned-cell editable-cell",
+                editable: true,
+                type: "number",
+                width: 80,
+
+                renderEditCell: (params) => (
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    slotProps={{
+                      input: {
+                        disableUnderline: true,
+                      },
+                    }}
+                    defaultValue={params.value}
+                    onBlur={(event) => {
+                      const value = Number(event.target.value);
+                      if (value >= 0 && value <= params.row.episodes) {
+                        params.api.setEditCellValue({
+                          id: params.id,
+                          field: params.field,
+                          value,
+                        });
+                      }
+                    }}
+                    sx={{
+                      "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
+                        {
+                          WebkitAppearance: "auto",
+                        },
+                      "& input[type=number]": {
+                        MozAppearance: "text-field",
+                      },
+                    }}
+                  />
+                ),
+              },
+              {
+                field: "episodes",
+                headerName: "Total",
+                cellClassName: "base-cell left-aligned-cell",
+                width: 60,
+              },
+              {
+                field: "progress",
+                headerName: "Progress",
+                cellClassName: "base-cell center-aligned-cell",
+                width: 80,
+                valueGetter: (value, row) => {
+                  return (row.watched * 100) / row.episodes;
+                },
+                renderCell: (params) => {
+                  return <CircularProgressWithLabel value={params.value} />;
+                },
+              },
+              {
+                field: "next_episode_to_air",
+                headerName: "Next Episode",
+                cellClassName: "base-cell left-aligned-cell",
+                width: 120,
+                valueGetter: (value) => {
+                  if (value) {
+                    return (value as NextEpisodeToAir).air_date;
+                  }
+                  return null;
+                },
+                renderCell: (params) => {
+                  if (params.value) {
+                    return new Date(params.value).toLocaleDateString();
+                  }
+                  return null;
+                },
+              },
+              {
+                field: "watch_providers",
+                headerName: "Providers",
+                cellClassName: "base-cell center-aligned-cell vertical-padding",
+                flex: 1,
+                renderCell: (params) => {
+                  return (
+                    <Stack
+                      direction={"row"}
                       sx={{
-                        display: "flex",
-                        gap: 1,
                         flexWrap: "wrap",
+                        gap: 1,
+                        justifyContent: "center",
                       }}
                     >
-                      {params.value.map((g, index) => (
-                        <Chip
-                          key={index}
-                          label={g.name}
-                          sx={{ backgroundColor: g.color }}
-                        />
-                      ))}
-                    </Box>
-                  ),
-                  cellClassName: "base-cell left-aligned-cell vertical-padding",
-                },
-                {
-                  field: "ongoing",
-                  headerName: "Ongoing",
-                  cellClassName: "base-cell center-aligned-cell",
-                  type: "boolean",
-                  width: 80,
-                },
-                {
-                  field: "status",
-                  headerName: "Status",
-                  cellClassName: "base-cell center-aligned-cell",
-                  width: 120,
-                  sortComparator: (v1, v2) => {
-                    if (v1 === v2) {
-                      return 0;
-                    }
-                    if (v1 === "Not Started") {
-                      return 1;
-                    }
-                    if (v1 === "Completed" && v2 === "In Progress") {
-                      return 1;
-                    }
-
-                    return -1;
-                  },
-
-                  valueGetter: (value, row) => {
-                    return row.watched === 0
-                      ? "Not Started"
-                      : row.watched < row.episodes
-                      ? "In Progress"
-                      : "Completed";
-                  },
-                  renderCell: (params) => {
-                    return (
-                      <Chip
-                        label={params.value}
-                        color={
-                          params.value === "Not Started"
-                            ? "default"
-                            : params.value === "In Progress"
-                            ? "info"
-                            : "success"
-                        }
-                      />
-                    );
-                  },
-                },
-                {
-                  field: "watched_name",
-                  headerName: "Watched Episode Name",
-                  cellClassName: "base-cell left-aligned-cell",
-                  flex: 1,
-                },
-                {
-                  field: "watched",
-                  headerName: "Watched",
-                  cellClassName: "base-cell left-aligned-cell editable-cell",
-                  editable: true,
-                  type: "number",
-                  width: 80,
-
-                  renderEditCell: (params) => (
-                    <TextField
-                      type="number"
-                      variant="standard"
-                      slotProps={{
-                        input: {
-                          disableUnderline: true,
-                        },
-                      }}
-                      defaultValue={params.value}
-                      onBlur={(event) => {
-                        const value = Number(event.target.value);
-                        if (value >= 0 && value <= params.row.episodes) {
-                          params.api.setEditCellValue({
-                            id: params.id,
-                            field: params.field,
-                            value,
-                          });
-                        }
-                      }}
-                      sx={{
-                        "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
-                          {
-                            WebkitAppearance: "auto",
-                          },
-                        "& input[type=number]": {
-                          MozAppearance: "text-field",
-                        },
-                      }}
-                    />
-                  ),
-                },
-                {
-                  field: "episodes",
-                  headerName: "Total",
-                  cellClassName: "base-cell left-aligned-cell",
-                  width: 60,
-                },
-                {
-                  field: "progress",
-                  headerName: "Progress",
-                  cellClassName: "base-cell center-aligned-cell",
-                  width: 80,
-                  valueGetter: (value, row) => {
-                    return (row.watched * 100) / row.episodes;
-                  },
-                  renderCell: (params) => {
-                    return <CircularProgressWithLabel value={params.value} />;
-                  },
-                },
-                {
-                  field: "next_episode_to_air",
-                  headerName: "Next Episode",
-                  cellClassName: "base-cell left-aligned-cell",
-                  width: 120,
-                  valueGetter: (value) => {
-                    if (value) {
-                      return (value as NextEpisodeToAir).air_date;
-                    }
-                    return null;
-                  },
-                },
-                {
-                  field: "watch_providers",
-                  headerName: "Providers",
-                  cellClassName: "base-cell center-aligned-cell",
-                  flex: 1,
-                  renderCell: (params) => {
-                    return (
-                      <Stack
-                        direction={"row"}
-                        spacing={1}
-                        sx={{ flexWrap: "wrap" }}
-                      >
-                        {Object.keys(params.value)
-                          .filter((key) => key !== "link")
-                          .map((buyType) =>
-                            params.value[buyType]
-                              .filter((provider) =>
+                      {Object.keys(params.value)
+                        .filter((key) => key !== "link")
+                        .map((buyType) =>
+                          params.value[buyType]
+                            .filter(
+                              (provider) =>
+                                buyType === "free" ||
+                                buyType === "ads" ||
                                 providers.some(
                                   (p) => p.provider_id === provider.provider_id
                                 )
-                              )
-                              .map((provider, index) => (
-                                <Avatar
-                                  variant="rounded"
-                                  key={index}
-                                  src={`https://image.tmdb.org/t/p/w500/${provider.logo_path}`}
-                                />
-                              ))
-                          )}
-                      </Stack>
-                    );
-                  },
+                            )
+                            .map((provider, index) => (
+                              <Avatar
+                                variant="rounded"
+                                key={index}
+                                src={`https://image.tmdb.org/t/p/w500/${provider.logo_path}`}
+                              />
+                            ))
+                        )}
+                    </Stack>
+                  );
                 },
-                {
-                  field: "actions",
-                  headerName: "",
-                  width: 50,
-                  renderCell: (params) => (
-                    <IconButton
-                      aria-label="delete"
-                      onClick={() => handleDelete(params.row.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  ),
-                  cellClassName: "base-cell center-aligned-cell",
-                },
-              ]}
-              sx={{
-                "& .base-cell": {
-                  display: "flex",
-                  alignItems: "center",
-                },
-                "& .left-aligned-cell": {
-                  justifyContent: "left",
-                },
-                "& .center-aligned-cell": {
-                  justifyContent: "center",
-                },
-                "& .vertical-padding": {
-                  paddingY: 1,
-                },
-                "& .editable-cell": {
-                  backgroundColor: "background.paper",
-                },
-                width: "95%",
-              }}
-            />
-          </Stack>
-        </AccordionDetails>
-      </Accordion>
+              },
+              {
+                field: "actions",
+                headerName: "",
+                width: 50,
+                renderCell: (params) => (
+                  <IconButton
+                    aria-label="delete"
+                    onClick={() => handleDelete(params.row.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                ),
+                cellClassName: "base-cell center-aligned-cell",
+              },
+            ]}
+            sx={{
+              "& .base-cell": {
+                display: "flex",
+                alignItems: "center",
+              },
+              "& .left-aligned-cell": {
+                justifyContent: "left",
+              },
+              "& .center-aligned-cell": {
+                justifyContent: "center",
+              },
+              "& .vertical-padding": {
+                paddingY: 1,
+              },
+              "& .editable-cell": {
+                backgroundColor: "background.paper",
+              },
+              width: "95%",
+            }}
+          />
+        </Box>
+      </Stack>
       <Accordion sx={{ width: "95%" }}>
         <AccordionSummary expandIcon={<ArrowDropDown />}>
-          <Typography>Networks</Typography>
+          <Typography>Providers</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <NetworkPage providers={providers} fetchProviders={fetchProviders} />

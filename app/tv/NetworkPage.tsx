@@ -1,6 +1,8 @@
-import { Stack, Avatar } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Stack, Avatar, IconButton } from "@mui/material";
 import { DataGrid, GridRowsProp, GridRenderCellParams } from "@mui/x-data-grid";
 
+import { deleteProviderFromFirebase } from "./firebaseUtils";
 import ProviderSearchBar from "./ProviderSearchBar";
 import { fetchWatchProvidersSearchResults } from "./utils";
 
@@ -32,8 +34,25 @@ export default function NetworkPage({
       headerName: "Name",
       flex: 1,
     },
+    {
+      field: "actions",
+      headerName: "",
+      width: 50,
+      renderCell: (params) => (
+        <IconButton
+          aria-label="delete"
+          onClick={() => handleDelete(params.row.provider_id)}
+        >
+          <DeleteIcon />
+        </IconButton>
+      ),
+    },
   ];
 
+  const handleDelete = (id: number) => {
+    deleteProviderFromFirebase(id);
+    fetchProviders();
+  };
   return (
     <Stack sx={{ gap: 2 }}>
       <ProviderSearchBar

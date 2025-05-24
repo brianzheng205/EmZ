@@ -28,9 +28,11 @@ export interface TVShow extends Content {
   next_episode_to_air: NextEpisodeToAir;
   seasons: Season[];
   watch_providers: {
-    buy: Provider[];
-    flatrate: Provider[];
-    rent: Provider[];
+    buy?: Provider[];
+    flatrate?: Provider[];
+    rent?: Provider[];
+    free?: Provider[];
+    ads?: Provider[];
     link: string;
   };
 }
