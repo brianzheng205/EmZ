@@ -30,6 +30,7 @@ interface DateItemDialogProps {
   title: string;
   submitText: string;
   dateListItems: ListRow[];
+  existingPlaceIds?: string[]; // New prop for existing place IDs
 }
 
 export default function DateItemDialog({
@@ -39,13 +40,22 @@ export default function DateItemDialog({
   title,
   submitText,
   dateListItems,
+  existingPlaceIds = ["ChIJt2rCtwJ644kRM6dAV77vrxo"], // Default to empty array
 }: DateItemDialogProps) {
+  const [activeTab, setActiveTab] = useState<TabValue>(TabValue.MAPS);
+
+  // Map input states
+  const [selectedPlace, setSelectedPlace] =
+    useState<google.maps.places.Place | null>(null);
+
+  console.log("Selected Place:", selectedPlace);
+
+  // Manual input states
   const [name, setName] = useState("");
   const [duration, setDuration] = useState(0);
   const [cost, setCost] = useState(0);
   const [activityType, setActivityType] = useState<ActivityType>("Other");
   const [notes, setNotes] = useState("");
-  const [activeTab, setActiveTab] = useState<TabValue>(TabValue.MAPS);
 
   useEffect(() => {
     if (open) {
@@ -82,6 +92,16 @@ export default function DateItemDialog({
     } as ListRow,
     true
   );
+
+  function MapInputs() {
+    return (
+      <MapWithSearch
+        selectedPlace={selectedPlace}
+        onPlaceSelect={setSelectedPlace}
+        existingPlaceIds={existingPlaceIds}
+      />
+    );
+  }
 
   function ManualInputs() {
     return (
@@ -174,7 +194,7 @@ export default function DateItemDialog({
         </Tabs>
       </Stack>
 
-      {activeTab === TabValue.MAPS ? <MapWithSearch /> : <ManualInputs />}
+      {activeTab === TabValue.MAPS ? <MapInputs /> : <ManualInputs />}
     </DialogWrapper>
   );
 }

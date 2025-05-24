@@ -1,13 +1,15 @@
+import { Box, Typography } from "@mui/material";
 import {
   APIProvider,
   ControlPosition,
   MapControl,
   AdvancedMarker,
+  InfoWindow,
   Map,
   useMap,
   useAdvancedMarkerRef,
 } from "@vis.gl/react-google-maps";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
 import { TXI_BOSTON } from "./constants";
 
@@ -16,11 +18,19 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 interface MapHandlerProps {
   place: google.maps.places.Place | null;
   marker: google.maps.marker.AdvancedMarkerElement | null;
+  existingPlaceIds: string[];
+  setExistingPlaces: (places: google.maps.places.Place[]) => void;
 }
 
-function MapHandler({ place, marker }: MapHandlerProps) {
+function MapHandler({
+  place,
+  marker,
+  existingPlaceIds,
+  setExistingPlaces,
+}: MapHandlerProps) {
   const map = useMap();
 
+  // Handle the main selected place
   useEffect(() => {
     if (!map || !place || !marker) return;
 
@@ -33,6 +43,44 @@ function MapHandler({ place, marker }: MapHandlerProps) {
 
     marker.position = place.location;
   }, [map, place, marker]);
+
+  // Fetch and display existing places using the modern Places API
+  useEffect(() => {
+    if (!map || !existingPlaceIds.length) return;
+
+    const fetchPlaces = async () => {
+      try {
+        await window.google.maps.importLibrary("places");
+
+        const fetchedPlaces: google.maps.places.Place[] = [];
+
+        // Use the modern Place API instead of PlacesService
+        for (const placeId of existingPlaceIds) {
+          try {
+            // Create a Place instance from the place ID
+            const place = new window.google.maps.places.Place({
+              id: placeId,
+            });
+
+            // Fetch the required fields
+            await place.fetchFields({
+              fields: ["displayName", "location", "formattedAddress", "id"],
+            });
+
+            fetchedPlaces.push(place);
+          } catch (error) {
+            console.error(`Error fetching place ${placeId}:`, error);
+          }
+        }
+
+        setExistingPlaces(fetchedPlaces);
+      } catch (error) {
+        console.error("Error loading places:", error);
+      }
+    };
+
+    fetchPlaces();
+  }, [map, existingPlaceIds, setExistingPlaces]);
 
   return null;
 }
@@ -53,10 +101,16 @@ function PlaceAutocomplete({ onPlaceSelect }: PlaceAutocompleteProps) {
       if (!place) return;
 
       await place.fetchFields({
-        fields: ["displayName", "formattedAddress", "location", "viewport"],
+        fields: [
+          "displayName",
+          "formattedAddress",
+          "location",
+          "viewport",
+          "id",
+        ],
       });
 
-      onPlaceSelect(place.toJSON());
+      onPlaceSelect(place);
     },
     [onPlaceSelect]
   );
@@ -132,10 +186,47 @@ function PlaceAutocomplete({ onPlaceSelect }: PlaceAutocompleteProps) {
   return <div ref={containerRef} />;
 }
 
-export default function MapWithSearch() {
-  const [selectedPlace, setSelectedPlace] =
-    useState<google.maps.places.Place | null>(null);
+interface InfoWindowWrapperProps {
+  place: google.maps.places.Place;
+  onCloseClick: () => void;
+}
+
+function InfoWindowWrapper({ place, onCloseClick }: InfoWindowWrapperProps) {
+  if (!place.location) return null;
+
+  return (
+    <InfoWindow position={place.location} onCloseClick={onCloseClick}>
+      <Box sx={{ padding: 1, maxWidth: "300px" }}>
+        <Typography variant="h6" gutterBottom>
+          {place.displayName}
+        </Typography>
+        <Typography variant="body2" gutterBottom>
+          {place.formattedAddress}
+        </Typography>
+        <Typography variant="caption" display="block" gutterBottom>
+          <strong>Selected Location</strong>
+        </Typography>
+      </Box>
+    </InfoWindow>
+  );
+}
+
+interface MapWithSearchProps {
+  selectedPlace: google.maps.places.Place | null;
+  onPlaceSelect: (place: google.maps.places.Place | null) => void;
+  existingPlaceIds?: string[];
+}
+
+export default function MapWithSearch({
+  selectedPlace,
+  onPlaceSelect,
+  existingPlaceIds = [],
+}: MapWithSearchProps) {
   const [markerRef, marker] = useAdvancedMarkerRef();
+  const [existingPlaces, setExistingPlaces] = useState<
+    google.maps.places.Place[]
+  >([]);
+  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
 
   return (
     <APIProvider
@@ -149,18 +240,65 @@ export default function MapWithSearch() {
         defaultCenter={TXI_BOSTON}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
+        onClick={() => setSelectedMarker(null)}
       >
-        <AdvancedMarker ref={markerRef} position={null} />
+        {/* Primary marker for selected place */}
+        <AdvancedMarker
+          ref={markerRef}
+          position={null}
+          onClick={() => {
+            if (selectedPlace) {
+              setSelectedMarker("selected");
+            }
+          }}
+        />
+
+        {/* Info window for selected place */}
+        {selectedMarker === "selected" && selectedPlace && (
+          <InfoWindowWrapper
+            place={selectedPlace}
+            onCloseClick={() => setSelectedMarker(null)}
+          />
+        )}
+
+        {/* Markers for existing places */}
+        {existingPlaces.map((place) => (
+          <AdvancedMarker
+            key={place.id}
+            position={place.location || null}
+            title={place.displayName || ""}
+            onClick={() => setSelectedMarker(place.id || "")}
+          />
+        ))}
+
+        {/* Info windows for existing places */}
+        {existingPlaces.map(
+          (place) =>
+            selectedMarker === place.id && (
+              <InfoWindowWrapper
+                key={`info-${place.id}`}
+                place={place}
+                onCloseClick={() => setSelectedMarker(null)}
+              />
+            )
+        )}
       </Map>
+
       <MapControl position={ControlPosition.TOP}>
-        <div
+        <Box
+          sx={{ width: "400px", padding: 2 }}
           className="autocomplete-control"
-          style={{ width: "400px", padding: "10px" }}
         >
-          <PlaceAutocomplete onPlaceSelect={setSelectedPlace} />
-        </div>
+          <PlaceAutocomplete onPlaceSelect={onPlaceSelect} />
+        </Box>
       </MapControl>
-      <MapHandler place={selectedPlace} marker={marker} />
+
+      <MapHandler
+        place={selectedPlace}
+        marker={marker}
+        existingPlaceIds={existingPlaceIds}
+        setExistingPlaces={setExistingPlaces}
+      />
     </APIProvider>
   );
 }
