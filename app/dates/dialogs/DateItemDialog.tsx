@@ -5,14 +5,23 @@ import {
   MenuItem,
   Select,
   Grid,
+  Stack,
+  Tabs,
+  Tab,
 } from "@mui/material";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
+import MapWithSearch from "@/components/maps/MapWithSearch";
 
 import { ACTIVITY_TYPES } from "../constants";
-import { ActivityType, ListRow, FirestoreListItem } from "../types";
+import { ActivityType, ListRow } from "../types";
 import { isValidListItem } from "../utils";
+
+enum TabValue {
+  MAPS = "maps",
+  MANUAL = "manual",
+}
 
 interface DateItemDialogProps {
   open: boolean;
@@ -21,7 +30,6 @@ interface DateItemDialogProps {
   title: string;
   submitText: string;
   dateListItems: ListRow[];
-  initialData?: FirestoreListItem;
 }
 
 export default function DateItemDialog({
@@ -31,49 +39,28 @@ export default function DateItemDialog({
   title,
   submitText,
   dateListItems,
-  initialData,
 }: DateItemDialogProps) {
-  const nameInit = useMemo(() => initialData?.name ?? "", [initialData]);
-  const placeIdInit = useMemo(() => initialData?.placeId ?? "", [initialData]);
-  const durationInit = useMemo(() => initialData?.duration ?? 0, [initialData]);
-  const costInit = useMemo(() => initialData?.cost ?? 0, [initialData]);
-  const activityTypeInit = useMemo(
-    () => initialData?.activityType ?? "Other",
-    [initialData]
-  );
-  const notesInit = useMemo(() => initialData?.notes ?? "", [initialData]);
-
-  const [name, setName] = useState(nameInit);
-  const [placeId, setPlaceId] = useState(placeIdInit);
-  const [duration, setDuration] = useState(durationInit);
-  const [cost, setCost] = useState(costInit);
-  const [activityType, setActivityType] = useState(activityTypeInit);
-  const [notes, setNotes] = useState(notesInit);
+  const [name, setName] = useState("");
+  const [duration, setDuration] = useState(0);
+  const [cost, setCost] = useState(0);
+  const [activityType, setActivityType] = useState<ActivityType>("Other");
+  const [notes, setNotes] = useState("");
+  const [activeTab, setActiveTab] = useState<TabValue>(TabValue.MAPS);
 
   useEffect(() => {
     if (open) {
-      setName(nameInit);
-      setPlaceId(placeIdInit);
-      setDuration(durationInit);
-      setCost(costInit);
-      setActivityType(activityTypeInit);
-      setNotes(notesInit);
+      setName("");
+      setDuration(0);
+      setCost(0);
+      setActivityType("Other");
+      setNotes("");
     }
-  }, [
-    open,
-    initialData,
-    nameInit,
-    placeIdInit,
-    durationInit,
-    costInit,
-    activityTypeInit,
-    notesInit,
-  ]);
+  }, [open]);
 
   const handleSubmit = () => {
     const newItem = {
       name,
-      placeId,
+      placeId: "",
       duration,
       cost,
       activityType,
@@ -87,7 +74,7 @@ export default function DateItemDialog({
     dateListItems,
     {
       name,
-      placeId,
+      placeId: "",
       duration,
       cost,
       activityType,
@@ -96,34 +83,14 @@ export default function DateItemDialog({
     true
   );
 
-  return (
-    <DialogWrapper
-      open={open}
-      onClose={onClose}
-      onSubmit={handleSubmit}
-      title={title}
-      submitText={submitText}
-      disabled={disabled}
-      contentSx={{
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+  function ManualInputs() {
+    return (
       <Grid container columnSpacing={2}>
         <Grid size={6}>
           <TextField
             label="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            margin="dense"
-            fullWidth
-          />
-        </Grid>
-        <Grid size={6}>
-          <TextField
-            label="Place ID"
-            value={placeId}
-            onChange={(e) => setPlaceId(e.target.value)}
             margin="dense"
             fullWidth
           />
@@ -178,6 +145,36 @@ export default function DateItemDialog({
           />
         </Grid>
       </Grid>
+    );
+  }
+
+  return (
+    <DialogWrapper
+      open={open}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={title}
+      submitText={submitText}
+      disabled={disabled}
+      contentSx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        width: 600,
+        height: 400,
+      }}
+    >
+      <Stack sx={{ flexDirection: "row" }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+        >
+          <Tab label={TabValue.MAPS} value={TabValue.MAPS} />
+          <Tab label={TabValue.MANUAL} value={TabValue.MANUAL} />
+        </Tabs>
+      </Stack>
+
+      {activeTab === TabValue.MAPS ? <MapWithSearch /> : <ManualInputs />}
     </DialogWrapper>
   );
 }

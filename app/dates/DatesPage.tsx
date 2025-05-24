@@ -26,10 +26,11 @@ export default function DatesPage() {
             <Tab label={TabValue.PLANNER} value={TabValue.PLANNER} />
           </Tabs>
         </Stack>
-        <>
-          {activeTab === TabValue.LIST && <DateList />}
-          {activeTab === TabValue.PLANNER && <DatePlanner />}
-        </>
+        {activeTab === TabValue.LIST ? (
+          <DateList />
+        ) : (
+          activeTab === TabValue.PLANNER && <DatePlanner />
+        )}
       </Stack>
     </Container>
   );
