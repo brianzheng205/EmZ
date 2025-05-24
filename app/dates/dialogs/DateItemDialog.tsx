@@ -1,3 +1,4 @@
+import { Delete } from "@mui/icons-material";
 import {
   TextField,
   FormControl,
@@ -8,6 +9,8 @@ import {
   Stack,
   Tabs,
   Tab,
+  InputAdornment,
+  Button,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
@@ -30,7 +33,6 @@ interface DateItemDialogProps {
   title: string;
   submitText: string;
   dateListItems: ListRow[];
-  existingPlaceIds?: string[]; // New prop for existing place IDs
 }
 
 export default function DateItemDialog({
@@ -40,15 +42,13 @@ export default function DateItemDialog({
   title,
   submitText,
   dateListItems,
-  existingPlaceIds = ["ChIJt2rCtwJ644kRM6dAV77vrxo"], // Default to empty array
 }: DateItemDialogProps) {
   const [activeTab, setActiveTab] = useState<TabValue>(TabValue.MAPS);
 
   // Map input states
   const [selectedPlace, setSelectedPlace] =
     useState<google.maps.places.Place | null>(null);
-
-  console.log("Selected Place:", selectedPlace);
+  const [placeId, setPlaceId] = useState("");
 
   // Manual input states
   const [name, setName] = useState("");
@@ -59,6 +59,7 @@ export default function DateItemDialog({
 
   useEffect(() => {
     if (open) {
+      setActiveTab(TabValue.MAPS);
       setName("");
       setDuration(0);
       setCost(0);
@@ -68,43 +69,52 @@ export default function DateItemDialog({
   }, [open]);
 
   const handleSubmit = () => {
-    const newItem = {
-      name,
-      placeId: "",
-      duration,
-      cost,
-      activityType,
-      notes,
-    } as ListRow;
-    onSubmit(newItem);
-    onClose();
+    if (activeTab === TabValue.MAPS && selectedPlace) {
+      setName(selectedPlace.displayName || "");
+      setPlaceId(selectedPlace.id);
+      setActiveTab(TabValue.MANUAL);
+    } else if (activeTab === TabValue.MANUAL) {
+      const newItem = {
+        name,
+        placeId,
+        duration,
+        cost,
+        activityType,
+        notes,
+      } as ListRow;
+      onSubmit(newItem);
+      onClose();
+    }
   };
 
-  const disabled = !isValidListItem(
-    dateListItems,
-    {
-      name,
-      placeId: "",
-      duration,
-      cost,
-      activityType,
-      notes,
-    } as ListRow,
-    true
+  const disabled =
+    (activeTab === TabValue.MAPS && !selectedPlace) ||
+    (activeTab === TabValue.MANUAL &&
+      !isValidListItem(
+        dateListItems,
+        {
+          name,
+          placeId: "",
+          duration,
+          cost,
+          activityType,
+          notes,
+        } as ListRow,
+        true
+      ));
+
+  const renderMapInputs = () => (
+    <MapWithSearch
+      selectedPlace={selectedPlace}
+      onPlaceSelect={setSelectedPlace}
+      existingPlaceIds={dateListItems
+        .map((item) => item.placeId)
+        .filter((placeId) => placeId !== "")}
+    />
   );
 
-  function MapInputs() {
-    return (
-      <MapWithSearch
-        selectedPlace={selectedPlace}
-        onPlaceSelect={setSelectedPlace}
-        existingPlaceIds={existingPlaceIds}
-      />
-    );
-  }
-
-  function ManualInputs() {
-    return (
+  const renderManualInputs = () => (
+    <Stack sx={{ gap: 1 }}>
       <Grid container columnSpacing={2}>
         <Grid size={6}>
           <TextField
@@ -156,6 +166,35 @@ export default function DateItemDialog({
         </Grid>
         <Grid size={12}>
           <TextField
+            label="Place ID"
+            type="string"
+            value={placeId}
+            margin="dense"
+            fullWidth
+            helperText="This will be filled automatically when selecting a place on the map."
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end" sx={{ padding: 0 }}>
+                    <Button
+                      onClick={() => {
+                        setPlaceId("");
+                        setSelectedPlace(null);
+                      }}
+                      variant="text"
+                      disabled={!placeId}
+                    >
+                      <Delete />
+                    </Button>
+                  </InputAdornment>
+                ),
+              },
+            }}
+            disabled
+          />
+        </Grid>
+        <Grid size={12}>
+          <TextField
             label="Notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -165,8 +204,8 @@ export default function DateItemDialog({
           />
         </Grid>
       </Grid>
-    );
-  }
+    </Stack>
+  );
 
   return (
     <DialogWrapper
@@ -194,7 +233,7 @@ export default function DateItemDialog({
         </Tabs>
       </Stack>
 
-      {activeTab === TabValue.MAPS ? <MapInputs /> : <ManualInputs />}
+      {activeTab === TabValue.MAPS ? renderMapInputs() : renderManualInputs()}
     </DialogWrapper>
   );
 }

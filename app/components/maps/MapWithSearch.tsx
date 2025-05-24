@@ -110,7 +110,7 @@ function PlaceAutocomplete({ onPlaceSelect }: PlaceAutocompleteProps) {
         ],
       });
 
-      onPlaceSelect(place);
+      onPlaceSelect(place.toJSON());
     },
     [onPlaceSelect]
   );
