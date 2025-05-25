@@ -17,16 +17,9 @@ import { TXI_BOSTON } from "./constants";
 interface MapHandlerProps {
   place: google.maps.places.Place | null;
   marker: google.maps.marker.AdvancedMarkerElement | null;
-  existingPlaceIds: string[];
-  setExistingPlaces: (places: google.maps.places.Place[]) => void;
 }
 
-function MapHandler({
-  place,
-  marker,
-  existingPlaceIds,
-  setExistingPlaces,
-}: MapHandlerProps) {
+function MapHandler({ place, marker }: MapHandlerProps) {
   const map = useMap();
 
   // Handle the main selected place
@@ -42,44 +35,6 @@ function MapHandler({
 
     marker.position = place.location;
   }, [map, place, marker]);
-
-  // Fetch and display existing places using the modern Places API
-  useEffect(() => {
-    if (!map || !existingPlaceIds.length) return;
-
-    const fetchPlaces = async () => {
-      try {
-        await window.google.maps.importLibrary("places");
-
-        const fetchedPlaces: google.maps.places.Place[] = [];
-
-        // Use the modern Place API instead of PlacesService
-        for (const placeId of existingPlaceIds) {
-          try {
-            // Create a Place instance from the place ID
-            const place = new window.google.maps.places.Place({
-              id: placeId,
-            });
-
-            // Fetch the required fields
-            await place.fetchFields({
-              fields: ["displayName", "location", "formattedAddress", "id"],
-            });
-
-            fetchedPlaces.push(place);
-          } catch (error) {
-            console.error(`Error fetching place ${placeId}:`, error);
-          }
-        }
-
-        setExistingPlaces(fetchedPlaces);
-      } catch (error) {
-        console.error("Error loading places:", error);
-      }
-    };
-
-    fetchPlaces();
-  }, [map, existingPlaceIds, setExistingPlaces]);
 
   return null;
 }
@@ -213,18 +168,15 @@ function InfoWindowWrapper({ place, onCloseClick }: InfoWindowWrapperProps) {
 interface MapWithSearchProps {
   selectedPlace: google.maps.places.Place | null;
   onPlaceSelect: (place: google.maps.places.Place | null) => void;
-  existingPlaceIds?: string[];
+  existingPlaces: google.maps.places.Place[];
 }
 
 export default function MapWithSearch({
   selectedPlace,
   onPlaceSelect,
-  existingPlaceIds = [],
+  existingPlaces,
 }: MapWithSearchProps) {
   const [markerRef, marker] = useAdvancedMarkerRef();
-  const [existingPlaces, setExistingPlaces] = useState<
-    google.maps.places.Place[]
-  >([]);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
 
   const removeSelectedMarker = () => setSelectedMarker(null);
@@ -284,12 +236,7 @@ export default function MapWithSearch({
         </Box>
       </MapControl>
 
-      <MapHandler
-        place={selectedPlace}
-        marker={marker}
-        existingPlaceIds={existingPlaceIds}
-        setExistingPlaces={setExistingPlaces}
-      />
+      <MapHandler place={selectedPlace} marker={marker} />
     </>
   );
 }

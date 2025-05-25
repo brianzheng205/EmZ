@@ -1,5 +1,6 @@
 import { Add } from "@mui/icons-material";
 import { Stack, Button } from "@mui/material";
+import * as R from "ramda";
 import { useEffect } from "react";
 
 import MapWithSearch from "@/components/maps/MapWithSearch";
@@ -28,9 +29,9 @@ export default function DateMap({
       <MapWithSearch
         selectedPlace={selectedPlace}
         onPlaceSelect={setSelectedPlace}
-        existingPlaceIds={dateListItems
-          .map((item) => item.place?.id || "")
-          .filter((placeId) => placeId !== "")}
+        existingPlaces={dateListItems
+          .map((item) => item.place)
+          .filter((place) => R.isNotNil(place))}
       />
 
       <Button
