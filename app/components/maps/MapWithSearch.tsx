@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Typography } from "@mui/material";
 import {
   APIProvider,
@@ -9,7 +11,7 @@ import {
   useMap,
   useAdvancedMarkerRef,
 } from "@vis.gl/react-google-maps";
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, Fragment } from "react";
 
 import { TXI_BOSTON } from "./constants";
 
@@ -228,6 +230,8 @@ export default function MapWithSearch({
   >([]);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
 
+  const removeSelectedMarker = () => setSelectedMarker(null);
+
   return (
     <APIProvider
       apiKey={API_KEY}
@@ -240,9 +244,8 @@ export default function MapWithSearch({
         defaultCenter={TXI_BOSTON}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
-        onClick={() => setSelectedMarker(null)}
+        onClick={removeSelectedMarker}
       >
-        {/* Primary marker for selected place */}
         <AdvancedMarker
           ref={markerRef}
           position={null}
@@ -253,35 +256,30 @@ export default function MapWithSearch({
           }}
         />
 
-        {/* Info window for selected place */}
         {selectedMarker === "selected" && selectedPlace && (
           <InfoWindowWrapper
             place={selectedPlace}
-            onCloseClick={() => setSelectedMarker(null)}
+            onCloseClick={removeSelectedMarker}
           />
         )}
 
-        {/* Markers for existing places */}
-        {existingPlaces.map((place) => (
-          <AdvancedMarker
-            key={place.id}
-            position={place.location || null}
-            title={place.displayName || ""}
-            onClick={() => setSelectedMarker(place.id || "")}
-          />
-        ))}
+        {existingPlaces.map((place, i) => (
+          <Fragment key={i}>
+            <AdvancedMarker
+              key={place.id}
+              position={place.location || null}
+              title={place.displayName || ""}
+              onClick={() => setSelectedMarker(place.id || "")}
+            />
 
-        {/* Info windows for existing places */}
-        {existingPlaces.map(
-          (place) =>
-            selectedMarker === place.id && (
+            {selectedMarker === place.id && (
               <InfoWindowWrapper
-                key={`info-${place.id}`}
                 place={place}
-                onCloseClick={() => setSelectedMarker(null)}
+                onCloseClick={removeSelectedMarker}
               />
-            )
-        )}
+            )}
+          </Fragment>
+        ))}
       </Map>
 
       <MapControl position={ControlPosition.TOP}>

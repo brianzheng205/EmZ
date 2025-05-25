@@ -6,17 +6,14 @@ import { Theme, styled, darken } from "@mui/material/styles";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
-import { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 
-import CenteredLoader from "@/components/CenteredLoader";
 import { TimePickerEditCell } from "@/components/dataGrid";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
 import { AddDateDialog, EditDateDialog } from "../dialogs";
 import {
-  fetchAllDates,
-  fetchActiveDateRef,
   createDate,
   updateActiveDate,
   updateDateSchedule,
@@ -40,7 +37,7 @@ import {
 
 interface DateSelectorProps {
   docRef: DocumentReference | null;
-  setDocRef: (docRef: DocumentReference) => void;
+  setDocRef: React.Dispatch<React.SetStateAction<DocumentReference | null>>;
   dates: IdToPlannerDate | null;
   onAdd: (metadata: PlannerMetadata) => void;
   onDelete: (docRef: DocumentReference) => void;
@@ -172,34 +169,32 @@ const lastRow: PlannerItem = {
   startTimeFixed: false,
 };
 
-export default function DatesPlanner() {
-  const [dates, setDates] = useState<IdToPlannerDate>({});
-  const [activeDateRef, setActiveDateRef] = useState<DocumentReference | null>(
-    null
-  );
-  const [rows, setRows] = useState<PlannerRow[]>([]);
-  const [loading, setLoading] = useState(true);
+interface DatesPlannerProps {
+  dates: IdToPlannerDate;
+  setDates: React.Dispatch<React.SetStateAction<IdToPlannerDate>>;
+  activeDateRef: DocumentReference | null;
+  setActiveDateRef: React.Dispatch<
+    React.SetStateAction<DocumentReference | null>
+  >;
+  rows: PlannerRow[];
+  onRefresh: () => void;
+  setRows: (rows: PlannerRow[]) => void;
+}
 
+export default function DatesPlanner({
+  dates,
+  setDates,
+  activeDateRef,
+  setActiveDateRef,
+  rows,
+  setRows,
+  onRefresh,
+}: DatesPlannerProps) {
   const {
     isDialogOpen: isEditDateDialogOpen,
     openDialog: openEditDateDialog,
     closeDialog: closeEditDateDialog,
   } = useDialog();
-
-  const fetchDates = async () => {
-    setLoading(true);
-    const fetchedDates = await fetchAllDates();
-    setDates(fetchedDates);
-
-    const fetchedActiveDateRef = await fetchActiveDateRef();
-    setActiveDateRef(fetchedActiveDateRef);
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchDates();
-  }, []);
 
   useEffect(() => {
     if (!activeDateRef) return;
@@ -220,7 +215,7 @@ export default function DatesPlanner() {
       ),
     });
     setRows(schedule);
-  }, [dates, activeDateRef]);
+  }, [dates, activeDateRef, setRows]);
 
   const handleDeleteRow = async (row: PlannerRow) => {
     if (!activeDateRef) return;
@@ -374,15 +369,13 @@ export default function DatesPlanner() {
     } catch {}
   };
 
-  if (loading) return <CenteredLoader />;
-
   return (
     <>
       <Stack
         sx={{
           flexDirection: "row",
           justifyContent: "space-between",
-          height: 40,
+          height: 36,
         }}
       >
         <DateSelector
@@ -395,15 +388,16 @@ export default function DatesPlanner() {
 
         <Stack
           sx={{
-            flexDirection: "row-reverse",
+            flexDirection: "row",
+            justifyContent: "flex-end",
             gap: 1,
           }}
         >
-          <Button startIcon={<Refresh />} onClick={fetchDates}>
-            Refresh
-          </Button>
           <Button startIcon={<Edit />} onClick={openEditDateDialog}>
             Edit
+          </Button>
+          <Button startIcon={<Refresh />} onClick={onRefresh}>
+            Refresh
           </Button>
         </Stack>
       </Stack>
