@@ -176,6 +176,12 @@ export const getNextAvailableId = (rows: PlannerRow[]): number => {
   return nextId;
 };
 
+/**
+ * Recalculates the start times and durations of planner rows and
+ * edits the rows in place.
+ *
+ * @returns true if all rows are valid, false if any row has an invalid duration.
+ */
 export const recalculateRows = (rows: PlannerRow[]): boolean => {
   for (let i = 1; i < rows.length; i++) {
     const prev = rows[i - 1];

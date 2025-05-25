@@ -99,6 +99,7 @@ export const createDate = async (
     {
       startTime: "10:00",
       duration: 0,
+      placeId: "",
       activity: "Get Ready",
       activityType: "Prepare",
       notes: "",

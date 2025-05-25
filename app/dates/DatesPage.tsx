@@ -123,6 +123,7 @@ export default function DatesPage() {
     ) : (
       activeTab === TabValue.PLANNER && (
         <DatePlanner
+          dateList={listRows}
           dates={plannerDates}
           setDates={setPlannerDates}
           activeDateRef={activeDateRef}

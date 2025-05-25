@@ -6,9 +6,12 @@ import { Theme, styled, darken } from "@mui/material/styles";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { DocumentReference, doc } from "firebase/firestore";
 import * as R from "ramda";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
-import { TimePickerEditCell } from "@/components/dataGrid";
+import {
+  TimePickerEditCell,
+  AutocompleteEditCell,
+} from "@/components/dataGrid";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
@@ -21,6 +24,7 @@ import {
   deleteDate,
 } from "../firebaseUtils";
 import {
+  ListRow,
   PlannerRow,
   IdToPlannerDate,
   PlannerDate,
@@ -163,6 +167,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
 const lastRow: PlannerItem = {
   startTime: new Date(),
   duration: 0,
+  placeId: "",
   activity: "",
   activityType: "",
   notes: "",
@@ -170,6 +175,7 @@ const lastRow: PlannerItem = {
 };
 
 interface DatesPlannerProps {
+  dateList: ListRow[];
   dates: IdToPlannerDate;
   setDates: React.Dispatch<React.SetStateAction<IdToPlannerDate>>;
   activeDateRef: DocumentReference | null;
@@ -178,10 +184,11 @@ interface DatesPlannerProps {
   >;
   rows: PlannerRow[];
   onRefresh: () => void;
-  setRows: (rows: PlannerRow[]) => void;
+  setRows: React.Dispatch<React.SetStateAction<PlannerRow[]>>;
 }
 
 export default function DatesPlanner({
+  dateList,
   dates,
   setDates,
   activeDateRef,
@@ -252,6 +259,37 @@ export default function DatesPlanner({
       ...commonColumns.name,
       field: "activity",
       headerName: "Activity",
+      renderEditCell: (params) => (
+        <AutocompleteEditCell
+          params={params}
+          options={dateList.map((l) => ({ label: l.name, value: l.id }))}
+          handleSelect={async (value: string) => {
+            if (!activeDateRef) return;
+
+            const selectedItem = dateList.find((l) => l.id === value);
+            if (!selectedItem) return;
+
+            const newRows = rows.map((row) =>
+              row.id === params.row.id
+                ? {
+                    ...row,
+                    duration: selectedItem.duration,
+                    placeId: selectedItem.id,
+                    activity: selectedItem.name,
+                    activityType: selectedItem.activityType,
+                    notes: selectedItem.notes,
+                  }
+                : row
+            );
+
+            const isValid = recalculateRows(newRows);
+            if (!isValid) return;
+
+            await updateDateSchedule(activeDateRef, newRows);
+            setRows(newRows);
+          }}
+        />
+      ),
     },
     commonColumns.activityType,
     commonColumns.notes,

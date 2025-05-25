@@ -6,12 +6,26 @@ export type ActivityType = "Prepare" | "Bulk" | "Fun" | Commute | "Other" | "";
 /* BACKEND TYPES */
 /*****************/
 
+// DATES LIST
+
+export type FirestoreListItem = {
+  name: string;
+  placeId: string;
+  duration: number;
+  cost: number;
+  activityType: ActivityType;
+  notes: string;
+};
+
+export type FirestoreIdToListItem = Record<string, FirestoreListItem>;
+
 // DATES PLANNER
 
 export type FirestorePlannerItem = {
   startTime: string;
   startTimeFixed: boolean;
   duration: number;
+  placeId: string;
   activity: string;
   activityType: ActivityType;
   notes: string;
@@ -28,22 +42,15 @@ export type FirestoreDate = FirestorePlannerMetadata & {
 
 export type FirestoreIdToPlannerDate = Record<string, FirestoreDate>;
 
-// DATES LIST
-
-export type FirestoreListItem = {
-  name: string;
-  placeId: string;
-  duration: number;
-  cost: number;
-  activityType: ActivityType;
-  notes: string;
-};
-
-export type FirestoreIdToListItem = Record<string, FirestoreListItem>;
-
 /******************/
 /* FRONTEND TYPES */
 /******************/
+
+// DATES LIST
+
+export type ListRow = FirestoreListItem & {
+  id: string;
+};
 
 // DATES PLANNER
 
@@ -63,10 +70,4 @@ export type IdToPlannerDate = { [id: string]: PlannerDate };
 
 export type PlannerRow = PlannerItem & {
   id: number;
-};
-
-// DATES LIST
-
-export type ListRow = FirestoreListItem & {
-  id: string;
 };
