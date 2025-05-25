@@ -1,4 +1,4 @@
-export type ActivityType = "Bulk" | "Fun" | "Other";
+export type ActivityType = "Bulk" | "Fun" | "Other" | "";
 
 export type ScheduleItemType =
   | ActivityType
