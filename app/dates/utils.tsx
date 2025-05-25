@@ -3,7 +3,8 @@ import { Button, Chip } from "@mui/material";
 import { GridColDef, GridValidRowModel } from "@mui/x-data-grid";
 import * as R from "ramda";
 
-import { ActivityType, PlannerRowWithPlace, ListRowWithPlaces } from "./types";
+import { SCHEDULE_ITEM_TYPES } from "./constants";
+import { PlannerRowWithPlace, ListRowWithPlaces } from "./types";
 
 export const getCommonColumns = (
   handleDeleteRow: (row: GridValidRowModel) => void
@@ -53,15 +54,7 @@ export const getCommonColumns = (
     type: "singleSelect",
     width: 100,
     editable: true,
-    valueOptions: [
-      "Prepare",
-      "Bulk",
-      "Fun",
-      "Public Transport",
-      "Uber",
-      "Walk",
-      "Other",
-    ] as ActivityType[],
+    valueOptions: SCHEDULE_ITEM_TYPES,
     renderCell: (params) => {
       if (params.value === "") return null;
 

@@ -6,6 +6,7 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import * as R from "ramda";
 import React from "react";
 
+import { ACTIVITY_TYPES } from "../constants";
 import { updateDateListItem, deleteDateListItem } from "../firebaseUtils";
 import { ListRowWithPlaces } from "../types";
 import { getCommonColumns, isValidListItem } from "../utils";
@@ -72,7 +73,10 @@ export default function DateList({
     commonColumns.location,
     commonColumns.duration,
     commonColumns.cost,
-    commonColumns.activityType,
+    {
+      ...commonColumns.activityType,
+      valueOptions: ACTIVITY_TYPES,
+    } as GridColDef,
     commonColumns.notes,
     commonColumns.delete,
   ];

@@ -15,7 +15,7 @@ import DialogWrapper from "@/components/DialogWrapper";
 
 import { ACTIVITY_TYPES } from "../constants";
 import {
-  ActivityType,
+  ScheduleItemType,
   ListRowWithPlaces,
   FirestoreListItemWithPlace,
 } from "../types";
@@ -47,7 +47,7 @@ export default function DateItemDialog({
   const [name, setName] = useState("");
   const [duration, setDuration] = useState(0);
   const [cost, setCost] = useState(0);
-  const [activityType, setActivityType] = useState<ActivityType>("Fun");
+  const [activityType, setActivityType] = useState<ScheduleItemType>("Fun");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -155,7 +155,7 @@ export default function DateItemDialog({
                 value={activityType}
                 label="Activity Type"
                 onChange={(e) =>
-                  setActivityType(e.target.value as ActivityType)
+                  setActivityType(e.target.value as ScheduleItemType)
                 }
               >
                 {ACTIVITY_TYPES.map((type) => (

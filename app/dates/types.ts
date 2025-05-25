@@ -1,6 +1,11 @@
-type Commute = "Public Transport" | "Uber" | "Walk";
+export type ActivityType = "Bulk" | "Fun" | "Other";
 
-export type ActivityType = "Prepare" | "Bulk" | "Fun" | Commute | "Other" | "";
+export type ScheduleItemType =
+  | ActivityType
+  | "Prepare"
+  | "Public Transport"
+  | "Uber"
+  | "Walk";
 
 /*****************/
 /* BACKEND TYPES */
@@ -13,7 +18,7 @@ export type FirestoreListItem = {
   placeId: string;
   duration: number;
   cost: number;
-  activityType: ActivityType;
+  activityType: ScheduleItemType;
   notes: string;
 };
 
@@ -31,7 +36,7 @@ export type FirestorePlannerItem = {
   duration: number;
   placeId: string;
   activity: string;
-  activityType: ActivityType;
+  activityType: ScheduleItemType;
   notes: string;
 };
 

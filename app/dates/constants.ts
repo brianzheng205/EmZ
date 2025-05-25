@@ -1,9 +1,11 @@
-export const ACTIVITY_TYPES = [
+import { ActivityType, ScheduleItemType } from "./types";
+
+export const ACTIVITY_TYPES: ActivityType[] = ["Bulk", "Fun", "Other"];
+
+export const SCHEDULE_ITEM_TYPES: ScheduleItemType[] = [
+  ...ACTIVITY_TYPES,
   "Prepare",
-  "Bulk",
-  "Fun",
   "Public Transport",
   "Uber",
   "Walk",
-  "Other",
 ];
