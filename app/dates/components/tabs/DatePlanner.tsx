@@ -1,10 +1,10 @@
 "use client";
 
 import { Delete, Edit, Refresh } from "@mui/icons-material";
-import { Button, Box, Select, MenuItem, Stack } from "@mui/material";
+import { Button, Box, Stack } from "@mui/material";
 import { Theme, styled, darken } from "@mui/material/styles";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { DocumentReference, doc } from "firebase/firestore";
+import { DocumentReference } from "firebase/firestore";
 import * as R from "ramda";
 import { useEffect } from "react";
 
@@ -14,140 +14,30 @@ import {
 } from "@/components/dataGrid";
 import { getPlaceFromId } from "@/components/maps/utils";
 import useDialog from "@/hooks/useDialog";
-import db from "@firebase";
 
-import { AddDateDialog, EditDateDialog } from "../dialogs";
+import DateSelector from "../DateSelector";
+import { EditDateDialog } from "../dialogs";
+
 import {
   createDate,
   updateActiveDate,
   updateDateSchedule,
   updateDateMetadata,
   deleteDate,
-} from "../firebaseUtils";
+} from "../../firebaseUtils";
 import {
   ListRowWithPlaces,
   PlannerRowWithPlace,
   IdToPlannerDateWithPlaces,
-  PlannerDateWithPlaces,
   PlannerItemWithPlace,
   PlannerMetadata,
-} from "../types";
+} from "../../types";
 import {
   getCommonColumns,
   getNextAvailableId,
   recalculateRows,
   addMinutes,
-  convertDateToDateStr,
-} from "../utils";
-
-interface DateSelectorProps {
-  docRef: DocumentReference | null;
-  setDocRef: React.Dispatch<React.SetStateAction<DocumentReference | null>>;
-  dates: IdToPlannerDateWithPlaces | null;
-  onAdd: (metadata: PlannerMetadata) => void;
-  onDelete: (docRef: DocumentReference) => void;
-}
-
-function DateSelector({
-  docRef,
-  setDocRef,
-  dates,
-  onAdd,
-  onDelete,
-}: DateSelectorProps) {
-  const {
-    isDialogOpen: isAddDateDialogOpen,
-    openDialog: openAddDateDialog,
-    closeDialog: closeAddDateDialog,
-  } = useDialog();
-
-  const convertToDisplayValue = (date: PlannerDateWithPlaces) =>
-    `${convertDateToDateStr(date.date)}${
-      date.name !== "" ? ` - ${date.name}` : ""
-    }`;
-
-  return (
-    <Box sx={{ display: "flex", alignItems: "center" }}>
-      <Select
-        sx={{ width: 200, height: "100%" }}
-        value={docRef ? docRef.id : ""}
-        displayEmpty
-        margin="dense"
-        renderValue={(selectedId) =>
-          dates?.[selectedId]
-            ? convertToDisplayValue(dates[selectedId])
-            : "+ New date"
-        }
-      >
-        <MenuItem value="add-new" onClick={openAddDateDialog}>
-          + New date
-        </MenuItem>
-
-        {dates &&
-          R.pipe(
-            R.toPairs,
-            R.sortBy(([, d]: [string, PlannerDateWithPlaces]) => d.date), // Sort by date
-            R.map(([dateId, date]: [string, PlannerDateWithPlaces]) => (
-              <MenuItem
-                key={dateId}
-                value={dateId}
-                sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  width: 200,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (R.isNil(docRef) || dateId !== docRef.id) {
-                    setDocRef(doc(db, "dates", dateId));
-                  }
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 160,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {convertToDisplayValue(date)}
-                </Box>
-                <Button
-                  sx={{
-                    width: 40,
-                    minWidth: 0,
-                    padding: 0.5,
-                    margin: 0,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                  variant="text"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(doc(db, "dates", dateId));
-                  }}
-                  disabled={R.isNotNil(docRef) && dateId === docRef.id}
-                >
-                  <Delete fontSize="small" />
-                </Button>
-              </MenuItem>
-            ))
-          )(dates)}
-      </Select>
-      {dates && (
-        <AddDateDialog
-          open={isAddDateDialogOpen}
-          dates={dates}
-          onClose={closeAddDateDialog}
-          onSubmit={onAdd}
-        />
-      )}
-    </Box>
-  );
-}
+} from "../../utils";
 
 const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   "& .fixed": {

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import MapWithSearch from "@/components/maps/MapWithSearch";
 
-import { ListRowWithPlaces } from "../types";
+import { ListRowWithPlaces } from "../../types";
 
 interface DateMapProps {
   selectedPlace: google.maps.places.Place | null;

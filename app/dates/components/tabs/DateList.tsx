@@ -6,10 +6,10 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import * as R from "ramda";
 import React from "react";
 
-import { ACTIVITY_TYPES } from "../constants";
-import { updateDateListItem, deleteDateListItem } from "../firebaseUtils";
-import { ListRowWithPlaces } from "../types";
-import { getCommonColumns, isValidListItem } from "../utils";
+import { ACTIVITY_TYPES } from "../../constants";
+import { updateDateListItem, deleteDateListItem } from "../../firebaseUtils";
+import { ListRowWithPlaces } from "../../types";
+import { getCommonColumns, isValidListItem } from "../../utils";
 
 interface DateListProps {
   rows: ListRowWithPlaces[];

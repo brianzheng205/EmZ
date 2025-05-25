@@ -13,13 +13,13 @@ import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 
-import { ACTIVITY_TYPES } from "../constants";
+import { ACTIVITY_TYPES } from "../../constants";
 import {
   ScheduleItemType,
   ListRowWithPlaces,
   FirestoreListItemWithPlace,
-} from "../types";
-import { isValidListItem } from "../utils";
+} from "../../types";
+import { isValidListItem } from "../../utils";
 
 interface DateItemDialogProps {
   open: boolean;

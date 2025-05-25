@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 
-import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../types";
+import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../../types";
 
 interface DateDialogProps {
   open: boolean;

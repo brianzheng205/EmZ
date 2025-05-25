@@ -9,14 +9,14 @@ import CenteredLoader from "@/components/CenteredLoader";
 import { getPlaceFromId } from "@/components/maps/utils";
 import useDialog from "@/hooks/useDialog";
 
-import DateItemDialog from "./dialogs/DateItemDialog";
+import { DateItemDialog } from "./components/dialogs";
+import { DatePlanner, DateMap, DateList } from "./components/tabs";
 import {
   fetchDateList,
   createDateListItem,
   fetchAllDates,
   fetchActiveDateRef,
 } from "./firebaseUtils";
-import { DatePlanner, DateMap, DateList } from "./tabs";
 import {
   ListRowWithPlaces,
   PlannerRowWithPlace,

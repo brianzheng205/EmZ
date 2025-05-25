@@ -1,31 +1,28 @@
-import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../types";
+import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../../types";
 
 import DateDialog from "./DateDialog";
 
-interface EditDateDialogProps {
+interface AddBudgetDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (metadata: PlannerMetadata) => void;
   dates: IdToPlannerDateWithPlaces;
-  initialMetadata: PlannerMetadata;
 }
 
-export default function EditDateDialog({
+export default function AddBudgetDialog({
   open,
   onClose,
   onSubmit,
   dates,
-  initialMetadata,
-}: EditDateDialogProps) {
+}: AddBudgetDialogProps) {
   return (
     <DateDialog
       open={open}
       onClose={onClose}
       onSubmit={onSubmit}
-      title="Edit Date"
-      submitText="Save"
+      title="Add Date"
+      submitText="Add"
       dates={dates}
-      initialMetadata={initialMetadata}
     />
   );
 }
