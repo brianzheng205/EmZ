@@ -32,7 +32,10 @@ export default function DateList({
       return oldRow;
     }
 
-    const isValid = isValidListItem(rows, row);
+    const isValid = isValidListItem(
+      rows.filter((r) => r.id !== row.id),
+      row
+    );
     if (!isValid) return oldRow;
 
     try {

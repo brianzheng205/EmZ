@@ -86,6 +86,8 @@ export default function DatesPage() {
       id: newId,
     };
     setListRows((prevRows) => [...prevRows, newRow]);
+    setAddedPlace(null);
+    setSelectedPlace(null);
   };
 
   const handleAddPlace = (place: google.maps.places.Place | null) => {
