@@ -17,6 +17,10 @@ export type FirestoreListItem = {
   notes: string;
 };
 
+export type FirestoreListItemWithPlace = Omit<FirestoreListItem, "placeId"> & {
+  place: google.maps.places.Place | null;
+};
+
 export type FirestoreIdToListItem = Record<string, FirestoreListItem>;
 
 // DATES PLANNER
@@ -52,10 +56,18 @@ export type ListRow = FirestoreListItem & {
   id: string;
 };
 
+export type ListRowWithPlaces = Omit<ListRow, "placeId"> & {
+  place: google.maps.places.Place | null;
+};
+
 // DATES PLANNER
 
 export type PlannerItem = Omit<FirestorePlannerItem, "startTime"> & {
   startTime: Date;
+};
+
+export type PlannerItemWithPlace = Omit<PlannerItem, "placeId"> & {
+  place: google.maps.places.Place | null;
 };
 
 export type PlannerMetadata = Omit<FirestorePlannerMetadata, "date"> & {
@@ -66,8 +78,20 @@ export type PlannerDate = PlannerMetadata & {
   schedule: PlannerItem[];
 };
 
+export type PlannerDateWithPlaces = Omit<PlannerDate, "schedule"> & {
+  schedule: PlannerItemWithPlace[];
+};
+
 export type IdToPlannerDate = { [id: string]: PlannerDate };
+
+export type IdToPlannerDateWithPlaces = {
+  [id: string]: PlannerDateWithPlaces;
+};
 
 export type PlannerRow = PlannerItem & {
   id: number;
+};
+
+export type PlannerRowWithPlace = Omit<PlannerRow, "placeId"> & {
+  place: google.maps.places.Place | null;
 };

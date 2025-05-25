@@ -12,6 +12,7 @@ import {
   TimePickerEditCell,
   AutocompleteEditCell,
 } from "@/components/dataGrid";
+import { getPlaceFromId } from "@/components/maps/utils";
 import useDialog from "@/hooks/useDialog";
 import db from "@firebase";
 
@@ -24,11 +25,11 @@ import {
   deleteDate,
 } from "../firebaseUtils";
 import {
-  ListRow,
-  PlannerRow,
-  IdToPlannerDate,
-  PlannerDate,
-  PlannerItem,
+  ListRowWithPlaces,
+  PlannerRowWithPlace,
+  IdToPlannerDateWithPlaces,
+  PlannerDateWithPlaces,
+  PlannerItemWithPlace,
   PlannerMetadata,
 } from "../types";
 import {
@@ -42,7 +43,7 @@ import {
 interface DateSelectorProps {
   docRef: DocumentReference | null;
   setDocRef: React.Dispatch<React.SetStateAction<DocumentReference | null>>;
-  dates: IdToPlannerDate | null;
+  dates: IdToPlannerDateWithPlaces | null;
   onAdd: (metadata: PlannerMetadata) => void;
   onDelete: (docRef: DocumentReference) => void;
 }
@@ -60,7 +61,7 @@ function DateSelector({
     closeDialog: closeAddDateDialog,
   } = useDialog();
 
-  const convertToDisplayValue = (date: PlannerDate) =>
+  const convertToDisplayValue = (date: PlannerDateWithPlaces) =>
     `${convertDateToDateStr(date.date)}${
       date.name !== "" ? ` - ${date.name}` : ""
     }`;
@@ -85,8 +86,8 @@ function DateSelector({
         {dates &&
           R.pipe(
             R.toPairs,
-            R.sortBy(([, d]: [string, PlannerDate]) => d.date), // Sort by date
-            R.map(([dateId, date]: [string, PlannerDate]) => (
+            R.sortBy(([, d]: [string, PlannerDateWithPlaces]) => d.date), // Sort by date
+            R.map(([dateId, date]: [string, PlannerDateWithPlaces]) => (
               <MenuItem
                 key={dateId}
                 value={dateId}
@@ -164,10 +165,10 @@ const StyledDataGrid = styled(DataGrid)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
-const lastRow: PlannerItem = {
+const lastRow: PlannerItemWithPlace = {
   startTime: new Date(),
   duration: 0,
-  placeId: "",
+  place: null,
   activity: "",
   activityType: "",
   notes: "",
@@ -175,16 +176,16 @@ const lastRow: PlannerItem = {
 };
 
 interface DatesPlannerProps {
-  dateList: ListRow[];
-  dates: IdToPlannerDate;
-  setDates: React.Dispatch<React.SetStateAction<IdToPlannerDate>>;
+  dateList: ListRowWithPlaces[];
+  dates: IdToPlannerDateWithPlaces;
+  setDates: React.Dispatch<React.SetStateAction<IdToPlannerDateWithPlaces>>;
   activeDateRef: DocumentReference | null;
   setActiveDateRef: React.Dispatch<
     React.SetStateAction<DocumentReference | null>
   >;
-  rows: PlannerRow[];
+  rows: PlannerRowWithPlace[];
   onRefresh: () => void;
-  setRows: React.Dispatch<React.SetStateAction<PlannerRow[]>>;
+  setRows: React.Dispatch<React.SetStateAction<PlannerRowWithPlace[]>>;
 }
 
 export default function DatesPlanner({
@@ -224,7 +225,7 @@ export default function DatesPlanner({
     setRows(schedule);
   }, [dates, activeDateRef, setRows]);
 
-  const handleDeleteRow = async (row: PlannerRow) => {
+  const handleDeleteRow = async (row: PlannerRowWithPlace) => {
     if (!activeDateRef) return;
 
     const updatedRows = rows.filter((r) => r.id !== row.id);
@@ -269,16 +270,16 @@ export default function DatesPlanner({
             const selectedItem = dateList.find((l) => l.id === value);
             if (!selectedItem) return;
 
-            const newRows = rows.map((row) =>
+            const newRows: PlannerRowWithPlace[] = rows.map((row) =>
               row.id === params.row.id
-                ? {
+                ? ({
                     ...row,
                     duration: selectedItem.duration,
-                    placeId: selectedItem.id,
+                    place: selectedItem.place,
                     activity: selectedItem.name,
                     activityType: selectedItem.activityType,
                     notes: selectedItem.notes,
-                  }
+                  } as PlannerRowWithPlace)
                 : row
             );
 
@@ -291,12 +292,13 @@ export default function DatesPlanner({
         />
       ),
     },
+    commonColumns.location,
     commonColumns.activityType,
     commonColumns.notes,
     {
       ...commonColumns.delete,
       renderCell: (params) => {
-        const row = params.row as PlannerRow;
+        const row = params.row as PlannerRowWithPlace;
 
         return row.id !== rows[0].id && row.id !== rows[rows.length - 1].id ? (
           <Button
@@ -315,7 +317,10 @@ export default function DatesPlanner({
     },
   ];
 
-  const processRowUpdate = async (newRow: PlannerRow, oldRow: PlannerRow) => {
+  const processRowUpdate = async (
+    newRow: PlannerRowWithPlace,
+    oldRow: PlannerRowWithPlace
+  ) => {
     if (!activeDateRef || R.equals(newRow, oldRow)) return oldRow;
 
     const updatedRows = [...rows];
@@ -374,9 +379,22 @@ export default function DatesPlanner({
       const [dateRef, date] = newDateCreation;
       await updateActiveDate(dateRef);
 
+      const scheduleWithPlaces = await Promise.all(
+        date.schedule.map(async (item) => {
+          const place = await getPlaceFromId(item.placeId);
+          return {
+            ...R.dissoc("placeId", item),
+            place: place || null,
+          } as PlannerItemWithPlace;
+        })
+      );
+
       setDates((prev) => ({
         ...prev,
-        [dateRef.id]: date,
+        [dateRef.id]: {
+          ...date,
+          schedule: scheduleWithPlaces,
+        },
       }));
       setActiveDateRef(dateRef);
     } catch {}
@@ -446,7 +464,7 @@ export default function DatesPlanner({
           columns={columns}
           processRowUpdate={processRowUpdate}
           getRowClassName={(params) => {
-            const row: PlannerRow = params.row as PlannerRow;
+            const row: PlannerRowWithPlace = params.row as PlannerRowWithPlace;
             return row.startTimeFixed ? "fixed" : "";
           }}
           disableColumnResize

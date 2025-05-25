@@ -1,12 +1,12 @@
 import DateDialog from "@/dates/dialogs/DateDialog";
 
-import { IdToPlannerDate, PlannerMetadata } from "../types";
+import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../types";
 
 interface AddBudgetDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (metadata: PlannerMetadata) => void;
-  dates: IdToPlannerDate;
+  dates: IdToPlannerDateWithPlaces;
 }
 
 export default function AddBudgetDialog({

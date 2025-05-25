@@ -3,7 +3,7 @@ import { Button, Chip } from "@mui/material";
 import { GridColDef, GridValidRowModel } from "@mui/x-data-grid";
 import * as R from "ramda";
 
-import { ActivityType, PlannerRow, ListRow } from "./types";
+import { ActivityType, PlannerRowWithPlace, ListRowWithPlaces } from "./types";
 
 export const getCommonColumns = (
   handleDeleteRow: (row: GridValidRowModel) => void
@@ -38,6 +38,14 @@ export const getCommonColumns = (
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(value),
+  } as GridColDef,
+  location: {
+    field: "place",
+    headerName: "Location",
+    type: "string",
+    width: 200,
+    valueGetter: (value: google.maps.places.Place | null) =>
+      value ? value.formattedAddress : "",
   } as GridColDef,
   activityType: {
     field: "activityType",
@@ -167,7 +175,7 @@ export const convertNumberTo24HourFormat = (number: number): string => {
 /**
  * Returns the next available ID for a new row.
  */
-export const getNextAvailableId = (rows: PlannerRow[]): number => {
+export const getNextAvailableId = (rows: PlannerRowWithPlace[]): number => {
   const ids = new Set(rows.map((row) => row.id));
   let nextId = 1;
   while (ids.has(nextId)) {
@@ -182,7 +190,7 @@ export const getNextAvailableId = (rows: PlannerRow[]): number => {
  *
  * @returns true if all rows are valid, false if any row has an invalid duration.
  */
-export const recalculateRows = (rows: PlannerRow[]): boolean => {
+export const recalculateRows = (rows: PlannerRowWithPlace[]): boolean => {
   for (let i = 1; i < rows.length; i++) {
     const prev = rows[i - 1];
     const curr = rows[i];
@@ -204,8 +212,8 @@ export const recalculateRows = (rows: PlannerRow[]): boolean => {
 // DATE LIST
 
 export const isValidListItem = (
-  list: ListRow[],
-  item: ListRow,
+  list: ListRowWithPlaces[],
+  item: ListRowWithPlaces,
   silent = false
 ): boolean => {
   if (R.isEmpty(item.name) || item.duration <= 0) {
@@ -215,7 +223,7 @@ export const isValidListItem = (
   }
 
   for (let i = 0; i < list.length; i++) {
-    if (list[i].name === item.name && list[i].placeId === item.placeId) {
+    if (list[i].name === item.name && list[i].place?.id === item.place?.id) {
       if (!silent)
         console.error(
           "Invalid item: name and placeId already exist in the list"

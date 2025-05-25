@@ -24,6 +24,8 @@ import {
   FirestoreListItem,
   FirestoreIdToListItem,
   ListRow,
+  ListRowWithPlaces,
+  PlannerItemWithPlace,
 } from "./types";
 import {
   convertDateStrToDate,
@@ -52,9 +54,13 @@ const convertToSchedule = (schedule: FirestorePlannerItem[]): PlannerItem[] =>
   schedule.map((s) => ({ ...s, startTime: convertTimeStrToDate(s.startTime) }));
 
 const convertToFirestoreSchedule = (
-  schedule: PlannerItem[]
+  schedule: PlannerItemWithPlace[]
 ): FirestorePlannerItem[] =>
-  schedule.map((s) => ({ ...s, startTime: convertDateToTimeStr(s.startTime) }));
+  schedule.map((s) => ({
+    ...R.dissoc("place", s),
+    startTime: convertDateToTimeStr(s.startTime),
+    placeId: s.place?.id || "",
+  }));
 
 const convertToPlannerDate = (date: FirestoreDate): PlannerDate => ({
   ...convertToMetadata(date),
@@ -149,7 +155,7 @@ export const updateDateMetadata = async (
 
 export const updateDateSchedule = async (
   dateRef: DocumentReference,
-  schedule: PlannerItem[]
+  schedule: PlannerItemWithPlace[]
 ) => {
   try {
     await updateDoc(dateRef, {
@@ -169,6 +175,13 @@ export const deleteDate = async (dateRef: DocumentReference) => {
 };
 
 // DATE SCHEDULE
+
+const convertToFirestoreListItem = (
+  item: ListRowWithPlaces
+): FirestoreListItem => ({
+  ...R.omit(["place", "id"], item),
+  placeId: item.place?.id || "",
+});
 
 export const fetchDateList = async (): Promise<ListRow[]> => {
   try {
@@ -200,9 +213,11 @@ export const createDateListItem = async (
   }
 };
 
-export const updateDateListItem = async (itemRow: ListRow): Promise<void> => {
-  const { id, ...item } = itemRow;
-  const listItemRef = doc(db, "datesList", id);
+export const updateDateListItem = async (
+  rowItem: ListRowWithPlaces
+): Promise<void> => {
+  const item = convertToFirestoreListItem(rowItem);
+  const listItemRef = doc(db, "datesList", rowItem.id);
 
   try {
     await updateDoc(listItemRef, item);

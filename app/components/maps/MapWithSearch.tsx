@@ -2,7 +2,6 @@
 
 import { Box, Typography } from "@mui/material";
 import {
-  APIProvider,
   ControlPosition,
   MapControl,
   AdvancedMarker,
@@ -14,8 +13,6 @@ import {
 import { useEffect, useRef, useCallback, useState, Fragment } from "react";
 
 import { TXI_BOSTON } from "./constants";
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 interface MapHandlerProps {
   place: google.maps.places.Place | null;
@@ -233,11 +230,7 @@ export default function MapWithSearch({
   const removeSelectedMarker = () => setSelectedMarker(null);
 
   return (
-    <APIProvider
-      apiKey={API_KEY}
-      libraries={["places"]}
-      solutionChannel="GMP_devsite_samples_v3_rgmautocomplete"
-    >
+    <>
       <Map
         mapId={"defaultMapId"}
         defaultZoom={13}
@@ -297,6 +290,6 @@ export default function MapWithSearch({
         existingPlaceIds={existingPlaceIds}
         setExistingPlaces={setExistingPlaces}
       />
-    </APIProvider>
+    </>
   );
 }

@@ -14,16 +14,20 @@ import { useState, useEffect } from "react";
 import DialogWrapper from "@/components/DialogWrapper";
 
 import { ACTIVITY_TYPES } from "../constants";
-import { ActivityType, ListRow } from "../types";
+import {
+  ActivityType,
+  ListRowWithPlaces,
+  FirestoreListItemWithPlace,
+} from "../types";
 import { isValidListItem } from "../utils";
 
 interface DateItemDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (listItem: ListRow) => void;
+  onSubmit: (listItem: FirestoreListItemWithPlace) => void;
   title: string;
   submitText: string;
-  dateListItems: ListRow[];
+  dateListItems: ListRowWithPlaces[];
   addedPlace: google.maps.places.Place | null;
   setAddedPlace: (place: google.maps.places.Place | null) => void;
   onSelectMap: () => void;
@@ -65,12 +69,12 @@ export default function DateItemDialog({
   const handleSubmit = () => {
     const newItem = {
       name,
-      placeId: addedPlace?.id || "",
+      place: addedPlace,
       duration,
       cost,
       activityType,
       notes,
-    } as ListRow;
+    } as FirestoreListItemWithPlace;
     onSubmit(newItem);
     handleClose();
   };
@@ -79,12 +83,12 @@ export default function DateItemDialog({
     dateListItems,
     {
       name,
-      placeId: addedPlace?.id || "",
+      place: addedPlace,
       duration,
       cost,
       activityType,
       notes,
-    } as ListRow,
+    } as ListRowWithPlaces,
     true
   );
 

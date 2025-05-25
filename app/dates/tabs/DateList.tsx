@@ -7,12 +7,12 @@ import * as R from "ramda";
 import React from "react";
 
 import { updateDateListItem, deleteDateListItem } from "../firebaseUtils";
-import { ListRow } from "../types";
+import { ListRowWithPlaces } from "../types";
 import { getCommonColumns, isValidListItem } from "../utils";
 
 interface DateListProps {
-  rows: ListRow[];
-  setRows: React.Dispatch<React.SetStateAction<ListRow[]>>;
+  rows: ListRowWithPlaces[];
+  setRows: React.Dispatch<React.SetStateAction<ListRowWithPlaces[]>>;
   onAdd: () => void;
   onRefresh: () => void;
 }
@@ -23,7 +23,10 @@ export default function DateList({
   onAdd,
   onRefresh,
 }: DateListProps) {
-  const processRowUpdate = async (newRow: ListRow, oldRow: ListRow) => {
+  const processRowUpdate = async (
+    newRow: ListRowWithPlaces,
+    oldRow: ListRowWithPlaces
+  ) => {
     if (R.equals(newRow, oldRow)) return newRow;
 
     const row = rows.find((row) => row.id === newRow.id);
@@ -54,7 +57,7 @@ export default function DateList({
     console.error("Error processing row update:", error);
   };
 
-  const handleDeleteRow = async (row: ListRow) => {
+  const handleDeleteRow = async (row: ListRowWithPlaces) => {
     try {
       await deleteDateListItem(row.id);
       setRows((prevRows) => prevRows.filter((r) => r.id !== row.id));
@@ -66,6 +69,7 @@ export default function DateList({
   const commonColumns = getCommonColumns(handleDeleteRow);
   const columns: GridColDef[] = [
     commonColumns.name,
+    commonColumns.location,
     commonColumns.duration,
     commonColumns.cost,
     commonColumns.activityType,

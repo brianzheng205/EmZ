@@ -4,10 +4,12 @@ import { useEffect } from "react";
 
 import MapWithSearch from "@/components/maps/MapWithSearch";
 
+import { ListRowWithPlaces } from "../types";
+
 interface DateMapProps {
   selectedPlace: google.maps.places.Place | null;
   setSelectedPlace: (place: google.maps.places.Place | null) => void;
-  dateListItems: { placeId: string }[];
+  dateListItems: ListRowWithPlaces[];
   onAddPlace: (place: google.maps.places.Place | null) => void;
 }
 
@@ -27,7 +29,7 @@ export default function DateMap({
         selectedPlace={selectedPlace}
         onPlaceSelect={setSelectedPlace}
         existingPlaceIds={dateListItems
-          .map((item) => item.placeId)
+          .map((item) => item.place?.id || "")
           .filter((placeId) => placeId !== "")}
       />
 

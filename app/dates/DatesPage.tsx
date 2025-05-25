@@ -6,6 +6,7 @@ import * as R from "ramda";
 import { useState, useEffect } from "react";
 
 import CenteredLoader from "@/components/CenteredLoader";
+import { getPlaceFromId } from "@/components/maps/utils";
 import useDialog from "@/hooks/useDialog";
 
 import DateItemDialog from "./dialogs/DateItemDialog";
@@ -17,10 +18,13 @@ import {
 } from "./firebaseUtils";
 import { DatePlanner, DateMap, DateList } from "./tabs";
 import {
+  ListRowWithPlaces,
+  PlannerRowWithPlace,
+  FirestoreListItemWithPlace,
   FirestoreListItem,
-  ListRow,
-  PlannerRow,
-  IdToPlannerDate,
+  IdToPlannerDateWithPlaces,
+  PlannerItemWithPlace,
+  PlannerDateWithPlaces,
 } from "./types";
 
 enum TabValue {
@@ -33,12 +37,14 @@ export default function DatesPage() {
   const [activeTab, setActiveTab] = useState(TabValue.LIST);
   const [loading, setLoading] = useState(true);
 
-  const [listRows, setListRows] = useState<ListRow[]>([]);
-  const [plannerDates, setPlannerDates] = useState<IdToPlannerDate>({});
+  const [listRows, setListRows] = useState<ListRowWithPlaces[]>([]);
+  const [plannerDates, setPlannerDates] = useState<IdToPlannerDateWithPlaces>(
+    {}
+  );
   const [activeDateRef, setActiveDateRef] = useState<DocumentReference | null>(
     null
   );
-  const [plannerRows, setPlannerRows] = useState<PlannerRow[]>([]);
+  const [plannerRows, setPlannerRows] = useState<PlannerRowWithPlace[]>([]);
 
   const [selectedPlace, setSelectedPlace] =
     useState<google.maps.places.Place | null>(null);
@@ -54,12 +60,80 @@ export default function DatesPage() {
 
   const fetchDateListData = async () => {
     const fetchedRows = await fetchDateList();
-    setListRows(fetchedRows);
+
+    const rowsWithPlaces: ListRowWithPlaces[] = await Promise.all(
+      fetchedRows.map(async (row) => {
+        if (R.isNil(row.placeId) || row.placeId === "") {
+          return {
+            ...R.dissoc("placeId", row),
+            place: null,
+          } as ListRowWithPlaces;
+        }
+
+        try {
+          const place = await getPlaceFromId(row.placeId);
+          return {
+            ...R.dissoc("placeId", row),
+            place,
+          } as ListRowWithPlaces;
+        } catch (error) {
+          console.error(
+            `Failed to load place with ID ${row.placeId}: ${error}`
+          );
+          return {
+            ...R.dissoc("placeId", row),
+            place: null,
+          } as ListRowWithPlaces;
+        }
+      })
+    );
+    setListRows(rowsWithPlaces);
   };
+
+  console.log("plannerRows", plannerRows);
 
   const fetchPlannerDates = async () => {
     const fetchedDates = await fetchAllDates();
-    setPlannerDates(fetchedDates);
+    console.log("Fetched planner dates:", fetchedDates);
+
+    const plannerDatesWithPlaces: IdToPlannerDateWithPlaces = await Promise.all(
+      R.toPairs(fetchedDates).map(async ([dateId, date]) => [
+        dateId,
+        {
+          ...date,
+          schedule: await Promise.all(
+            date.schedule.map(async (item) => {
+              console.log(item, R.isNil(item.placeId), item.placeId === "");
+              if (R.isNil(item.placeId) || item.placeId === "") {
+                return {
+                  ...R.dissoc("placeId", item),
+                  place: null,
+                } as PlannerItemWithPlace;
+              }
+
+              try {
+                const place = await getPlaceFromId(item.placeId);
+                return {
+                  ...R.dissoc("placeId", item),
+                  place,
+                } as PlannerItemWithPlace;
+              } catch (error) {
+                console.error(
+                  `Failed to load place with ID ${item.placeId}: ${error}`
+                );
+                return {
+                  ...R.dissoc("placeId", item),
+                  place: null,
+                } as PlannerItemWithPlace;
+              }
+            })
+          ),
+        },
+      ])
+    ).then((res: [string, PlannerDateWithPlaces][]) => R.fromPairs(res));
+
+    console.log("Planner dates with places:", plannerDatesWithPlaces);
+    setPlannerDates(plannerDatesWithPlaces);
 
     const fetchedActiveDateRef = await fetchActiveDateRef();
     setActiveDateRef(fetchedActiveDateRef);
@@ -76,12 +150,17 @@ export default function DatesPage() {
     fetchData();
   }, []);
 
-  const handleAddRow = async (newListItem: FirestoreListItem) => {
-    const newId = await createDateListItem(newListItem);
+  const handleAddRow = async (newListItem: FirestoreListItemWithPlace) => {
+    const firestoreListItem: FirestoreListItem = {
+      ...R.dissoc("place", newListItem),
+      placeId: newListItem.place?.id || "",
+    };
+
+    const newId = await createDateListItem(firestoreListItem);
 
     if (R.isNil(newId)) return;
 
-    const newRow: ListRow = {
+    const newRow: ListRowWithPlaces = {
       ...newListItem,
       id: newId,
     };
