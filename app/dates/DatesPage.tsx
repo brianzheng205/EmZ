@@ -90,11 +90,8 @@ export default function DatesPage() {
     setListRows(rowsWithPlaces);
   };
 
-  console.log("plannerRows", plannerRows);
-
   const fetchPlannerDates = async () => {
     const fetchedDates = await fetchAllDates();
-    console.log("Fetched planner dates:", fetchedDates);
 
     const plannerDatesWithPlaces: IdToPlannerDateWithPlaces = await Promise.all(
       R.toPairs(fetchedDates).map(async ([dateId, date]) => [
@@ -103,7 +100,6 @@ export default function DatesPage() {
           ...date,
           schedule: await Promise.all(
             date.schedule.map(async (item) => {
-              console.log(item, R.isNil(item.placeId), item.placeId === "");
               if (R.isNil(item.placeId) || item.placeId === "") {
                 return {
                   ...R.dissoc("placeId", item),
@@ -132,7 +128,6 @@ export default function DatesPage() {
       ])
     ).then((res: [string, PlannerDateWithPlaces][]) => R.fromPairs(res));
 
-    console.log("Planner dates with places:", plannerDatesWithPlaces);
     setPlannerDates(plannerDatesWithPlaces);
 
     const fetchedActiveDateRef = await fetchActiveDateRef();
