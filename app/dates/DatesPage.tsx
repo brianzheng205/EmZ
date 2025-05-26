@@ -193,6 +193,7 @@ export default function DatesPage() {
         setSelectedPlace={setSelectedPlace}
         dateListItems={listRows}
         onAddPlace={handleAddPlace}
+        plannerRows={plannerRows}
       />
     ) : (
       activeTab === TabValue.PLANNER && (

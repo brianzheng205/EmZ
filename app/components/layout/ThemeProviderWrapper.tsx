@@ -5,8 +5,8 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { ReactNode, useState } from "react";
 
-import Header from "@/components/layout/Header";
-import SideBar from "@/components/layout/SideBar";
+import Header from "./Header";
+import SideBar from "./SideBar";
 
 const theme = createTheme({
   palette: {

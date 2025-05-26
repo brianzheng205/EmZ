@@ -1,10 +1,12 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   ControlPosition,
   MapControl,
   AdvancedMarker,
+  Pin,
   InfoWindow,
   Map,
   useMap,
@@ -168,16 +170,20 @@ function InfoWindowWrapper({ place, onCloseClick }: InfoWindowWrapperProps) {
 interface MapWithSearchProps {
   selectedPlace: google.maps.places.Place | null;
   onPlaceSelect: (place: google.maps.places.Place | null) => void;
-  existingPlaces: google.maps.places.Place[];
+  unhighlightedPlaces: google.maps.places.Place[];
+  highlightedPlaces: google.maps.places.Place[];
 }
 
 export default function MapWithSearch({
   selectedPlace,
   onPlaceSelect,
-  existingPlaces,
+  unhighlightedPlaces,
+  highlightedPlaces,
 }: MapWithSearchProps) {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+
+  const theme = useTheme();
 
   const removeSelectedMarker = () => setSelectedMarker(null);
 
@@ -199,7 +205,9 @@ export default function MapWithSearch({
               setSelectedMarker("selected");
             }
           }}
-        />
+        >
+          <Pin background={theme.palette.primary.main} glyphColor={"white"} />
+        </AdvancedMarker>
 
         {selectedMarker === "selected" && selectedPlace && (
           <InfoWindowWrapper
@@ -208,7 +216,7 @@ export default function MapWithSearch({
           />
         )}
 
-        {existingPlaces.map((place, i) => (
+        {unhighlightedPlaces.map((place, i) => (
           <Fragment key={i}>
             <AdvancedMarker
               key={place.id}
@@ -216,6 +224,29 @@ export default function MapWithSearch({
               title={place.displayName || ""}
               onClick={() => setSelectedMarker(place.id || "")}
             />
+
+            {selectedMarker === place.id && (
+              <InfoWindowWrapper
+                place={place}
+                onCloseClick={removeSelectedMarker}
+              />
+            )}
+          </Fragment>
+        ))}
+
+        {highlightedPlaces.map((place, i) => (
+          <Fragment key={i}>
+            <AdvancedMarker
+              key={place.id}
+              position={place.location || null}
+              title={place.displayName || ""}
+              onClick={() => setSelectedMarker(place.id || "")}
+            >
+              <Pin
+                background={theme.palette.secondary.main}
+                glyphColor={theme.palette.primary.main}
+              />
+            </AdvancedMarker>
 
             {selectedMarker === place.id && (
               <InfoWindowWrapper
