@@ -41,6 +41,9 @@ export default function DateMap({
           ? theme.palette.primary.main
           : undefined,
     })) as PlaceWithColor[];
+  const hasSelectedPlace = places.some(
+    (place) => place.id === selectedPlace?.id
+  );
 
   useEffect(() => {
     setSelectedPlace(null);
@@ -57,7 +60,7 @@ export default function DateMap({
       <Button
         startIcon={<Add />}
         onClick={() => onAddPlace(selectedPlace)}
-        disabled={!selectedPlace}
+        disabled={!selectedPlace || hasSelectedPlace}
       >
         {selectedPlace?.displayName}
       </Button>

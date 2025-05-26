@@ -11,9 +11,10 @@ import {
   Map,
   useMap,
 } from "@vis.gl/react-google-maps";
-import { useEffect, useRef, useCallback, useState, Fragment } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
 import { TXI_BOSTON } from "./constants";
+import { getPlaceFromId } from "./utils";
 
 export type PlaceWithColor = google.maps.places.Place & {
   background?: string;
@@ -160,21 +161,37 @@ function InfoWindowWrapper({ place, onCloseClick }: InfoWindowWrapperProps) {
         <Typography variant="body2" gutterBottom>
           {place.formattedAddress}
         </Typography>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${place.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-block",
+            marginTop: 8,
+            padding: "6px 12px",
+            background: "#4285F4",
+            color: "#fff",
+            borderRadius: 4,
+            textDecoration: "none",
+          }}
+        >
+          Find in Google Maps
+        </a>
       </Box>
     </InfoWindow>
   );
 }
 
 interface MapWithSearchProps {
+  places: PlaceWithColor[];
   selectedPlace: google.maps.places.Place | null;
   onPlaceSelect: (place: google.maps.places.Place | null) => void;
-  places: PlaceWithColor[];
 }
 
 export default function MapWithSearch({
+  places,
   selectedPlace,
   onPlaceSelect,
-  places,
 }: MapWithSearchProps) {
   const [isSelected, setIsSelected] = useState(false);
 
@@ -202,7 +219,15 @@ export default function MapWithSearch({
         defaultCenter={TXI_BOSTON}
         gestureHandling={"greedy"}
         disableDefaultUI={true}
-        onClick={removeSelectedMarker}
+        onClick={async (e) => {
+          if (e.detail.placeId) {
+            e.stop();
+            const place = await getPlaceFromId(e.detail.placeId);
+            handlePlaceSelect(place);
+          } else {
+            handlePlaceSelect(null);
+          }
+        }}
       >
         {selectedPlace && (
           <>
