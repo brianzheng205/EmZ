@@ -153,15 +153,12 @@ function InfoWindowWrapper({ place, onCloseClick }: InfoWindowWrapperProps) {
 
   return (
     <InfoWindow position={place.location} onCloseClick={onCloseClick}>
-      <Box sx={{ padding: 1, maxWidth: "300px" }}>
+      <Box sx={{ padding: 1, maxWidth: "500px" }}>
         <Typography variant="h6" gutterBottom>
           {place.displayName}
         </Typography>
         <Typography variant="body2" gutterBottom>
           {place.formattedAddress}
-        </Typography>
-        <Typography variant="caption" display="block" gutterBottom>
-          <strong>Selected Location</strong>
         </Typography>
       </Box>
     </InfoWindow>
@@ -179,15 +176,18 @@ export default function MapWithSearch({
   onPlaceSelect,
   places,
 }: MapWithSearchProps) {
-  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+  const [isSelected, setIsSelected] = useState(false);
 
   const theme = useTheme();
 
-  const removeSelectedMarker = () => setSelectedMarker(null);
-  const handlePlaceSelect = (place: google.maps.places.Place | null) => {
-    setSelectedMarker(place?.id || null);
-    onPlaceSelect(place);
-  };
+  const removeSelectedMarker = useCallback(() => setIsSelected(false), []);
+  const handlePlaceSelect = useCallback(
+    (place: google.maps.places.Place | null) => {
+      setIsSelected(true);
+      onPlaceSelect(place);
+    },
+    [onPlaceSelect]
+  );
 
   // Filter out the selected pin from the other places
   const filteredPlaces = places.filter(
@@ -216,7 +216,7 @@ export default function MapWithSearch({
               />
             </AdvancedMarker>
 
-            {selectedMarker === selectedPlace.id && (
+            {isSelected && (
               <InfoWindowWrapper
                 place={selectedPlace}
                 onCloseClick={removeSelectedMarker}
@@ -226,26 +226,14 @@ export default function MapWithSearch({
         )}
 
         {filteredPlaces.map((place, i) => (
-          <Fragment key={i}>
-            <AdvancedMarker
-              key={place.id}
-              position={place.location || null}
-              title={place.displayName || ""}
-              onClick={() => handlePlaceSelect(place)}
-            >
-              <Pin
-                background={place.background}
-                glyphColor={place.glyphColor}
-              />
-            </AdvancedMarker>
-
-            {selectedMarker === place.id && (
-              <InfoWindowWrapper
-                place={place}
-                onCloseClick={removeSelectedMarker}
-              />
-            )}
-          </Fragment>
+          <AdvancedMarker
+            key={i}
+            position={place.location || null}
+            title={place.displayName || ""}
+            onClick={() => handlePlaceSelect(place)}
+          >
+            <Pin background={place.background} glyphColor={place.glyphColor} />
+          </AdvancedMarker>
         ))}
       </Map>
 
