@@ -1,9 +1,10 @@
 import { Add } from "@mui/icons-material";
 import { Stack, Button } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import * as R from "ramda";
 import { useEffect } from "react";
 
-import MapWithSearch from "@/components/maps/MapWithSearch";
+import MapWithSearch, { PlaceWithColor } from "@/components/maps/MapWithSearch";
 
 import { ListRowWithPlaces, PlannerRowWithPlace } from "../../types";
 
@@ -22,20 +23,24 @@ export default function DateMap({
   onAddPlace,
   plannerRows,
 }: DateMapProps) {
+  const theme = useTheme();
+
   const plannerPlaceIds = new Set(
     plannerRows.map((row) => row.place?.id).filter((place) => R.isNotNil(place))
   );
-  const highlightedPlaces: google.maps.places.Place[] = dateListItems
-    .map((item) => item.place)
-    .filter(
-      (place) => R.isNotNil(place) && plannerPlaceIds.has(place.id)
-    ) as google.maps.places.Place[];
-
-  const unhighlightedPlaces: google.maps.places.Place[] = dateListItems
-    .map((item) => item.place)
-    .filter(
-      (place) => R.isNotNil(place) && !plannerPlaceIds.has(place.id)
-    ) as google.maps.places.Place[];
+  const places: PlaceWithColor[] = dateListItems
+    .filter((item) => R.isNotNil(item.place))
+    .map((item) => ({
+      ...item.place,
+      background:
+        item.place && plannerPlaceIds.has(item.place.id)
+          ? theme.palette.secondary.main
+          : undefined,
+      glyphColor:
+        item.place && plannerPlaceIds.has(item.place.id)
+          ? theme.palette.primary.main
+          : undefined,
+    })) as PlaceWithColor[];
 
   useEffect(() => {
     setSelectedPlace(null);
@@ -46,8 +51,7 @@ export default function DateMap({
       <MapWithSearch
         selectedPlace={selectedPlace}
         onPlaceSelect={setSelectedPlace}
-        highlightedPlaces={highlightedPlaces}
-        unhighlightedPlaces={unhighlightedPlaces}
+        places={places}
       />
 
       <Button
