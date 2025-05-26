@@ -10,7 +10,6 @@ import {
   InfoWindow,
   Map,
   useMap,
-  useAdvancedMarkerRef,
 } from "@vis.gl/react-google-maps";
 import { useEffect, useRef, useCallback, useState, Fragment } from "react";
 
@@ -23,15 +22,14 @@ export type PlaceWithColor = google.maps.places.Place & {
 
 interface MapHandlerProps {
   place: google.maps.places.Place | null;
-  marker: google.maps.marker.AdvancedMarkerElement | null;
 }
 
-function MapHandler({ place, marker }: MapHandlerProps) {
+function MapHandler({ place }: MapHandlerProps) {
   const map = useMap();
 
   // Handle the main selected place
   useEffect(() => {
-    if (!map || !place || !marker) return;
+    if (!map || !place) return;
 
     if (place.viewport) {
       map.fitBounds(place.viewport);
@@ -39,9 +37,7 @@ function MapHandler({ place, marker }: MapHandlerProps) {
       map.setCenter(place.location);
       map.setZoom(16);
     }
-
-    marker.position = place.location;
-  }, [map, place, marker]);
+  }, [map, place]);
 
   return null;
 }
@@ -144,7 +140,7 @@ function PlaceAutocomplete({ onPlaceSelect }: PlaceAutocompleteProps) {
     };
   }, [onPlaceSelect, cleanup, handleSelect]);
 
-  return <div ref={containerRef} />;
+  return <Box ref={containerRef} />;
 }
 
 interface InfoWindowWrapperProps {
@@ -183,17 +179,19 @@ export default function MapWithSearch({
   onPlaceSelect,
   places,
 }: MapWithSearchProps) {
-  const [markerRef, marker] = useAdvancedMarkerRef();
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
 
   const theme = useTheme();
 
   const removeSelectedMarker = () => setSelectedMarker(null);
+  const handlePlaceSelect = (place: google.maps.places.Place | null) => {
+    setSelectedMarker(place?.id || null);
+    onPlaceSelect(place);
+  };
 
   // Filter out the selected pin from the other places
-  const selectedPlaceId = selectedPlace?.id;
-  const filtereedPlaces = places.filter(
-    (place) => place.id !== selectedPlaceId
+  const filteredPlaces = places.filter(
+    (place) => place.id !== selectedPlace?.id
   );
 
   return (
@@ -206,42 +204,41 @@ export default function MapWithSearch({
         disableDefaultUI={true}
         onClick={removeSelectedMarker}
       >
-        <AdvancedMarker
-          ref={markerRef}
-          position={null}
-          onClick={() => {
-            if (selectedPlace) {
-              setSelectedMarker(selectedPlace.id || "");
-              onPlaceSelect(selectedPlace); // Call onPlaceSelect when main pin is clicked
-            }
-          }}
-        >
-          <Pin background={theme.palette.primary.main} glyphColor={"white"} />
-        </AdvancedMarker>
+        {selectedPlace && (
+          <>
+            <AdvancedMarker
+              position={selectedPlace.location || null}
+              onClick={() => handlePlaceSelect(selectedPlace)}
+            >
+              <Pin
+                background={theme.palette.primary.main}
+                glyphColor={"white"}
+              />
+            </AdvancedMarker>
 
-        {selectedPlace && selectedMarker === selectedPlace.id && (
-          <InfoWindowWrapper
-            place={selectedPlace}
-            onCloseClick={removeSelectedMarker}
-          />
+            {selectedMarker === selectedPlace.id && (
+              <InfoWindowWrapper
+                place={selectedPlace}
+                onCloseClick={removeSelectedMarker}
+              />
+            )}
+          </>
         )}
 
-        {filtereedPlaces.map((place, i) => (
+        {filteredPlaces.map((place, i) => (
           <Fragment key={i}>
             <AdvancedMarker
               key={place.id}
               position={place.location || null}
               title={place.displayName || ""}
-              onClick={() => {
-                setSelectedMarker(place.id || "");
-                onPlaceSelect(place); // Call onPlaceSelect when other pins are clicked
-              }}
+              onClick={() => handlePlaceSelect(place)}
             >
               <Pin
                 background={place.background}
                 glyphColor={place.glyphColor}
               />
             </AdvancedMarker>
+
             {selectedMarker === place.id && (
               <InfoWindowWrapper
                 place={place}
@@ -257,11 +254,11 @@ export default function MapWithSearch({
           sx={{ width: "400px", padding: 2 }}
           className="autocomplete-control"
         >
-          <PlaceAutocomplete onPlaceSelect={onPlaceSelect} />
+          <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
         </Box>
       </MapControl>
 
-      <MapHandler place={selectedPlace} marker={marker} />
+      <MapHandler place={selectedPlace} />
     </>
   );
 }
