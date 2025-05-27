@@ -2,10 +2,11 @@
 
 import { CssBaseline, Box, Stack, Drawer } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { APIProvider } from "@vis.gl/react-google-maps";
 import { ReactNode, useState } from "react";
 
-import Header from "@/components/layout/Header";
-import SideBar from "@/components/layout/SideBar";
+import Header from "./Header";
+import SideBar from "./SideBar";
 
 const theme = createTheme({
   palette: {
@@ -90,26 +91,32 @@ export default function ThemeProviderWrapper({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Stack
-        sx={{
-          height: "100vh",
-        }}
-      >
-        <Header setIsSidebarOpen={setIsSidebarOpen} />
-        <Drawer open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
-          <SideBar setIsSidebarOpen={setIsSidebarOpen} />
-        </Drawer>
-        <Box
+    <APIProvider
+      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
+      libraries={["places"]}
+      solutionChannel="GMP_devsite_samples_v3_rgmautocomplete"
+    >
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Stack
           sx={{
-            flex: 1,
-            overflowY: "auto",
+            height: "100vh",
           }}
         >
-          {children}
-        </Box>
-      </Stack>
-    </ThemeProvider>
+          <Header setIsSidebarOpen={setIsSidebarOpen} />
+          <Drawer open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}>
+            <SideBar setIsSidebarOpen={setIsSidebarOpen} />
+          </Drawer>
+          <Box
+            sx={{
+              flex: 1,
+              overflowY: "auto",
+            }}
+          >
+            {children}
+          </Box>
+        </Stack>
+      </ThemeProvider>
+    </APIProvider>
   );
 }
