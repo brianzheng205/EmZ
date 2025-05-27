@@ -7,16 +7,16 @@ import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 
-import { IdToDate, Metadata } from "../types";
+import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../../types";
 
 interface DateDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (metadata: Metadata) => void;
+  onSubmit: (metadata: PlannerMetadata) => void;
   title: string;
   submitText: string;
-  dates: IdToDate;
-  initialMetadata?: Metadata;
+  dates: IdToPlannerDateWithPlaces;
+  initialMetadata?: PlannerMetadata;
 }
 
 export default function DateDialog({
