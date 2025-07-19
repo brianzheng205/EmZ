@@ -1,7 +1,7 @@
 "use client";
 
 import { Add } from "@mui/icons-material";
-import { Button, Container, Stack, Grid } from "@mui/material";
+import { Button, Container, Stack } from "@mui/material";
 import {
   collection,
   getDocs,
@@ -212,11 +212,11 @@ export default function CountdownPage() {
   };
 
   return (
-    <Container sx={{ height: "100%", padding: 2 }}>
+    <Container sx={{ minHeight: "100%", padding: 2 }}>
       {loading ? (
         <CenteredLoader />
       ) : (
-        <Stack sx={{ gap: 3 }}>
+        <Stack sx={{ gap: 2 }}>
           <Stack
             sx={{
               flexDirection: "row-reverse",
@@ -232,19 +232,16 @@ export default function CountdownPage() {
             </Button>
           </Stack>
 
-          <Grid container rowSpacing={1} columnSpacing={2}>
-            {events.map((event) => (
-              <Grid key={event.id} size={4}>
-                <CountdownEventCard
-                  event={event}
-                  onEdit={editEvent}
-                  onDelete={deleteEvent}
-                  formatCountdown={formatCountdown}
-                  existingCustomIds={getExistingCustomIds()}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          {events.map((event, index) => (
+            <CountdownEventCard
+              key={index}
+              event={event}
+              onEdit={editEvent}
+              onDelete={deleteEvent}
+              formatCountdown={formatCountdown}
+              existingCustomIds={getExistingCustomIds()}
+            />
+          ))}
 
           <AddCountdownDialog
             open={isAddingCountdown}

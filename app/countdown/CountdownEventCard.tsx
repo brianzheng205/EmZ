@@ -49,7 +49,6 @@ export default function CountdownEventCard({
     <>
       <Card
         sx={{
-          height: 200,
           display: "flex",
           flexDirection: "column",
         }}
