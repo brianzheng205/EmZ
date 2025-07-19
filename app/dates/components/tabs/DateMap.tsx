@@ -2,7 +2,6 @@ import { Add } from "@mui/icons-material";
 import { Stack, Button } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import * as R from "ramda";
-import { useEffect } from "react";
 
 import MapWithSearch, { PlaceWithColor } from "@/components/maps/MapWithSearch";
 
@@ -10,7 +9,7 @@ import { ListRowWithPlaces, PlannerRowWithPlace } from "../../types";
 
 interface DateMapProps {
   selectedPlace: google.maps.places.Place | null;
-  setSelectedPlace: (place: google.maps.places.Place | null) => void;
+  onSelectedPlace: (place: google.maps.places.Place | null) => void;
   dateListItems: ListRowWithPlaces[];
   onAddPlace: (place: google.maps.places.Place | null) => void;
   plannerRows: PlannerRowWithPlace[];
@@ -18,7 +17,7 @@ interface DateMapProps {
 
 export default function DateMap({
   selectedPlace,
-  setSelectedPlace,
+  onSelectedPlace,
   dateListItems,
   onAddPlace,
   plannerRows,
@@ -45,15 +44,11 @@ export default function DateMap({
     (place) => place.id === selectedPlace?.id
   );
 
-  useEffect(() => {
-    setSelectedPlace(null);
-  }, [setSelectedPlace]);
-
   return (
     <Stack sx={{ flex: 1, gap: 1 }}>
       <MapWithSearch
         selectedPlace={selectedPlace}
-        onPlaceSelect={setSelectedPlace}
+        onPlaceSelect={onSelectedPlace}
         places={places}
       />
 
