@@ -190,7 +190,7 @@ export default function DatesPage() {
     ) : activeTab === TabValue.MAP ? (
       <DateMap
         selectedPlace={selectedPlace}
-        setSelectedPlace={setSelectedPlace}
+        onSelectedPlace={setSelectedPlace}
         dateListItems={listRows}
         onAddPlace={handleAddPlace}
         plannerRows={plannerRows}
