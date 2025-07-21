@@ -1,7 +1,7 @@
 "use client";
 
 import { Add } from "@mui/icons-material";
-import { Button, Container, Stack, Grid } from "@mui/material";
+import { Button, Container, Stack } from "@mui/material";
 import {
   collection,
   getDocs,
@@ -13,8 +13,9 @@ import {
   arrayUnion,
   arrayRemove,
 } from "firebase/firestore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
+import CenteredLoader from "@/components/CenteredLoader";
 import { CountdownEvent, SubmitEventFn, EditEventFn } from "@/types";
 import { getAdjustedDate } from "@/utils";
 import db from "@firebase";
@@ -31,14 +32,12 @@ function getDateString(date: Date): string {
 }
 
 export default function CountdownPage() {
+  const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<CountdownEvent[]>([]);
   const [isAddingCountdown, setIsAddingCountdown] = useState(false);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
     const eventsRef = collection(db, "countdowns");
     const querySnapshot = await getDocs(eventsRef);
 
@@ -77,7 +76,12 @@ export default function CountdownPage() {
     });
 
     setEvents(fetchedEvents);
-  };
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const addEvent: SubmitEventFn = async (id, description, isCustomId) => {
     if (!isCustomId) {
@@ -208,44 +212,45 @@ export default function CountdownPage() {
   };
 
   return (
-    <Container>
-      <Stack sx={{ gap: 3 }}>
-        <Stack
-          sx={{
-            flexDirection: "row-reverse",
-            gap: 2,
-            alignItems: "center",
-          }}
-        >
-          <Button
-            startIcon={<Add />}
-            onClick={() => setIsAddingCountdown(true)}
+    <Container sx={{ minHeight: "100%", padding: 2 }}>
+      {loading ? (
+        <CenteredLoader />
+      ) : (
+        <Stack sx={{ gap: 2 }}>
+          <Stack
+            sx={{
+              flexDirection: "row-reverse",
+              gap: 2,
+              alignItems: "center",
+            }}
           >
-            Add
-          </Button>
-        </Stack>
+            <Button
+              startIcon={<Add />}
+              onClick={() => setIsAddingCountdown(true)}
+            >
+              Add
+            </Button>
+          </Stack>
 
-        <Grid container rowSpacing={1} columnSpacing={2}>
-          {events.map((event) => (
-            <Grid key={event.id} size={4}>
-              <CountdownEventCard
-                event={event}
-                onEdit={editEvent}
-                onDelete={deleteEvent}
-                formatCountdown={formatCountdown}
-                existingCustomIds={getExistingCustomIds()}
-              />
-            </Grid>
+          {events.map((event, index) => (
+            <CountdownEventCard
+              key={index}
+              event={event}
+              onEdit={editEvent}
+              onDelete={deleteEvent}
+              formatCountdown={formatCountdown}
+              existingCustomIds={getExistingCustomIds()}
+            />
           ))}
-        </Grid>
 
-        <AddCountdownDialog
-          open={isAddingCountdown}
-          onClose={() => setIsAddingCountdown(false)}
-          onSubmit={addEvent}
-          existingCustomIds={getExistingCustomIds()}
-        />
-      </Stack>
+          <AddCountdownDialog
+            open={isAddingCountdown}
+            onClose={() => setIsAddingCountdown(false)}
+            onSubmit={addEvent}
+            existingCustomIds={getExistingCustomIds()}
+          />
+        </Stack>
+      )}
     </Container>
   );
 }
