@@ -15,12 +15,12 @@ import { useEffect, useState } from "react";
 import EditCountdownDialog from "./dialogs/EditEventDialog";
 import { Event, UpdateEventFn, DeleteEventFn } from "./types";
 
-const convertDateToCountdown = (id: string, isCustomID?: boolean) => {
-  if (isCustomID) return id;
+import { convertDateStrToDate } from "shared/utils";
 
-  // Parse the date from datestring (YYYY-MM-DD)
-  const [year, month, day] = id.split("-").map(Number);
-  const date = new Date(year, month - 1, day); // month is 0-based
+const convertDateToCountdown = (id: string) => {
+  if (id === "") return "D-∞";
+
+  const date = convertDateStrToDate(id);
 
   // Get today's date at midnight for comparison
   const today = new Date();
@@ -136,7 +136,7 @@ export default function EventGroupCard({
       >
         <CardHeader
           title={convertDateToCountdown(date)}
-          subheader={date === "D-∞" ? date : date.replace(/-/g, "/")}
+          subheader={date === "" ? "D-∞" : date.replace(/-/g, "/")}
         />
 
         <CardContent>
