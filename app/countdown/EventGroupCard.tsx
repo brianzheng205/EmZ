@@ -12,14 +12,15 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
+import { convertDateStrToDate } from "shared/utils";
+
 import EditCountdownDialog from "./dialogs/EditEventDialog";
 import { Event, UpdateEventFn, DeleteEventFn } from "./types";
-
-import { convertDateStrToDate } from "shared/utils";
 
 const convertDateToCountdown = (id: string) => {
   if (id === "") return "D-∞";
 
+  console.log(id);
   const date = convertDateStrToDate(id);
 
   // Get today's date at midnight for comparison
