@@ -1,5 +1,6 @@
 "use client";
 
+import { FbEvent } from "@lib/types/countdown";
 import { Add } from "@mui/icons-material";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import { getDocs } from "firebase/firestore";
@@ -37,13 +38,13 @@ export default function CountdownPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       const querySnapshot = await getDocs(EVENTS_REF);
-      const fetchedEvents = querySnapshot.docs.map(
-        (doc) =>
-          ({
-            ...doc.data(),
-            id: doc.id,
-          } as Event)
-      );
+      const fetchedEvents = querySnapshot.docs.map((doc) => {
+        const eventData = doc.data() as FbEvent;
+        return {
+          ...eventData,
+          id: doc.id,
+        } as Event;
+      });
       setEvents(fetchedEvents);
     };
 

@@ -17,7 +17,7 @@ export const EVENTS_REF = collection(db, DB_NAME);
 const backendUpdates = {
   /**
    *
-   * @param date
+   * @param date in YYYY-MM-DD format
    * @param description
    * @returns The id of the newly created document
    */
@@ -30,6 +30,12 @@ const backendUpdates = {
     return docRef.id;
   },
 
+  /**
+   *
+   * @param id
+   * @param newDate in YYYY-MM-DD format
+   * @param newDescription
+   */
   async updateEvent(id: string, newDate: string, newDescription: string) {
     const docRef = doc(db, DB_NAME, id);
     await updateDoc(docRef, { date: newDate, description: newDescription });
@@ -42,11 +48,25 @@ const backendUpdates = {
 };
 
 const frontendUpdates = {
+  /**
+   *
+   * @param id
+   * @param date in YYYY-MM-DD format
+   * @param description
+   * @returns
+   */
   addEvent:
     (id: string, date: string, description: string): EventGroupsUpdaterFn =>
     (prevEventGroups) =>
       [{ id, date, description }, ...R.clone(prevEventGroups)],
 
+  /**
+   *
+   * @param id
+   * @param newDate in YYYY-MM-DD format
+   * @param newDescription
+   * @returns
+   */
   updateEvent:
     (
       id: string,
@@ -67,8 +87,7 @@ const frontendUpdates = {
 };
 
 /**
- *
- * @returns A state updater function
+ * `date` needs to be in YYYY-MM-DD format. Returns a state updater function.
  */
 export const addEvent = async (
   date: string,
@@ -84,8 +103,7 @@ export const addEvent = async (
 };
 
 /**
- *
- * @returns A state updater function
+ * `date` needs to be in YYYY-MM-DD format. Returns a state updater function.
  */
 export const updateEvent = async (
   id: string,
@@ -102,8 +120,7 @@ export const updateEvent = async (
 };
 
 /**
- *
- * @returns A state updater function
+ * Returns a state updater function
  */
 export const deleteEvent = async (
   id: string

@@ -12,16 +12,15 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
-import { convertDateStrToDate } from "shared/utils";
+import { toUSDateStr } from "@/utils";
+import { toDate } from "shared/utils";
 
 import EditCountdownDialog from "./dialogs/EditEventDialog";
 import { Event, UpdateEventFn, DeleteEventFn } from "./types";
 
 const convertDateToCountdown = (id: string) => {
-  if (id === "") return "D-∞";
-
-  console.log(id);
-  const date = convertDateStrToDate(id);
+  const date = toDate(id);
+  if (date === null) return "D-∞";
 
   // Get today's date at midnight for comparison
   const today = new Date();
@@ -137,7 +136,7 @@ export default function EventGroupCard({
       >
         <CardHeader
           title={convertDateToCountdown(date)}
-          subheader={date === "" ? "D-∞" : date.replace(/-/g, "/")}
+          subheader={date === "" ? "D-∞" : toUSDateStr(date)}
         />
 
         <CardContent>

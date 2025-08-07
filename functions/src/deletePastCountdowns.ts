@@ -3,7 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
 import { FbEvent } from "../../shared/types/countdown.js";
-import { convertDateStrToDate } from "../../shared/utils.js";
+import { toDate } from "../../shared/utils.js";
 
 initializeApp();
 
@@ -26,9 +26,9 @@ export const deletePastCountdowns = onSchedule(
 
       for (const doc of querySnapshot.docs) {
         const event = doc.data() as FbEvent;
-        const date = convertDateStrToDate(event.date);
+        const date = toDate(event.date);
 
-        if (date < today) {
+        if (date !== null && date < today) {
           batch.delete(doc.ref);
           batchCount++;
 

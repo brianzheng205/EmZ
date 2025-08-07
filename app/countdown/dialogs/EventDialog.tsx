@@ -1,15 +1,13 @@
 "use client";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Stack,
-} from "@mui/material";
+import { toDate } from "@lib/utils";
+import { TextField } from "@mui/material";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useState, useEffect } from "react";
+
+import DialogWrapper from "@/components/DialogWrapper";
+import { toISODateStr } from "@/utils";
 
 import { EventDialogSharedProps } from "../types";
 
@@ -27,23 +25,19 @@ export default function EventDialog({
   onSubmit,
   initialInputs = { date: "", description: "" },
 }: EventDialogProps) {
-  // Get minimum date (today) for date input
-  const today = new Date();
-  const minDate = today.toISOString().split("T")[0];
-
-  const [date, setDate] = useState(initialInputs.date);
+  const [date, setDate] = useState<Date | null>(toDate(initialInputs.date));
   const [description, setDescription] = useState(initialInputs.description);
 
   useEffect(() => {
     if (open) {
-      setDate(initialInputs.date);
+      setDate(toDate(initialInputs.date));
       setDescription(initialInputs.description);
     }
   }, [open, initialInputs.date, initialInputs.description]);
 
   const handleSubmit = () => {
     if (!description) return;
-    onSubmit(date, description);
+    onSubmit(toISODateStr(date), description);
     handleClose();
   };
 
@@ -54,54 +48,48 @@ export default function EventDialog({
     }
   };
 
-  // TODO use custom general dialog component
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+    <DialogWrapper
+      open={open}
+      onClose={handleClose}
+      onSubmit={handleSubmit}
+      title={title}
+      submitText={submitText}
+      disabled={!description}
+      contentSx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        width: 500,
+      }}
+    >
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DatePicker
+          label="Date"
+          value={date}
+          onChange={(newValue) => setDate(newValue)}
+          minDate={new Date()}
+          slotProps={{
+            actionBar: {
+              actions: ["clear"],
+            },
+          }}
+        />
+      </LocalizationProvider>
 
-      <DialogContent>
-        <Stack gap={3}>
-          {/* TODO Replace with MUI DatePicker */}
-          <TextField
-            label="Date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-            fullWidth
-            size="small"
-            margin="dense"
-            slotProps={{
-              htmlInput: {
-                min: minDate,
-              },
-            }}
-          />
-
-          <TextField
-            label="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
-            required
-            fullWidth
-            size="small"
-            margin="dense"
-            multiline
-            rows={2}
-          />
-        </Stack>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose} color="error">
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={!description}>
-          {submitText}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <TextField
+        label="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        onKeyDown={handleKeyPress}
+        placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
+        required
+        fullWidth
+        size="small"
+        margin="dense"
+        multiline
+        rows={3}
+      />
+    </DialogWrapper>
   );
 }
