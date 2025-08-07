@@ -40,9 +40,34 @@ export const fetchData = async (path: string) => {
 };
 
 // DATES
+// TODO remove by using toISODate rather than Date's toISOString
+// Also centralize all date utils here
 export const getAdjustedDate = (date: Date) => {
   const timezoneOffset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() + timezoneOffset);
+};
+
+/**
+ * Converts a Date object to a string in the format "YYYY-MM-DD".
+ * Returns empty string if date is null.
+ *
+ * Differs from toISOString().slice(0, 10) by using local timezone rather than UTC.
+ */
+export const toISODateStr = (date: Date | null): string => {
+  if (date === null) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Converts a dateStr in ISO format (YYYY-MM-DD) to a string in US format "MM/DD/YY".
+ */
+export const toUSDateStr = (dateStr: string) => {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return `${month}/${day}/${year % 100}`;
 };
 
 // STRINGS

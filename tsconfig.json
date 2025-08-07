@@ -19,12 +19,13 @@
       }
     ],
     "strictNullChecks": true,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["app/*"],
-      "@firebase": ["firebase/client.ts"]
+      "@firebase": ["firebase/client.ts"],
+      "@lib/*": ["shared/*"]
     }
   },
   "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "firebase/functions"]
+  "exclude": ["node_modules", "functions"]
 }
