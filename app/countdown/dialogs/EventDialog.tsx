@@ -1,7 +1,13 @@
 "use client";
 
-import { toDate } from "@lib/utils";
-import { FormControlLabel, Switch, TextField } from "@mui/material";
+import {
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  TextField,
+} from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { PickerValue } from "@mui/x-date-pickers/internals";
@@ -9,6 +15,8 @@ import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 import { toISODateStr } from "@/utils";
+import { RepeatFrequency } from "@lib/types/countdown";
+import { toDate } from "@lib/utils";
 
 import { EventDialogSharedProps } from "../types";
 
@@ -27,7 +35,7 @@ export default function EventDialog({
   initialInputs = { date: "", description: "" },
 }: EventDialogProps) {
   const [date, setDate] = useState<Date | null>(toDate(initialInputs.date));
-  const [isRecurring, setIsRecurring] = useState(false);
+  const [repeat, setIsRepeating] = useState(RepeatFrequency.Never);
   const [description, setDescription] = useState(initialInputs.description);
 
   useEffect(() => {
@@ -38,8 +46,12 @@ export default function EventDialog({
   }, [open, initialInputs.date, initialInputs.description]);
 
   const handleDateChange = (newDate: PickerValue) => {
-    if (newDate === null) setIsRecurring(false);
+    if (newDate === null) setIsRepeating(RepeatFrequency.Never);
     setDate(newDate);
+  };
+
+  const handleRepeatChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setIsRepeating(event.target.value as RepeatFrequency);
   };
 
   const handleSubmit = () => {
@@ -62,12 +74,11 @@ export default function EventDialog({
       onSubmit={handleSubmit}
       title={title}
       submitText={submitText}
-      disabled={!description || !date}
+      disabled={!description}
       contentSx={{
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        width: 300,
       }}
     >
       <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -84,16 +95,46 @@ export default function EventDialog({
         />
       </LocalizationProvider>
 
-      <FormControlLabel
-        label="Recurring?"
-        disabled={!date}
-        control={
-          <Switch
-            checked={isRecurring}
-            onChange={(e) => setIsRecurring(e.target.checked)}
+      <FormControl disabled={date === null}>
+        <FormLabel id="repeat-label">Repeat</FormLabel>
+        <RadioGroup
+          aria-labelledby="repeat-label"
+          name="repeat"
+          value={repeat}
+          onChange={handleRepeatChange}
+        >
+          <FormControlLabel
+            value={RepeatFrequency.Never}
+            control={<Radio />}
+            label={RepeatFrequency.Never}
           />
-        }
-      />
+          <FormControlLabel
+            value={RepeatFrequency.Daily}
+            control={<Radio />}
+            label={RepeatFrequency.Daily}
+          />
+          <FormControlLabel
+            value={RepeatFrequency.Weekly}
+            control={<Radio />}
+            label={RepeatFrequency.Weekly}
+          />
+          <FormControlLabel
+            value={RepeatFrequency.Biweekly}
+            control={<Radio />}
+            label={RepeatFrequency.Biweekly}
+          />
+          <FormControlLabel
+            value={RepeatFrequency.Monthly}
+            control={<Radio />}
+            label={RepeatFrequency.Monthly}
+          />
+          <FormControlLabel
+            value={RepeatFrequency.Yearly}
+            control={<Radio />}
+            label={RepeatFrequency.Yearly}
+          />
+        </RadioGroup>
+      </FormControl>
 
       <TextField
         label="Description"
