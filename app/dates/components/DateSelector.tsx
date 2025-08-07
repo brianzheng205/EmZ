@@ -112,6 +112,7 @@ export default function DateSelector({
             ))
           )(dates)}
       </Select>
+
       {dates && (
         <AddDateDialog
           open={isAddDateDialogOpen}

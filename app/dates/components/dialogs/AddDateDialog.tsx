@@ -2,19 +2,19 @@ import { IdToPlannerDateWithPlaces, PlannerMetadata } from "../../types";
 
 import DateDialog from "./DateDialog";
 
-interface AddBudgetDialogProps {
+interface AddDateDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (metadata: PlannerMetadata) => void;
   dates: IdToPlannerDateWithPlaces;
 }
 
-export default function AddBudgetDialog({
+export default function AddDateDialog({
   open,
   onClose,
   onSubmit,
   dates,
-}: AddBudgetDialogProps) {
+}: AddDateDialogProps) {
   return (
     <DateDialog
       open={open}

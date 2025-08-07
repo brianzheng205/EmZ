@@ -1,3 +1,4 @@
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { Metadata } from "next";
 
 import ThemeProviderWrapper from "@/components/layout/ThemeProviderWrapper";
@@ -32,7 +33,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
         />
       </head>
       <body>
-        <ThemeProviderWrapper>{children}</ThemeProviderWrapper>
+        <AppRouterCacheProvider>
+          <ThemeProviderWrapper>{children}</ThemeProviderWrapper>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );
