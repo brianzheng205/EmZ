@@ -42,7 +42,9 @@ export default function DialogWrapper({
   return (
     <Dialog open={open} onClose={onClose} sx={sx} onKeyDown={handleKeyDown}>
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent sx={contentSx}>{children}</DialogContent>
+      <DialogContent sx={{ overflow: "visible", ...contentSx }}>
+        {children}
+      </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="error">
           Cancel
