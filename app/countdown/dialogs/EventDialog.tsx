@@ -2,10 +2,9 @@
 
 import {
   FormControl,
-  FormControlLabel,
-  FormLabel,
-  Radio,
-  RadioGroup,
+  MenuItem,
+  InputLabel,
+  Select,
   TextField,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
@@ -19,6 +18,13 @@ import { RepeatFrequency } from "@lib/types/countdown";
 import { toDate } from "@lib/utils";
 
 import { EventDialogSharedProps } from "../types";
+
+const REPEAT_FREQ_SELECT = "repeat-frequency-select";
+const repeatFreqSelect = {
+  ID: REPEAT_FREQ_SELECT,
+  LABEL_ID: `${REPEAT_FREQ_SELECT}-label`,
+  LABEL: "Repeat Frequency",
+};
 
 type EventDialogProps = EventDialogSharedProps & {
   title: string;
@@ -96,44 +102,36 @@ export default function EventDialog({
       </LocalizationProvider>
 
       <FormControl disabled={date === null}>
-        <FormLabel id="repeat-label">Repeat</FormLabel>
-        <RadioGroup
-          aria-labelledby="repeat-label"
-          name="repeat"
+        <InputLabel id={repeatFreqSelect.LABEL_ID}>
+          {repeatFreqSelect.LABEL}
+        </InputLabel>
+
+        <Select
+          labelId={repeatFreqSelect.LABEL_ID}
+          id={repeatFreqSelect.ID}
           value={repeat}
+          label={repeatFreqSelect.LABEL}
           onChange={handleRepeatChange}
         >
-          <FormControlLabel
-            value={RepeatFrequency.Never}
-            control={<Radio />}
-            label={RepeatFrequency.Never}
-          />
-          <FormControlLabel
-            value={RepeatFrequency.Daily}
-            control={<Radio />}
-            label={RepeatFrequency.Daily}
-          />
-          <FormControlLabel
-            value={RepeatFrequency.Weekly}
-            control={<Radio />}
-            label={RepeatFrequency.Weekly}
-          />
-          <FormControlLabel
-            value={RepeatFrequency.Biweekly}
-            control={<Radio />}
-            label={RepeatFrequency.Biweekly}
-          />
-          <FormControlLabel
-            value={RepeatFrequency.Monthly}
-            control={<Radio />}
-            label={RepeatFrequency.Monthly}
-          />
-          <FormControlLabel
-            value={RepeatFrequency.Yearly}
-            control={<Radio />}
-            label={RepeatFrequency.Yearly}
-          />
-        </RadioGroup>
+          <MenuItem value={RepeatFrequency.Never}>
+            {RepeatFrequency.Never}
+          </MenuItem>
+          <MenuItem value={RepeatFrequency.Daily}>
+            {RepeatFrequency.Daily}
+          </MenuItem>
+          <MenuItem value={RepeatFrequency.Weekly}>
+            {RepeatFrequency.Weekly}
+          </MenuItem>
+          <MenuItem value={RepeatFrequency.Biweekly}>
+            {RepeatFrequency.Biweekly}
+          </MenuItem>
+          <MenuItem value={RepeatFrequency.Monthly}>
+            {RepeatFrequency.Monthly}
+          </MenuItem>
+          <MenuItem value={RepeatFrequency.Yearly}>
+            {RepeatFrequency.Yearly}
+          </MenuItem>
+        </Select>
       </FormControl>
 
       <TextField
