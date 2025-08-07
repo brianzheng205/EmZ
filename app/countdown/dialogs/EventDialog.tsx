@@ -1,9 +1,10 @@
 "use client";
 
 import { toDate } from "@lib/utils";
-import { TextField } from "@mui/material";
+import { FormControlLabel, Switch, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { PickerValue } from "@mui/x-date-pickers/internals";
 import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
@@ -26,6 +27,7 @@ export default function EventDialog({
   initialInputs = { date: "", description: "" },
 }: EventDialogProps) {
   const [date, setDate] = useState<Date | null>(toDate(initialInputs.date));
+  const [isRecurring, setIsRecurring] = useState(false);
   const [description, setDescription] = useState(initialInputs.description);
 
   useEffect(() => {
@@ -34,6 +36,11 @@ export default function EventDialog({
       setDescription(initialInputs.description);
     }
   }, [open, initialInputs.date, initialInputs.description]);
+
+  const handleDateChange = (newDate: PickerValue) => {
+    if (newDate === null) setIsRecurring(false);
+    setDate(newDate);
+  };
 
   const handleSubmit = () => {
     if (!description) return;
@@ -55,19 +62,19 @@ export default function EventDialog({
       onSubmit={handleSubmit}
       title={title}
       submitText={submitText}
-      disabled={!description}
+      disabled={!description || !date}
       contentSx={{
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        width: 500,
+        width: 300,
       }}
     >
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <DatePicker
           label="Date"
           value={date}
-          onChange={(newValue) => setDate(newValue)}
+          onChange={handleDateChange}
           minDate={new Date()}
           slotProps={{
             actionBar: {
@@ -76,6 +83,17 @@ export default function EventDialog({
           }}
         />
       </LocalizationProvider>
+
+      <FormControlLabel
+        label="Recurring?"
+        disabled={!date}
+        control={
+          <Switch
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+          />
+        }
+      />
 
       <TextField
         label="Description"
