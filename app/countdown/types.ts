@@ -1,4 +1,5 @@
-import { RepeatFrequency, FbEvent } from "@shared/countdown/types";
+import { FbEvent } from "@shared/countdown/types";
+import { RepeatFrequency } from "@shared/types";
 
 export type Event = FbEvent & {
   id: string;

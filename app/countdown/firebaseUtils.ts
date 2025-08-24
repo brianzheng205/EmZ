@@ -1,5 +1,5 @@
 import { FB_COUNTDOWN_COLLECTION } from "@shared/countdown/constants";
-import { RepeatFrequency } from "@shared/countdown/types";
+import { RepeatFrequency } from "@shared/types";
 import {
   collection,
   doc,
