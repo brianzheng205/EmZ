@@ -9,6 +9,6 @@ export enum RepeatFrequency {
 
 export type FbEvent = {
   date: string; // datestring in ISO format like "2025-09-25" or empty string
-  repeat: RepeatFrequency;
+  repeatFreq: RepeatFrequency;
   description: string;
 };
