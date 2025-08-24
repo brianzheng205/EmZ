@@ -2,6 +2,7 @@
 
 import { Add } from "@mui/icons-material";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
+import { FbEvent } from "@shared/countdown/types";
 import { getDocs } from "firebase/firestore";
 import * as R from "ramda";
 import { useState, useEffect, useMemo } from "react";
@@ -14,7 +15,6 @@ import {
   GroupedEvents,
   UpdateEventFn,
 } from "@/countdown/types";
-import { FbEvent } from "@lib/countdown/types";
 
 import AddCountdownDialog from "./dialogs/AddEventDialog";
 import EventGroupCard from "./EventGroupCard";

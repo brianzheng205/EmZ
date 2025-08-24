@@ -23,7 +23,7 @@
     "paths": {
       "@/*": ["app/*"],
       "@firebase": ["firebase/client.ts"],
-      "@lib/*": ["shared/*"]
+      "@shared/*": ["shared/*"]
     }
   },
   "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],

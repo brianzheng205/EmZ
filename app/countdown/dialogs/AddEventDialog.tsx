@@ -1,4 +1,4 @@
-import { RepeatFrequency } from "@lib/countdown/types";
+import { RepeatFrequency } from "@shared/countdown/types";
 
 import { EventDialogSharedProps } from "../types";
 
