@@ -1,13 +1,13 @@
+import { FB_COUNTDOWN_COLLECTION } from "@shared/countdown/constants.js";
+import { FbEvent } from "@shared/countdown/types.js";
+import { toDate } from "@shared/utils.js";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
-import { FbEvent } from "../../shared/types/countdown.js";
-import { toDate } from "../../shared/utils.js";
-
 initializeApp();
 
-export const deletePastCountdowns = onSchedule(
+export const deletePastEvents = onSchedule(
   {
     schedule: "0 0 * * *",
     timeZone: "America/New_York",
@@ -19,7 +19,7 @@ export const deletePastCountdowns = onSchedule(
 
     try {
       // TODO move "countdowns" to lib to sync frontend and backend
-      const countdownsRef = db.collection("countdowns");
+      const countdownsRef = db.collection(FB_COUNTDOWN_COLLECTION);
       const querySnapshot = await countdownsRef.get();
       const batch = db.batch();
       let batchCount = 0;

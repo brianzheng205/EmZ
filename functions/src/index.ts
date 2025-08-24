@@ -27,7 +27,7 @@ import { setGlobalOptions } from "firebase-functions";
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-export { deletePastCountdowns } from "./deletePastCountdowns";
+export { deletePastEvents as deletePastCountdowns } from "./countdown/deletePastEvents";
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
