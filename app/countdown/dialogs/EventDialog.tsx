@@ -37,11 +37,7 @@ export default function EventDialog({
   open,
   onClose: handleClose,
   onSubmit,
-  initialEventData = {
-    date: "",
-    repeatFreq: RepeatFrequency.Never,
-    description: "",
-  },
+  initialEventData,
 }: EventDialogProps) {
   const [date, setDate] = useState<Date | null>(toDate(initialEventData.date));
   const [repeatFreq, setRepeatFreq] = useState(initialEventData.repeatFreq);
