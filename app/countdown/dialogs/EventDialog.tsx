@@ -17,7 +17,7 @@ import { toISODateStr } from "@/utils";
 import { RepeatFrequency } from "@lib/types/countdown";
 import { toDate } from "@lib/utils";
 
-import { EventDialogSharedProps } from "../types";
+import { EditEventDialogProps } from "../types";
 
 const REPEAT_FREQ_SELECT = "repeat-frequency-select";
 const repeatFreqSelect = {
@@ -26,10 +26,9 @@ const repeatFreqSelect = {
   LABEL: "Repeat Frequency",
 };
 
-type EventDialogProps = EventDialogSharedProps & {
+type EventDialogProps = EditEventDialogProps & {
   title: string;
   submitText: string;
-  initialInputs?: { date: string; description: string };
 };
 
 export default function EventDialog({
@@ -38,31 +37,35 @@ export default function EventDialog({
   open,
   onClose: handleClose,
   onSubmit,
-  initialInputs = { date: "", description: "" },
+  initialEventData = {
+    date: "",
+    repeatFreq: RepeatFrequency.Never,
+    description: "",
+  },
 }: EventDialogProps) {
-  const [date, setDate] = useState<Date | null>(toDate(initialInputs.date));
-  const [repeat, setIsRepeating] = useState(RepeatFrequency.Never);
-  const [description, setDescription] = useState(initialInputs.description);
+  const [date, setDate] = useState<Date | null>(toDate(initialEventData.date));
+  const [repeatFreq, setRepeatFreq] = useState(initialEventData.repeatFreq);
+  const [description, setDescription] = useState(initialEventData.description);
 
   useEffect(() => {
     if (open) {
-      setDate(toDate(initialInputs.date));
-      setDescription(initialInputs.description);
+      setDate(toDate(initialEventData.date));
+      setDescription(initialEventData.description);
     }
-  }, [open, initialInputs.date, initialInputs.description]);
+  }, [open, initialEventData.date, initialEventData.description]);
 
   const handleDateChange = (newDate: PickerValue) => {
-    if (newDate === null) setIsRepeating(RepeatFrequency.Never);
+    if (newDate === null) setRepeatFreq(RepeatFrequency.Never);
     setDate(newDate);
   };
 
   const handleRepeatChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setIsRepeating(event.target.value as RepeatFrequency);
+    setRepeatFreq(event.target.value as RepeatFrequency);
   };
 
   const handleSubmit = () => {
     if (!description) return;
-    onSubmit(toISODateStr(date), description);
+    onSubmit(toISODateStr(date), repeatFreq, description);
     handleClose();
   };
 
@@ -109,7 +112,7 @@ export default function EventDialog({
         <Select
           labelId={repeatFreqSelect.LABEL_ID}
           id={repeatFreqSelect.ID}
-          value={repeat}
+          value={repeatFreq}
           label={repeatFreqSelect.LABEL}
           onChange={handleRepeatChange}
         >

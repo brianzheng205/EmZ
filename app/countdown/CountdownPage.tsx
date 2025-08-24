@@ -1,6 +1,5 @@
 "use client";
 
-import { FbEvent } from "@lib/types/countdown";
 import { Add } from "@mui/icons-material";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import { getDocs } from "firebase/firestore";
@@ -10,10 +9,12 @@ import { useState, useEffect, useMemo } from "react";
 import CenteredLoader from "@/components/CenteredLoader";
 import {
   AddEventFn,
+  DeleteEventFn,
   Event,
   GroupedEvents,
   UpdateEventFn,
 } from "@/countdown/types";
+import { FbEvent } from "@lib/types/countdown";
 
 import AddCountdownDialog from "./dialogs/AddEventDialog";
 import EventGroupCard from "./EventGroupCard";
@@ -53,21 +54,22 @@ export default function CountdownPage() {
     setLoading(false);
   }, []);
 
-  const handleAddEvent: AddEventFn = async (date, description) => {
-    const updaterFn = await addEvent(date, description);
+  const handleAddEvent: AddEventFn = async (date, repeatFreq, description) => {
+    const updaterFn = await addEvent(date, repeatFreq, description);
     setEvents(updaterFn);
   };
 
   const handleUpdateEvent: UpdateEventFn = async (
-    id: string,
-    date: string,
-    description: string
+    id,
+    date,
+    repeatFreq,
+    description
   ) => {
-    const updaterFn = await updateEvent(id, date, description);
+    const updaterFn = await updateEvent(id, date, repeatFreq, description);
     setEvents(updaterFn);
   };
 
-  const handleDeleteEvent = async (id: string) => {
+  const handleDeleteEvent: DeleteEventFn = async (id: string) => {
     const updaterFn = await deleteEvent(id);
     setEvents(updaterFn);
   };
