@@ -1,3 +1,5 @@
+import { FB_COUNTDOWN_COLLECTION } from "@shared/countdown/constants";
+import { RepeatFrequency } from "@shared/countdown/types";
 import {
   collection,
   doc,
@@ -8,12 +10,10 @@ import {
 import * as R from "ramda";
 
 import db from "@firebase";
-import { RepeatFrequency } from "@lib/countdown/types";
 
 import { EventGroupsUpdaterFn } from "./types";
 
-const DB_NAME = "countdowns";
-export const EVENTS_REF = collection(db, DB_NAME);
+export const EVENTS_REF = collection(db, FB_COUNTDOWN_COLLECTION);
 
 const backendUpdates = {
   /**
@@ -48,12 +48,12 @@ const backendUpdates = {
     repeatFreq: RepeatFrequency,
     description: string
   ) {
-    const docRef = doc(db, DB_NAME, id);
+    const docRef = doc(db, FB_COUNTDOWN_COLLECTION, id);
     await updateDoc(docRef, { date, repeatFreq, description });
   },
 
   async deleteEvent(id: string) {
-    const docRef = doc(db, DB_NAME, id);
+    const docRef = doc(db, FB_COUNTDOWN_COLLECTION, id);
     await deleteDoc(docRef);
   },
 };

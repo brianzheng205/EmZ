@@ -18,7 +18,6 @@ export const deletePastEvents = onSchedule(
     today.setHours(0, 0, 0, 0);
 
     try {
-      // TODO move "countdowns" to lib to sync frontend and backend
       const countdownsRef = db.collection(FB_COUNTDOWN_COLLECTION);
       const querySnapshot = await countdownsRef.get();
       const batch = db.batch();
