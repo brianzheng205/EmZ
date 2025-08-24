@@ -6,23 +6,24 @@ import {
   InputLabel,
   Select,
   TextField,
+  FormHelperText,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { PickerValue } from "@mui/x-date-pickers/internals";
-import { RepeatFrequency } from "@shared/countdown/types";
-import { toDate } from "@shared/utils";
+import { RepeatFrequency } from "@shared/types";
+import { getNextDate, toDate } from "@shared/utils";
 import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
-import { toISODateStr } from "@/utils";
+import { toISODateStr, toUSDateStr } from "@/utils";
 
 import { EditEventDialogProps } from "../types";
 
-const REPEAT_FREQ_SELECT = "repeat-frequency-select";
+const REPEAT_FREQ_SELECT_ID = "repeat-frequency-select";
 const repeatFreqSelect = {
-  ID: REPEAT_FREQ_SELECT,
-  LABEL_ID: `${REPEAT_FREQ_SELECT}-label`,
+  ID: REPEAT_FREQ_SELECT_ID,
+  LABEL_ID: `${REPEAT_FREQ_SELECT_ID}-label`,
   LABEL: "Repeat Frequency",
 };
 
@@ -46,9 +47,10 @@ export default function EventDialog({
   useEffect(() => {
     if (open) {
       setDate(toDate(initialEventData.date));
+      setRepeatFreq(initialEventData.repeatFreq);
       setDescription(initialEventData.description);
     }
-  }, [open, initialEventData.date, initialEventData.description]);
+  }, [open, initialEventData]);
 
   const handleDateChange = (newDate: PickerValue) => {
     if (newDate === null) setRepeatFreq(RepeatFrequency.Never);
@@ -93,45 +95,58 @@ export default function EventDialog({
           onChange={handleDateChange}
           minDate={new Date()}
           slotProps={{
-            actionBar: {
-              actions: ["clear"],
+            field: {
+              clearable: true,
+              onClear: () => {
+                setDate(null);
+                setRepeatFreq(RepeatFrequency.Never);
+              },
             },
           }}
         />
       </LocalizationProvider>
 
-      <FormControl disabled={date === null}>
-        <InputLabel id={repeatFreqSelect.LABEL_ID}>
-          {repeatFreqSelect.LABEL}
-        </InputLabel>
+      {date !== null && (
+        <FormControl>
+          <InputLabel id={repeatFreqSelect.LABEL_ID}>
+            {repeatFreqSelect.LABEL}
+          </InputLabel>
 
-        <Select
-          labelId={repeatFreqSelect.LABEL_ID}
-          id={repeatFreqSelect.ID}
-          value={repeatFreq}
-          label={repeatFreqSelect.LABEL}
-          onChange={handleRepeatChange}
-        >
-          <MenuItem value={RepeatFrequency.Never}>
-            {RepeatFrequency.Never}
-          </MenuItem>
-          <MenuItem value={RepeatFrequency.Daily}>
-            {RepeatFrequency.Daily}
-          </MenuItem>
-          <MenuItem value={RepeatFrequency.Weekly}>
-            {RepeatFrequency.Weekly}
-          </MenuItem>
-          <MenuItem value={RepeatFrequency.Biweekly}>
-            {RepeatFrequency.Biweekly}
-          </MenuItem>
-          <MenuItem value={RepeatFrequency.Monthly}>
-            {RepeatFrequency.Monthly}
-          </MenuItem>
-          <MenuItem value={RepeatFrequency.Yearly}>
-            {RepeatFrequency.Yearly}
-          </MenuItem>
-        </Select>
-      </FormControl>
+          <Select
+            labelId={repeatFreqSelect.LABEL_ID}
+            id={repeatFreqSelect.ID}
+            value={repeatFreq}
+            label={repeatFreqSelect.LABEL}
+            onChange={handleRepeatChange}
+          >
+            <MenuItem sx={{ borderBottom: 1 }} value={RepeatFrequency.Never}>
+              {RepeatFrequency.Never}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Daily}>
+              {RepeatFrequency.Daily}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Weekly}>
+              {RepeatFrequency.Weekly}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Biweekly}>
+              {RepeatFrequency.Biweekly}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Monthly}>
+              {RepeatFrequency.Monthly}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Yearly}>
+              {RepeatFrequency.Yearly}
+            </MenuItem>
+          </Select>
+
+          <FormHelperText>
+            {repeatFreq !== RepeatFrequency.Never &&
+              `Next Repeat: ${toUSDateStr(
+                toISODateStr(getNextDate(date, repeatFreq))
+              )}`}
+          </FormHelperText>
+        </FormControl>
+      )}
 
       <TextField
         label="Description"
