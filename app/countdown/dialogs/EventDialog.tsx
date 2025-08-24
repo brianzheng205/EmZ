@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
 import { toISODateStr } from "@/utils";
-import { RepeatFrequency } from "@lib/types/countdown";
+import { RepeatFrequency } from "@lib/countdown/types";
 import { toDate } from "@lib/utils";
 
 import { EditEventDialogProps } from "../types";

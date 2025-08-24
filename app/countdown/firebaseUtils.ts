@@ -8,7 +8,7 @@ import {
 import * as R from "ramda";
 
 import db from "@firebase";
-import { RepeatFrequency } from "@lib/types/countdown";
+import { RepeatFrequency } from "@lib/countdown/types";
 
 import { EventGroupsUpdaterFn } from "./types";
 

@@ -14,7 +14,7 @@ import {
   GroupedEvents,
   UpdateEventFn,
 } from "@/countdown/types";
-import { FbEvent } from "@lib/types/countdown";
+import { FbEvent } from "@lib/countdown/types";
 
 import AddCountdownDialog from "./dialogs/AddEventDialog";
 import EventGroupCard from "./EventGroupCard";
