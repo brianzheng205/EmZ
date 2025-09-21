@@ -75,11 +75,11 @@ export default function CountdownPage() {
   };
 
   return (
-    <Container sx={{ padding: 2 }}>
+    <Container sx={{ padding: 2, height: loading ? "100%" : "auto" }}>
       {loading ? (
         <CenteredLoader />
       ) : (
-        <Stack sx={{ height: "100%", gap: 2 }}>
+        <Stack sx={{ gap: 2 }}>
           <Stack
             sx={{
               flexDirection: "row",
