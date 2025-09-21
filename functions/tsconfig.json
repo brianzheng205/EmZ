@@ -12,8 +12,9 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
-    }
+    },
+    "isolatedModules": true
   },
   "compileOnSave": true,
-  "include": ["src", "../shared/**/*"]
+  "include": ["src", "../test", "../shared/**/*"]
 }

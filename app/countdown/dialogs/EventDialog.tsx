@@ -14,7 +14,7 @@ import { PickerValue } from "@mui/x-date-pickers/internals";
 import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
-import { toISODateStr, toUSDateStr } from "@/utils";
+import { toLocalDateStr, toUSDateStr } from "@/utils";
 import { RepeatFrequency } from "@shared/types";
 import { getNextDate, toDate } from "@shared/utils";
 
@@ -63,7 +63,7 @@ export default function EventDialog({
 
   const handleSubmit = () => {
     if (!description) return;
-    onSubmit(toISODateStr(date), repeatFreq, description);
+    onSubmit(toLocalDateStr(date), repeatFreq, description);
     handleClose();
   };
 
@@ -131,18 +131,18 @@ export default function EventDialog({
             <MenuItem value={RepeatFrequency.Biweekly}>
               {RepeatFrequency.Biweekly}
             </MenuItem>
-            <MenuItem value={RepeatFrequency.Monthly}>
+            {/* <MenuItem value={RepeatFrequency.Monthly}>
               {RepeatFrequency.Monthly}
             </MenuItem>
             <MenuItem value={RepeatFrequency.Yearly}>
               {RepeatFrequency.Yearly}
-            </MenuItem>
+            </MenuItem> */}
           </Select>
 
           <FormHelperText>
             {repeatFreq !== RepeatFrequency.Never &&
               `Next Repeat: ${toUSDateStr(
-                toISODateStr(getNextDate(date, repeatFreq))
+                toLocalDateStr(getNextDate(date, repeatFreq))
               )}`}
           </FormHelperText>
         </FormControl>
