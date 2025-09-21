@@ -1,5 +1,6 @@
 import { RepeatFrequency, NonNeverRepeatFrequency } from "./types";
 
+// TODO: use built-in Date fn
 /**
  * Converts a dateStr in "YYYY-MM-DD" to a Date object in local time.
  * Returns null if the string is empty.
@@ -51,10 +52,10 @@ export const getNextDate = (
       return addWeeks(date, 1);
     case RepeatFrequency.Biweekly:
       return addWeeks(date, 2);
-    case RepeatFrequency.Monthly:
-      return addMonths(date, 1);
-    case RepeatFrequency.Yearly:
-      return addYears(date, 1);
+    // case RepeatFrequency.Monthly:
+    //   return addMonths(date, 1);
+    // case RepeatFrequency.Yearly:
+    //   return addYears(date, 1);
     default:
       console.log("Unsupported repeat frequency:", repeatFreq);
       return date;

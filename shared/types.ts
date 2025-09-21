@@ -3,8 +3,8 @@ export enum RepeatFrequency {
   Daily = "Daily",
   Weekly = "Weekly",
   Biweekly = "Biweekly",
-  Monthly = "Monthly",
-  Yearly = "Yearly",
+  // Monthly = "Monthly",
+  // Yearly = "Yearly",
 }
 
 export type NonNeverRepeatFrequency = Exclude<
