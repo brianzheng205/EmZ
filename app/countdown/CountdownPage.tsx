@@ -2,7 +2,6 @@
 
 import { Add } from "@mui/icons-material";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
-import { FbEvent } from "@shared/countdown/types";
 import { getDocs } from "firebase/firestore";
 import * as R from "ramda";
 import { useState, useEffect, useMemo } from "react";
@@ -15,6 +14,7 @@ import {
   GroupedEvents,
   UpdateEventFn,
 } from "@/countdown/types";
+import { FbEvent } from "@shared/countdown/types";
 
 import AddCountdownDialog from "./dialogs/AddEventDialog";
 import EventGroupCard from "./EventGroupCard";
@@ -75,7 +75,7 @@ export default function CountdownPage() {
   };
 
   return (
-    <Container sx={{ height: "100%", padding: 2 }}>
+    <Container sx={{ padding: 2 }}>
       {loading ? (
         <CenteredLoader />
       ) : (

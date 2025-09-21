@@ -1,5 +1,3 @@
-import { FB_COUNTDOWN_COLLECTION } from "@shared/countdown/constants";
-import { RepeatFrequency } from "@shared/types";
 import {
   collection,
   doc,
@@ -10,6 +8,8 @@ import {
 import * as R from "ramda";
 
 import db from "@firebase";
+import { FB_COUNTDOWN_COLLECTION } from "@shared/countdown/constants";
+import { RepeatFrequency } from "@shared/types";
 
 import { EventGroupsUpdaterFn } from "./types";
 
