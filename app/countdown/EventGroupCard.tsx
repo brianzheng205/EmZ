@@ -2,6 +2,7 @@
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import RepeatIcon from "@mui/icons-material/Repeat";
 import {
   Card,
   CardHeader,
@@ -14,6 +15,7 @@ import * as R from "ramda";
 import { useEffect, useState } from "react";
 
 import { toUSDateStr } from "@/utils";
+import { RepeatFrequency } from "@shared/types";
 import { toDate } from "shared/utils";
 
 import EditCountdownDialog from "./dialogs/EditEventDialog";
@@ -56,7 +58,6 @@ function EventContent({
   }, [event]);
 
   const handleEdit = () => {
-    // Update editing input states
     setDate(event.date);
     setRepeatFreq(event.repeatFreq);
     setDescription(event.description);
@@ -66,7 +67,6 @@ function EventContent({
   return (
     <>
       <Stack
-        // TODO remove unnecessary styling
         sx={{
           flexDirection: "row",
           alignItems: "flex-start",
@@ -74,16 +74,21 @@ function EventContent({
           gap: 1,
         }}
       >
-        <Typography
-          variant="body1"
-          gutterBottom
-          sx={{
-            overflow: "hidden",
-            wordBreak: "break-word",
-          }}
-        >
-          {description}
-        </Typography>
+        {
+          <Stack>
+            <Typography>{description}</Typography>
+            {event.repeatFreq !== RepeatFrequency.Never && (
+              <Stack
+                sx={{ flexDirection: "row", alignItems: "center", gap: 0.5 }}
+              >
+                <RepeatIcon fontSize="small" color="disabled" />
+                <Typography variant="caption" color="text.secondary">
+                  {event.repeatFreq}
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
+        }
         <Stack sx={{ flexDirection: "row" }}>
           <IconButton
             aria-label="edit"
@@ -126,29 +131,22 @@ export default function EventGroupCard({
   onDelete,
 }: EventGroupCardProps) {
   return (
-    <>
-      <Card
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <CardHeader
-          title={convertDateToCountdown(date)}
-          subheader={date === "" ? "D-∞" : toUSDateStr(date)}
-        />
+    <Card>
+      <CardHeader
+        title={convertDateToCountdown(date)}
+        subheader={date === "" ? "D-∞" : toUSDateStr(date)}
+      />
 
-        <CardContent>
-          {events.map((event, index) => (
-            <EventContent
-              key={index}
-              event={event}
-              onEditSubmit={onEditSubmit}
-              onDelete={onDelete}
-            />
-          ))}
-        </CardContent>
-      </Card>
-    </>
+      <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {events.map((event, index) => (
+          <EventContent
+            key={index}
+            event={event}
+            onEditSubmit={onEditSubmit}
+            onDelete={onDelete}
+          />
+        ))}
+      </CardContent>
+    </Card>
   );
 }
