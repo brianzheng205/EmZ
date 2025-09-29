@@ -8,11 +8,12 @@ import {
 import * as R from "ramda";
 
 import db from "@firebase";
+import { FB_COUNTDOWN_COLLECTION } from "@shared/countdown/constants";
+import { RepeatFrequency } from "@shared/types";
 
 import { EventGroupsUpdaterFn } from "./types";
 
-const DB_NAME = "countdowns";
-export const EVENTS_REF = collection(db, DB_NAME);
+export const EVENTS_REF = collection(db, FB_COUNTDOWN_COLLECTION);
 
 const backendUpdates = {
   /**
@@ -21,9 +22,14 @@ const backendUpdates = {
    * @param description
    * @returns The id of the newly created document
    */
-  async addEvent(date: string, description: string): Promise<string> {
+  async addEvent(
+    date: string,
+    repeatFreq: RepeatFrequency,
+    description: string
+  ): Promise<string> {
     const newEvent = {
       date,
+      repeatFreq,
       description,
     };
     const docRef = await addDoc(EVENTS_REF, newEvent);
@@ -33,16 +39,21 @@ const backendUpdates = {
   /**
    *
    * @param id
-   * @param newDate in YYYY-MM-DD format
-   * @param newDescription
+   * @param date in YYYY-MM-DD format
+   * @param description
    */
-  async updateEvent(id: string, newDate: string, newDescription: string) {
-    const docRef = doc(db, DB_NAME, id);
-    await updateDoc(docRef, { date: newDate, description: newDescription });
+  async updateEvent(
+    id: string,
+    date: string,
+    repeatFreq: RepeatFrequency,
+    description: string
+  ) {
+    const docRef = doc(db, FB_COUNTDOWN_COLLECTION, id);
+    await updateDoc(docRef, { date, repeatFreq, description });
   },
 
   async deleteEvent(id: string) {
-    const docRef = doc(db, DB_NAME, id);
+    const docRef = doc(db, FB_COUNTDOWN_COLLECTION, id);
     await deleteDoc(docRef);
   },
 };
@@ -56,28 +67,32 @@ const frontendUpdates = {
    * @returns
    */
   addEvent:
-    (id: string, date: string, description: string): EventGroupsUpdaterFn =>
+    (
+      id: string,
+      date: string,
+      repeatFreq: RepeatFrequency,
+      description: string
+    ): EventGroupsUpdaterFn =>
     (prevEventGroups) =>
-      [{ id, date, description }, ...R.clone(prevEventGroups)],
+      [{ id, date, repeatFreq, description }, ...R.clone(prevEventGroups)],
 
   /**
    *
    * @param id
-   * @param newDate in YYYY-MM-DD format
-   * @param newDescription
+   * @param date in YYYY-MM-DD format
+   * @param description
    * @returns
    */
   updateEvent:
     (
       id: string,
-      newDate: string,
-      newDescription: string
+      date: string,
+      repeatFreq: RepeatFrequency,
+      description: string
     ): EventGroupsUpdaterFn =>
     (prevEventGroups) =>
       prevEventGroups.map((event) =>
-        event.id === id
-          ? { ...event, date: newDate, description: newDescription }
-          : event
+        event.id === id ? { ...event, date, repeatFreq, description } : event
       ),
 
   deleteEvent:
@@ -91,11 +106,12 @@ const frontendUpdates = {
  */
 export const addEvent = async (
   date: string,
+  repeatFreq: RepeatFrequency,
   description: string
 ): Promise<EventGroupsUpdaterFn> => {
   try {
-    const id = await backendUpdates.addEvent(date, description);
-    return frontendUpdates.addEvent(id, date, description);
+    const id = await backendUpdates.addEvent(date, repeatFreq, description);
+    return frontendUpdates.addEvent(id, date, repeatFreq, description);
   } catch (error) {
     console.error(`Error adding event with date ${date}:`, error);
     return (prevEventGroups) => prevEventGroups;
@@ -108,11 +124,12 @@ export const addEvent = async (
 export const updateEvent = async (
   id: string,
   date: string,
+  repeatFreq: RepeatFrequency,
   description: string
 ): Promise<EventGroupsUpdaterFn> => {
   try {
-    await backendUpdates.updateEvent(id, date, description);
-    return frontendUpdates.updateEvent(id, date, description);
+    await backendUpdates.updateEvent(id, date, repeatFreq, description);
+    return frontendUpdates.updateEvent(id, date, repeatFreq, description);
   } catch (error) {
     console.error(`Error updating event ${id}:`, error);
     return (prevEventGroups) => prevEventGroups;

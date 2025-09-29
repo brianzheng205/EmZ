@@ -1,20 +1,35 @@
 "use client";
 
-import { toDate } from "@lib/utils";
-import { TextField } from "@mui/material";
+import {
+  FormControl,
+  MenuItem,
+  InputLabel,
+  Select,
+  TextField,
+  FormHelperText,
+} from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { PickerValue } from "@mui/x-date-pickers/internals";
 import { useState, useEffect } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
-import { toISODateStr } from "@/utils";
+import { toLocalDateStr, toUSDateStr } from "@/utils";
+import { RepeatFrequency } from "@shared/types";
+import { getNextDate, toDate } from "@shared/utils";
 
-import { EventDialogSharedProps } from "../types";
+import { EditEventDialogProps } from "../types";
 
-type EventDialogProps = EventDialogSharedProps & {
+const REPEAT_FREQ_SELECT_ID = "repeat-frequency-select";
+const repeatFreqSelect = {
+  ID: REPEAT_FREQ_SELECT_ID,
+  LABEL_ID: `${REPEAT_FREQ_SELECT_ID}-label`,
+  LABEL: "Repeat Frequency",
+};
+
+type EventDialogProps = EditEventDialogProps & {
   title: string;
   submitText: string;
-  initialInputs?: { date: string; description: string };
 };
 
 export default function EventDialog({
@@ -23,21 +38,32 @@ export default function EventDialog({
   open,
   onClose: handleClose,
   onSubmit,
-  initialInputs = { date: "", description: "" },
+  initialEventData,
 }: EventDialogProps) {
-  const [date, setDate] = useState<Date | null>(toDate(initialInputs.date));
-  const [description, setDescription] = useState(initialInputs.description);
+  const [date, setDate] = useState<Date | null>(toDate(initialEventData.date));
+  const [repeatFreq, setRepeatFreq] = useState(initialEventData.repeatFreq);
+  const [description, setDescription] = useState(initialEventData.description);
 
   useEffect(() => {
     if (open) {
-      setDate(toDate(initialInputs.date));
-      setDescription(initialInputs.description);
+      setDate(toDate(initialEventData.date));
+      setRepeatFreq(initialEventData.repeatFreq);
+      setDescription(initialEventData.description);
     }
-  }, [open, initialInputs.date, initialInputs.description]);
+  }, [open, initialEventData]);
+
+  const handleDateChange = (newDate: PickerValue) => {
+    if (newDate === null) setRepeatFreq(RepeatFrequency.Never);
+    setDate(newDate);
+  };
+
+  const handleRepeatChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRepeatFreq(event.target.value as RepeatFrequency);
+  };
 
   const handleSubmit = () => {
     if (!description) return;
-    onSubmit(toISODateStr(date), description);
+    onSubmit(toLocalDateStr(date), repeatFreq, description);
     handleClose();
   };
 
@@ -60,22 +86,67 @@ export default function EventDialog({
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        width: 500,
       }}
     >
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <DatePicker
           label="Date"
           value={date}
-          onChange={(newValue) => setDate(newValue)}
+          onChange={handleDateChange}
           minDate={new Date()}
           slotProps={{
-            actionBar: {
-              actions: ["clear"],
+            field: {
+              clearable: true,
+              onClear: () => {
+                setDate(null);
+                setRepeatFreq(RepeatFrequency.Never);
+              },
             },
           }}
         />
       </LocalizationProvider>
+
+      {date !== null && (
+        <FormControl>
+          <InputLabel id={repeatFreqSelect.LABEL_ID}>
+            {repeatFreqSelect.LABEL}
+          </InputLabel>
+
+          <Select
+            labelId={repeatFreqSelect.LABEL_ID}
+            id={repeatFreqSelect.ID}
+            value={repeatFreq}
+            label={repeatFreqSelect.LABEL}
+            onChange={handleRepeatChange}
+          >
+            <MenuItem sx={{ borderBottom: 1 }} value={RepeatFrequency.Never}>
+              {RepeatFrequency.Never}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Daily}>
+              {RepeatFrequency.Daily}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Weekly}>
+              {RepeatFrequency.Weekly}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Biweekly}>
+              {RepeatFrequency.Biweekly}
+            </MenuItem>
+            {/* <MenuItem value={RepeatFrequency.Monthly}>
+              {RepeatFrequency.Monthly}
+            </MenuItem>
+            <MenuItem value={RepeatFrequency.Yearly}>
+              {RepeatFrequency.Yearly}
+            </MenuItem> */}
+          </Select>
+
+          <FormHelperText>
+            {repeatFreq !== RepeatFrequency.Never &&
+              `Next Repeat: ${toUSDateStr(
+                toLocalDateStr(getNextDate(date, repeatFreq))
+              )}`}
+          </FormHelperText>
+        </FormControl>
+      )}
 
       <TextField
         label="Description"

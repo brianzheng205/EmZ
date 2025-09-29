@@ -53,7 +53,7 @@ export const getAdjustedDate = (date: Date) => {
  *
  * Differs from toISOString().slice(0, 10) by using local timezone rather than UTC.
  */
-export const toISODateStr = (date: Date | null): string => {
+export const toLocalDateStr = (date: Date | null): string => {
   if (date === null) return "";
 
   const year = date.getFullYear();

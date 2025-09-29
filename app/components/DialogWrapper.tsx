@@ -40,7 +40,13 @@ export default function DialogWrapper({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} sx={sx} onKeyDown={handleKeyDown}>
+    <Dialog
+      fullWidth={true}
+      open={open}
+      onClose={onClose}
+      sx={sx}
+      onKeyDown={handleKeyDown}
+    >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent sx={{ overflow: "visible", ...contentSx }}>
         {children}

@@ -11,9 +11,10 @@
     "target": "es2017",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../shared/*"] // Maps to your external lib folder
-    }
+      "@shared/*": ["../shared/*"]
+    },
+    "isolatedModules": true
   },
   "compileOnSave": true,
-  "include": ["src", "../shared/**/*"]
+  "include": ["src", "../test", "../shared/**/*"]
 }
