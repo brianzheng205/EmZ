@@ -67,13 +67,6 @@ export default function EventDialog({
     handleClose();
   };
 
-  const handleKeyPress = async (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSubmit();
-    }
-  };
-
   return (
     <DialogWrapper
       open={open}
@@ -152,7 +145,6 @@ export default function EventDialog({
         label="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        onKeyDown={handleKeyPress}
         placeholder="e.g. 4-year 'ILY' anniversary. ❤️"
         required
         fullWidth
