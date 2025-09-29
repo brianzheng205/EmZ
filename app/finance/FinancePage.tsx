@@ -494,6 +494,9 @@ export default function FinancePage() {
     };
     setBudgets((prev) => getUpdatedBudgets(prev, newBudgetEm, newBudgetZ));
 
+    await updateBudget(budgets.emily.active, [], [], newEmilyMetadata);
+    await updateBudget(budgets.brian.active, [], [], newBrianMetadata);
+
     closeEditBudgetDialog();
   };
 
