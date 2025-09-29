@@ -9,12 +9,15 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2017",
-    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
     },
     "isolatedModules": true
   },
   "compileOnSave": true,
-  "include": ["src", "../test", "../shared/**/*"]
+  "include": ["src", "../shared/**/*"],
+  "plugins": [
+    { "transform": "typescript-transform-paths" },
+    { "transform": "typescript-transform-paths", "after": true }
+  ]
 }
