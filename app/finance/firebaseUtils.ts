@@ -12,38 +12,13 @@ import {
 } from "firebase/firestore";
 import * as R from "ramda";
 
-import { fetchData, fetchDocuments } from "@/utils";
 import db from "@firebase";
 
-import { IdToBudgetNew, BudgetNew } from "./types";
+import { BudgetNew } from "./types";
 
 export const BUDGETS_COLLECTION = "budgets-v2";
 
 // BUDGETS
-
-export const fetchAllBudgets = async () => {
-  try {
-    const budgets = (await fetchDocuments(BUDGETS_COLLECTION)) as IdToBudgetNew;
-    const emilyBudgets: IdToBudgetNew = {};
-    const brianBudgets: IdToBudgetNew = {};
-
-    R.forEachObjIndexed((budget, budgetId) => {
-      if (budget.user === "emily") {
-        emilyBudgets[budgetId] = budget;
-      } else if (budget.user === "brian") {
-        brianBudgets[budgetId] = budget;
-      }
-    }, budgets);
-
-    return {
-      emily: emilyBudgets,
-      brian: brianBudgets,
-    };
-  } catch (error) {
-    console.error("Error fetching all budgets:", error);
-    return null;
-  }
-};
 
 export const createBudget = async (name: string, budgetToCopy: BudgetNew) => {
   try {
@@ -117,23 +92,6 @@ export const deleteBudgetItem = async (
 };
 
 // ACTIVE BUDGETS
-
-export const fetchActiveBudgets = async () => {
-  const [emilyBudget, brianBudget] = await Promise.all([
-    fetchData("users/emily"),
-    fetchData("users/brian"),
-  ]);
-
-  if (!emilyBudget || !brianBudget) {
-    console.error("Failed to fetch active budgets for Emily or Brian.");
-    return null;
-  }
-
-  return {
-    emilyBudget: emilyBudget.activeBudget,
-    brianBudget: brianBudget.activeBudget,
-  };
-};
 
 export const updateActiveBudget = async (
   user: "emily" | "brian",
