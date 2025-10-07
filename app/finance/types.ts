@@ -1,3 +1,19 @@
+export type BudgetItemsNew = {
+  type: "Earnings" | "Deductions" | "Expenses" | "Retirement" | "Liquid Assets";
+  name: string;
+  amount: number;
+  amountTimeSpan: "Monthly" | "Yearly"; // if amount occurs every month or every year
+  repeatFreq: "Never" | "Monthly"; // add support for "biweekly" later
+};
+
+export type BudgetNew = {
+  name: string;
+  numMonths: number;
+  user: string;
+  budgetItems: BudgetItemsNew[];
+};
+
+// OLD TYPES
 export type Time = "month" | "year";
 
 export type BudgetItem = {
