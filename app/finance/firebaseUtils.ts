@@ -1,27 +1,31 @@
 import {
   DocumentReference,
   updateDoc,
-  deleteField,
   addDoc,
   collection,
   getDoc,
   deleteDoc,
   doc,
+  writeBatch,
+  arrayRemove,
+  arrayUnion,
 } from "firebase/firestore";
 import * as R from "ramda";
 
 import { fetchData, fetchDocuments } from "@/utils";
 import db from "@firebase";
 
-import { IdToBudget, Budget } from "./types";
+import { IdToBudgetNew, BudgetNew } from "./types";
 
-const pathToString = (path: string[]) => path.join(".");
+export const BUDGETS_COLLECTION = "budgets-v2";
+
+// BUDGETS
 
 export const fetchAllBudgets = async () => {
   try {
-    const budgets = (await fetchDocuments("budgets")) as IdToBudget;
-    const emilyBudgets: IdToBudget = {};
-    const brianBudgets: IdToBudget = {};
+    const budgets = (await fetchDocuments(BUDGETS_COLLECTION)) as IdToBudgetNew;
+    const emilyBudgets: IdToBudgetNew = {};
+    const brianBudgets: IdToBudgetNew = {};
 
     R.forEachObjIndexed((budget, budgetId) => {
       if (budget.user === "emily") {
@@ -41,60 +45,7 @@ export const fetchAllBudgets = async () => {
   }
 };
 
-export const fetchActiveBudgets = async () => {
-  const [emilyBudget, brianBudget] = await Promise.all([
-    fetchData("users/emily"),
-    fetchData("users/brian"),
-  ]);
-
-  if (!emilyBudget || !brianBudget) {
-    console.error("Failed to fetch active budgets for Emily or Brian.");
-    return null;
-  }
-
-  return {
-    emilyBudget: emilyBudget.activeBudget,
-    brianBudget: brianBudget.activeBudget,
-  };
-};
-
-export const updateBudget = async (
-  docRef: DocumentReference,
-  oldPath: string[],
-  newPath: string[],
-  object: object
-) => {
-  const newPathStr = pathToString(newPath);
-  const oldPathStr = pathToString(oldPath);
-  const updates =
-    newPathStr === ""
-      ? object
-      : {
-          [newPathStr]: object,
-        };
-
-  if (oldPathStr !== newPathStr && oldPathStr !== "")
-    updates[oldPathStr] = deleteField();
-
-  try {
-    return await updateDoc(docRef, updates);
-  } catch (error) {
-    console.error("Error updating budget:", error);
-    return null;
-  }
-};
-
-export const deleteBudgetItem = async (
-  docRef: DocumentReference,
-  path: string[]
-) => {
-  const pathStr = pathToString(path);
-  return await updateDoc(docRef, {
-    [pathStr]: deleteField(),
-  });
-};
-
-export const createBudget = async (name: string, budgetToCopy: Budget) => {
+export const createBudget = async (name: string, budgetToCopy: BudgetNew) => {
   try {
     const newBudgetRef = await addDoc(collection(db, "budgets"), {
       ...R.clone(budgetToCopy),
@@ -102,7 +53,7 @@ export const createBudget = async (name: string, budgetToCopy: Budget) => {
     });
 
     const newBudgetSnap = await getDoc(newBudgetRef);
-    const newBudget = newBudgetSnap.data() as Budget;
+    const newBudget = newBudgetSnap.data() as BudgetNew;
 
     return { id: newBudgetRef.id, newBudget };
   } catch (error) {
@@ -118,6 +69,70 @@ export const deleteBudget = async (docRef: DocumentReference) => {
     console.error("Error deleting budget:", error);
     return null;
   }
+};
+
+// BUDGET ITEMS
+
+export const updateBudgetItem = async (
+  budgetId: string,
+  oldBudgetItem: BudgetNew,
+  newBudgetItem: BudgetNew
+) => {
+  try {
+    const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);
+    const batch = writeBatch(db);
+
+    batch.update(budgetDocRef, {
+      budgetItems: arrayRemove(oldBudgetItem),
+    });
+
+    batch.update(budgetDocRef, {
+      budgetItems: arrayUnion(newBudgetItem),
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error(
+      `Error updating ${oldBudgetItem} with ${newBudgetItem} in budget ${budgetId} `,
+      error
+    );
+  }
+};
+
+export const deleteBudgetItem = async (
+  budgetId: string,
+  oldBudgetItem: BudgetNew
+) => {
+  try {
+    const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);
+    await updateDoc(budgetDocRef, {
+      budgetItems: arrayRemove(oldBudgetItem),
+    });
+  } catch (error) {
+    console.error(
+      `Error deleting ${oldBudgetItem} in budget ${budgetId} `,
+      error
+    );
+  }
+};
+
+// ACTIVE BUDGETS
+
+export const fetchActiveBudgets = async () => {
+  const [emilyBudget, brianBudget] = await Promise.all([
+    fetchData("users/emily"),
+    fetchData("users/brian"),
+  ]);
+
+  if (!emilyBudget || !brianBudget) {
+    console.error("Failed to fetch active budgets for Emily or Brian.");
+    return null;
+  }
+
+  return {
+    emilyBudget: emilyBudget.activeBudget,
+    brianBudget: brianBudget.activeBudget,
+  };
 };
 
 export const updateActiveBudget = async (
