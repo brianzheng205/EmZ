@@ -253,6 +253,56 @@ export default function FinancePage() {
     });
   }, [setLoading, setBudgets]);
 
+  // const oneOffDataTransform = async () => {
+  //   const budgets = await fetchAllBudgets();
+  //   const batch = db.batch();
+  //   let count = 0;
+
+  //   for (const doc of budgets) {
+  //     if (!doc || !doc.data()) {
+  //       continue;
+  //     }
+
+  //     const data = { ...(doc.data() as Budget) };
+  //     const newData: BudgetNew[] = [];
+
+  //     R.forEachObjIndexed((categoryItems, categoryName) => {
+  //       if (!categoryItems) {
+  //         return;
+  //       }
+
+  //       R.forEachObjIndexed((item, itemName) => {
+  //         if (!item || !item.amount || !item.time || !item.isRecurring) {
+  //           return;
+  //         }
+
+  //         newData.push({
+  //           type:
+  //             categoryName === "deductions"
+  //               ? "Deductions"
+  //               : categoryName === "expenses"
+  //               ? "Expenses"
+  //               : categoryName === "savings"
+  //               ? "Retirement" // Assuming savings map to retirement
+  //               : "Earnings", // Default to Earnings for gross
+  //           name: itemName as string,
+  //           amount: item.amount,
+  //           amountTimeSpan: item.time === "month" ? "Monthly" : "Yearly",
+  //           repeatFreq: item.isRecurring ? "Monthly" : "Never",
+  //         });
+  //       }, categoryItems);
+  //     }, data.categories);
+  //     const newDocRef = doc(db, "budgets-v2", doc.id);
+  //     batch.set(newDocRef, newData);
+
+  //     count++;
+  //   }
+
+  //   if (count > 0) {
+  //     await batch.commit();
+  //   }
+  // };
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
