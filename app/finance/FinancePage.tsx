@@ -12,7 +12,12 @@ import {
 } from "@mui/material";
 import { styled, Theme, darken } from "@mui/material/styles";
 import { DataGrid, GridRowsProp } from "@mui/x-data-grid";
-import { DocumentReference, doc } from "firebase/firestore";
+import {
+  DocumentReference,
+  collection,
+  doc,
+  writeBatch,
+} from "firebase/firestore";
 import * as R from "ramda";
 import { useEffect, useState, useCallback, useMemo } from "react";
 
@@ -37,6 +42,8 @@ import {
   BudgetItemRow,
   CombinedMetadata,
   BudgetItem,
+  BudgetItemsNew,
+  BudgetNew,
 } from "./types";
 import {
   getCombinedBudgets,
@@ -253,55 +260,58 @@ export default function FinancePage() {
     });
   }, [setLoading, setBudgets]);
 
-  // const oneOffDataTransform = async () => {
-  //   const budgets = await fetchAllBudgets();
-  //   const batch = db.batch();
-  //   let count = 0;
+  const oneOffDataTransform = async () => {
+    const budgets = await fetchAllBudgets();
 
-  //   for (const doc of budgets) {
-  //     if (!doc || !doc.data()) {
-  //       continue;
-  //     }
+    if (!budgets) {
+      return;
+    }
 
-  //     const data = { ...(doc.data() as Budget) };
-  //     const newData: BudgetNew[] = [];
+    const batch = writeBatch(db);
+    let count = 0;
 
-  //     R.forEachObjIndexed((categoryItems, categoryName) => {
-  //       if (!categoryItems) {
-  //         return;
-  //       }
+    R.forEach(
+      (idToBudget) =>
+        R.forEach((budget) => {
+          const newBudgetItems: BudgetItemsNew[] = [];
 
-  //       R.forEachObjIndexed((item, itemName) => {
-  //         if (!item || !item.amount || !item.time || !item.isRecurring) {
-  //           return;
-  //         }
+          R.forEachObjIndexed((categoryItems, categoryName) => {
+            R.forEachObjIndexed((item, itemName) => {
+              newBudgetItems.push({
+                type:
+                  categoryName === "deductions"
+                    ? "Deductions"
+                    : categoryName === "expenses"
+                    ? "Expenses"
+                    : categoryName === "savings"
+                    ? "Retirement" // Assuming savings map to retirement
+                    : "Earnings", // Default to Earnings for gross
+                name: itemName as string,
+                amount: item.amount || 0,
+                amountTimeSpan: item.time === "month" ? "Monthly" : "Yearly",
+                repeatFreq: item.isRecurring ? "Monthly" : "Never",
+              });
+            }, categoryItems);
+          }, budget.categories);
 
-  //         newData.push({
-  //           type:
-  //             categoryName === "deductions"
-  //               ? "Deductions"
-  //               : categoryName === "expenses"
-  //               ? "Expenses"
-  //               : categoryName === "savings"
-  //               ? "Retirement" // Assuming savings map to retirement
-  //               : "Earnings", // Default to Earnings for gross
-  //           name: itemName as string,
-  //           amount: item.amount,
-  //           amountTimeSpan: item.time === "month" ? "Monthly" : "Yearly",
-  //           repeatFreq: item.isRecurring ? "Monthly" : "Never",
-  //         });
-  //       }, categoryItems);
-  //     }, data.categories);
-  //     const newDocRef = doc(db, "budgets-v2", doc.id);
-  //     batch.set(newDocRef, newData);
+          const newBudget: BudgetNew = {
+            name: budget.name,
+            numMonths: budget.numMonths,
+            user: budget.user,
+            budgetItems: newBudgetItems,
+          };
 
-  //     count++;
-  //   }
+          const newDocRef = doc(collection(db, "budgets-v2"));
+          batch.set(newDocRef, newBudget);
+          count++;
+        }, R.values(idToBudget)),
+      R.values(budgets)
+    );
 
-  //   if (count > 0) {
-  //     await batch.commit();
-  //   }
-  // };
+    if (count > 0) {
+      await batch.commit();
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -633,6 +643,7 @@ export default function FinancePage() {
 
   return (
     <Container>
+      <Button onClick={oneOffDataTransform}>Transform Data</Button>
       <Stack
         sx={{
           gap: 1,
