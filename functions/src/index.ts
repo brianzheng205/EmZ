@@ -5,4 +5,3 @@ initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
 export { default as updateFutureEvents } from "./countdown/updateFutureEvents";
-export { default as oneOffDataTransform } from "./countdown/oneOffDataTransform";
