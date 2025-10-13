@@ -1,120 +1,47 @@
-export type BudgetItemsNew = {
-  type: "Earnings" | "Deductions" | "Expenses" | "Retirement" | "Liquid Assets";
+export type BudgetItem = {
+  type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
   name: string;
   amount: number;
   amountTimeSpan: "Monthly" | "Yearly"; // if amount occurs every month or every year
   repeatFreq: "Never" | "Monthly"; // add support for "biweekly" later
 };
 
-export type BudgetNew = {
+export type Budget = {
   name: string;
   numMonths: number;
   user: string;
-  budgetItems: BudgetItemsNew[];
+  budgetItems: BudgetItem[];
 };
 
-export type IdToBudgetNew = {
-  [id: string]: BudgetNew;
+export type IdToBudget = {
+  [id: string]: Budget;
 };
 
-// OLD TYPES
-// export type Time = "month" | "year";
+export type CalculatedBudgetItem = {
+  type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
+  name: string;
+  amountMonthly: number;
+  amountYearly: number;
+  amountTimeSpan: "Monthly" | "Yearly"; // if amount occurs every month or every year
+  repeatFreq: "Never" | "Monthly"; // add support for "biweekly" later
+};
 
-// export type BudgetItem = {
-//   amount: number;
-//   time: Time;
-//   isRecurring?: boolean;
-// };
+export type CalculatedCategory = {
+  name: string;
+  sumMonthly: number;
+  sumYearly: number;
+};
 
-// type CategoryItems = {
-//   [name: string]: BudgetItem;
-// };
+export type BudgetItemCategory = CalculatedCategory & {
+  items: CalculatedBudgetItem[];
+};
 
-// export type Metadata = {
-//   name: string;
-//   numMonths: number;
-//   user: string;
-// };
-
-// export type Budget = Metadata & {
-//   categories: {
-//     gross: CategoryItems;
-//     deductions: CategoryItems;
-//     expenses: CategoryItems;
-//     savings: CategoryItems;
-//   };
-// };
-
-// export type BudgetWithId = Budget & {
-//   id: string;
-// };
-
-// export type CombinedBudgetItem = {
-//   emily: BudgetItem;
-//   brian: BudgetItem;
-// };
-
-// export type CombinedCategoryItems = {
-//   [name: string]: CombinedBudgetItem;
-// };
-
-// export type CombinedMetadata = {
-//   emilyMetadata: Metadata;
-//   brianMetadata: Metadata;
-// };
-
-// export type CombinedBudget = CombinedMetadata & {
-//   categories: {
-//     gross: CombinedCategoryItems;
-//     deductions: CombinedCategoryItems;
-//     expenses: CombinedCategoryItems;
-//     savings: CombinedCategoryItems;
-//   };
-// };
-
-// export type IdToBudget = {
-//   [id: string]: Budget;
-// };
-
-// export type Category = keyof CombinedBudget["categories"];
-
-// export type BudgetItemRowWithoutDividers = {
-//   id: string;
-//   status?: string;
-//   category?: string;
-//   name: string;
-//   isRecurring: boolean;
-//   monthlyEmAmount: number;
-//   yearlyEmAmount: number;
-//   monthlyZAmount: number;
-//   yearlyZAmount: number;
-//   yearlySalaryEm?: number;
-//   yearlySalaryZ?: number;
-// };
-
-// export type BudgetItemRow = Required<Pick<BudgetSumsRow, "category">> &
-//   Omit<BudgetSumsRow, "category">;
-
-// export type BudgetSumsRow = BudgetItemRowWithoutDividers & {
-//   monthlyEmDivider: number;
-//   yearlyEmDivider: number;
-//   monthlyZDivider: number;
-//   yearlyZDivider: number;
-// };
-
-// export type Dividers = {
-//   monthlyGross: number;
-//   yearlyGross: number;
-//   monthlyTakeHome: number;
-//   yearlyTakeHome: number;
-// };
-
-// export type TaxBracket = {
-//   cap: number | "Infinity";
-//   rate: number;
-// };
-
-// export type TaxBracketFinite = {
-//   cap: number;
-//   rate: number;
-// };
+export type CalculatedCategories = {
+  earnings: BudgetItemCategory;
+  deductions: BudgetItemCategory;
+  taxes: CalculatedCategory;
+  takeHome: CalculatedCategory;
+  expenses: BudgetItemCategory;
+  retirement: BudgetItemCategory;
+  liquidAssets: CalculatedCategory;
+};

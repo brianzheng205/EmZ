@@ -9,7 +9,8 @@ import LoadingContainer from "@/components/LoadingContainer";
 import { fetchData, fetchDocuments } from "@/utils";
 
 import { BUDGETS_COLLECTION } from "./firebaseUtils";
-import { BudgetNew, IdToBudgetNew } from "./types";
+import { Budget, IdToBudget } from "./types";
+import { getCalculatedCategories } from "./utils";
 
 // function BudgetAccordion() {
 //   return null;
@@ -21,10 +22,10 @@ import { BudgetNew, IdToBudgetNew } from "./types";
 
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
-  const [budgets, setBudgets] = useState<IdToBudgetNew>({});
+  const [budgets, setBudgets] = useState<IdToBudget>({});
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
 
-  const activeBudgets: BudgetNew[] = useMemo(
+  const activeBudgets: Budget[] = useMemo(
     () => R.values(R.pick(activeBudgetIds, budgets)),
     [activeBudgetIds, budgets]
   );
@@ -50,7 +51,7 @@ export default function FinancePage() {
       try {
         const budgetsData = (await fetchDocuments(
           BUDGETS_COLLECTION
-        )) as IdToBudgetNew;
+        )) as IdToBudget;
         setBudgets(budgetsData);
       } catch (error) {
         console.error("Error fetching all budgets:", error);
@@ -63,15 +64,22 @@ export default function FinancePage() {
     setLoading(false);
   }, []);
 
-  console.log(R.propOr(null, activeBudgetIds[0] || "", budgets));
+  const firstBudgetExists =
+    activeBudgetIds.length > 0 && activeBudgetIds[0] in budgets;
+
+  const firstActiveBudget = budgets[activeBudgetIds[0]];
+  console.log(firstActiveBudget);
+
+  const calculatedCategories = getCalculatedCategories(firstActiveBudget);
+  console.log(calculatedCategories);
 
   return (
     <LoadingContainer loading={loading}>
-      {activeBudgets[0] && (
+      {firstBudgetExists && (
         <Stack sx={{ gap: 2 }}>
           <Typography variant="h1">{activeBudgets[0].name}</Typography>
-          <Typography>{activeBudgets[0].user}</Typography>
-          <Typography>{activeBudgets[0].numMonths}</Typography>
+          <Typography>Owner: {activeBudgets[0].user}</Typography>
+          <Typography>Num Months: {activeBudgets[0].numMonths}</Typography>
         </Stack>
       )}
     </LoadingContainer>
