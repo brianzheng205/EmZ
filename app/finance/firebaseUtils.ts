@@ -14,13 +14,13 @@ import * as R from "ramda";
 
 import db from "@firebase";
 
-import { Budget } from "./types";
+import { FbBudget } from "./types";
 
 export const BUDGETS_COLLECTION = "budgets-v2";
 
 // BUDGETS
 
-export const createBudget = async (name: string, budgetToCopy: Budget) => {
+export const createBudget = async (name: string, budgetToCopy: FbBudget) => {
   try {
     const newBudgetRef = await addDoc(collection(db, "budgets"), {
       ...R.clone(budgetToCopy),
@@ -28,7 +28,7 @@ export const createBudget = async (name: string, budgetToCopy: Budget) => {
     });
 
     const newBudgetSnap = await getDoc(newBudgetRef);
-    const newBudget = newBudgetSnap.data() as Budget;
+    const newBudget = newBudgetSnap.data() as FbBudget;
 
     return { id: newBudgetRef.id, newBudget };
   } catch (error) {
@@ -50,8 +50,8 @@ export const deleteBudget = async (docRef: DocumentReference) => {
 
 export const updateBudgetItem = async (
   budgetId: string,
-  oldBudgetItem: Budget,
-  newBudgetItem: Budget
+  oldBudgetItem: FbBudget,
+  newBudgetItem: FbBudget
 ) => {
   try {
     const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);
@@ -76,7 +76,7 @@ export const updateBudgetItem = async (
 
 export const deleteBudgetItem = async (
   budgetId: string,
-  oldBudgetItem: Budget
+  oldBudgetItem: FbBudget
 ) => {
   try {
     const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);

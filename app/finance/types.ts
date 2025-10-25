@@ -1,4 +1,4 @@
-export type BudgetItem = {
+export type FbBudgetItem = {
   type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
   name: string;
   amount: number;
@@ -6,18 +6,18 @@ export type BudgetItem = {
   repeatFreq: "Never" | "Monthly"; // add support for "biweekly" later
 };
 
-export type Budget = {
+export type FbBudget = {
   name: string;
   numMonths: number;
   user: string;
-  budgetItems: BudgetItem[];
+  budgetItems: FbBudgetItem[];
 };
 
 export type IdToBudget = {
-  [id: string]: Budget;
+  [id: string]: FbBudget;
 };
 
-export type CalculatedBudgetItem = {
+export type BudgetItem = {
   type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
   name: string;
   amountMonthly: number;
@@ -33,7 +33,7 @@ export type CalculatedCategory = {
 };
 
 export type BudgetItemCategory = CalculatedCategory & {
-  items: CalculatedBudgetItem[];
+  items: BudgetItem[];
 };
 
 export type CalculatedCategories = {
@@ -44,4 +44,11 @@ export type CalculatedCategories = {
   expenses: BudgetItemCategory;
   retirement: BudgetItemCategory;
   liquidAssets: CalculatedCategory;
+};
+
+export type CalculatedBudget = {
+  name: string;
+  numMonths: number;
+  user: string;
+  categories: CalculatedCategories;
 };

@@ -1,4 +1,4 @@
-import { Budget, CalculatedCategories } from "./types";
+import { FbBudget, CalculatedBudget, CalculatedCategories } from "./types";
 
 /**
  * Converts `amount` into `amountMonthly` and `amountYearly` based on `amountTimeSpan`
@@ -6,9 +6,7 @@ import { Budget, CalculatedCategories } from "./types";
  *
  * @param budgetItems - a budget's items
  */
-export const getCalculatedCategories = (
-  budget: Budget
-): CalculatedCategories => {
+export const getCalculatedCategories = (budget: FbBudget): CalculatedBudget => {
   const budgetItems = budget.budgetItems;
 
   const categories: CalculatedCategories = {
@@ -27,7 +25,9 @@ export const getCalculatedCategories = (
 
   budgetItems.forEach((item) => {
     const amountMonthly =
-      item.amountTimeSpan === "Monthly"
+      item.repeatFreq === "Never"
+        ? 0
+        : item.amountTimeSpan === "Monthly"
         ? item.amount
         : item.amount / budget.numMonths;
     const amountYearly =
@@ -66,7 +66,7 @@ export const getCalculatedCategories = (
     categories.earnings.sumYearly - categories.deductions.sumYearly;
 
   // taxes based on taxable income
-  const TEMP_TAX_RATE = 0.25; // flat 25% tax rate for simplicity. TODO: implement real tax estimates
+  const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
   categories.taxes.sumMonthly = taxableIncomeMonthly * TEMP_TAX_RATE;
   categories.taxes.sumYearly = taxableIncomeYearly * TEMP_TAX_RATE;
 
@@ -86,5 +86,10 @@ export const getCalculatedCategories = (
     categories.retirement.sumYearly -
     categories.expenses.sumYearly;
 
-  return categories;
+  return {
+    name: budget.name,
+    numMonths: budget.numMonths,
+    user: budget.user,
+    categories,
+  };
 };
