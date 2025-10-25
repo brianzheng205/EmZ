@@ -18,7 +18,7 @@ export type IdToBudget = {
 };
 
 export type BudgetItem = {
-  type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
+  type: "Earnings" | "Deductions" | "Expenses" | "Retirement" | "Liquid Assets";
   name: string;
   amountMonthly: number;
   amountYearly: number;
@@ -26,24 +26,24 @@ export type BudgetItem = {
   repeatFreq: "Never" | "Monthly"; // add support for "biweekly" later
 };
 
-export type CalculatedCategory = {
+export type CategoryWithNoItems = {
   name: string;
   sumMonthly: number;
   sumYearly: number;
 };
 
-export type BudgetItemCategory = CalculatedCategory & {
+export type CategoryWithItems = CategoryWithNoItems & {
   items: BudgetItem[];
 };
 
 export type CalculatedCategories = {
-  earnings: BudgetItemCategory;
-  deductions: BudgetItemCategory;
-  taxes: CalculatedCategory;
-  takeHome: CalculatedCategory;
-  expenses: BudgetItemCategory;
-  retirement: BudgetItemCategory;
-  liquidAssets: CalculatedCategory;
+  earnings: CategoryWithItems;
+  deductions: CategoryWithItems;
+  taxes: CategoryWithNoItems;
+  takeHome: CategoryWithNoItems;
+  expenses: CategoryWithItems;
+  retirement: CategoryWithItems;
+  liquidAssets: CategoryWithItems;
 };
 
 export type CalculatedBudget = {

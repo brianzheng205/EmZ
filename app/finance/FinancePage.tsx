@@ -65,7 +65,7 @@ export default function FinancePage() {
   return (
     <LoadingContainer loading={loading}>
       {activeBudgets.length > 0 ? (
-        <Stack sx={{ gap: 2 }}>
+        <Stack sx={{ gap: 2, marginBottom: 4 }}>
           <Typography variant="h1">{activeBudgets[0].name}</Typography>
           <Typography>Owner: {activeBudgets[0].user}</Typography>
           <Typography>Num Months: {activeBudgets[0].numMonths}</Typography>

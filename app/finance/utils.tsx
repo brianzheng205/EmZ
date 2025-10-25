@@ -1,5 +1,10 @@
 import { FbBudget, CalculatedBudget, CalculatedCategories } from "./types";
 
+const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
+
+const TEMP_RSU_TAX_RATE = 0.24; // flat tax rate for post-vesting RSU income
+const TEMP_RSU_TAKE_HOME_RATE = 1 - TEMP_RSU_TAX_RATE;
+
 /**
  * Converts `amount` into `amountMonthly` and `amountYearly` based on `amountTimeSpan`
  * and calculates calculated budget items such as sums of categories, taxes, and take home.
@@ -20,6 +25,7 @@ export const getCalculatedCategories = (budget: FbBudget): CalculatedBudget => {
       name: "Liquid Assets",
       sumMonthly: 0,
       sumYearly: 0,
+      items: [],
     },
   };
 
@@ -59,22 +65,38 @@ export const getCalculatedCategories = (budget: FbBudget): CalculatedBudget => {
     });
   });
 
-  // taxable income = earnings - deductions
-  const taxableIncomeMonthly =
-    categories.earnings.sumMonthly - categories.deductions.sumMonthly;
-  const taxableIncomeYearly =
-    categories.earnings.sumYearly - categories.deductions.sumYearly;
+  const RSU = categories.earnings.items.find((i) => i.name === "RSU") || {
+    amountMonthly: 0,
+    amountYearly: 0,
+  };
+
+  // earnings
+  const totalEarningsMonthly = categories.earnings.sumMonthly;
+  const totalEarningsYearly = categories.earnings.sumYearly;
+
+  // taxable RSU
+  const taxableRSUMonthly = RSU.amountMonthly;
+  const taxableRSUYearly = RSU.amountYearly;
+
+  // taxable income without RSU = (earnings - RSU) - deductions
+  const taxableIncomeNoRSUMonthly =
+    totalEarningsMonthly - taxableRSUMonthly - categories.deductions.sumMonthly;
+  const taxableIncomeNoRSUYearly =
+    totalEarningsYearly - taxableRSUYearly - categories.deductions.sumYearly;
 
   // taxes based on taxable income
-  const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
-  categories.taxes.sumMonthly = taxableIncomeMonthly * TEMP_TAX_RATE;
-  categories.taxes.sumYearly = taxableIncomeYearly * TEMP_TAX_RATE;
+  categories.taxes.sumMonthly =
+    taxableIncomeNoRSUMonthly * TEMP_TAX_RATE +
+    taxableRSUMonthly * TEMP_RSU_TAX_RATE;
+  categories.taxes.sumYearly =
+    taxableIncomeNoRSUYearly * TEMP_TAX_RATE +
+    taxableRSUYearly * TEMP_RSU_TAX_RATE;
 
   // take home = taxable income - taxes
   categories.takeHome.sumMonthly =
-    taxableIncomeMonthly - categories.taxes.sumMonthly;
+    totalEarningsMonthly - categories.taxes.sumMonthly;
   categories.takeHome.sumYearly =
-    taxableIncomeYearly - categories.taxes.sumYearly;
+    totalEarningsYearly - categories.taxes.sumYearly;
 
   // liquid assets = take home - retirement - expenses
   categories.liquidAssets.sumMonthly =
@@ -85,6 +107,31 @@ export const getCalculatedCategories = (budget: FbBudget): CalculatedBudget => {
     categories.takeHome.sumYearly -
     categories.retirement.sumYearly -
     categories.expenses.sumYearly;
+
+  // split liqiuid assets = post-tax RSU + remaining
+
+  const postTaxRSUMonthly = RSU.amountMonthly * TEMP_RSU_TAKE_HOME_RATE;
+  const postTaxRSUYearly = RSU.amountYearly * TEMP_RSU_TAKE_HOME_RATE;
+  const remainingMonthly =
+    categories.liquidAssets.sumMonthly - postTaxRSUMonthly;
+  const remainingYearly = categories.liquidAssets.sumYearly - postTaxRSUYearly;
+
+  categories.liquidAssets.items.push({
+    type: "Liquid Assets",
+    name: "Post-Tax RSU",
+    amountMonthly: postTaxRSUMonthly,
+    amountYearly: postTaxRSUYearly,
+    amountTimeSpan: "Monthly",
+    repeatFreq: "Monthly",
+  });
+  categories.liquidAssets.items.push({
+    type: "Liquid Assets",
+    name: "Remaining",
+    amountMonthly: remainingMonthly,
+    amountYearly: remainingYearly,
+    amountTimeSpan: "Monthly",
+    repeatFreq: "Monthly",
+  });
 
   return {
     name: budget.name,
