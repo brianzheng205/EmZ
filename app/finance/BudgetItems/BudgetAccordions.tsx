@@ -9,18 +9,18 @@ import {
 } from "@mui/material";
 
 import {
-  BudgetItemCategory,
+  CategoryWithItems,
   CalculatedBudget,
   BudgetItem,
   CalculatedCategories,
-  CalculatedCategory,
+  CategoryWithNoItems,
 } from "../types";
 
 import { BudgetAmountCell } from "./BudgetCells";
 import { VARIANT } from "./constants";
 
 interface CategorySummaryProps {
-  category: CalculatedCategory;
+  category: CategoryWithItems | CategoryWithNoItems;
 }
 
 function CategorySummary({ category }: CategorySummaryProps) {
@@ -62,29 +62,24 @@ function CategoryItem({ item }: CategoryItemProps) {
 }
 
 interface BudgetAccordionProps {
-  categoryKey: keyof CalculatedCategories;
-  category: BudgetItemCategory | CalculatedCategory;
+  category: CategoryWithItems | CategoryWithNoItems;
 }
 
-function CategoryAccordion({ categoryKey, category }: BudgetAccordionProps) {
-  return ["earnings", "deductions", "expenses", "retirement"].includes(
-    categoryKey
-  ) ? (
-    <Accordion>
+function CategoryAccordion({ category }: BudgetAccordionProps) {
+  const hasItems = "items" in category;
+
+  return (
+    <Accordion disabled={!hasItems} sx={{ margin: 0 }}>
       <AccordionSummary>
-        <CategorySummary category={category as CalculatedCategory} />
+        <CategorySummary category={category as CategoryWithItems} />
       </AccordionSummary>
-      <AccordionDetails>
-        {(category as BudgetItemCategory).items.map((item) => (
-          <CategoryItem key={item.name} item={item} />
-        ))}
-      </AccordionDetails>
-    </Accordion>
-  ) : (
-    <Accordion disabled>
-      <AccordionSummary>
-        <CategorySummary category={category as CalculatedCategory} />
-      </AccordionSummary>
+      {hasItems && (
+        <AccordionDetails sx={{ margin: 0 }}>
+          {(category as CategoryWithItems).items.map((item) => (
+            <CategoryItem key={item.name} item={item} />
+          ))}
+        </AccordionDetails>
+      )}
     </Accordion>
   );
 }
@@ -98,17 +93,21 @@ export default function BudgetAccordions({
 }: BudgetAccordionsProps) {
   // properties for just the first active budget
   const categories = activeBudgets[0].categories;
-  console.log(categories);
+  const categoryOrder: (keyof CalculatedCategories)[] = [
+    "earnings",
+    "deductions",
+    "taxes",
+    "takeHome",
+    "expenses",
+    "retirement",
+    "liquidAssets",
+  ];
 
   // TODO: add support for multiple active budgets. For now, just show the first one.
   return (
     <>
-      {Object.entries(categories).map(([key, category]) => (
-        <CategoryAccordion
-          key={key}
-          categoryKey={key as keyof CalculatedCategories}
-          category={category}
-        />
+      {categoryOrder.map((key) => (
+        <CategoryAccordion key={key} category={categories[key]} />
       ))}
     </>
   );
