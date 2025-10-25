@@ -8,25 +8,23 @@ import { useEffect, useMemo, useState } from "react";
 import LoadingContainer from "@/components/LoadingContainer";
 import { fetchData, fetchDocuments } from "@/utils";
 
+import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
 import { BUDGETS_COLLECTION } from "./firebaseUtils";
-import { Budget, IdToBudget } from "./types";
+import { CalculatedBudget, IdToBudget } from "./types";
 import { getCalculatedCategories } from "./utils";
-
-// function BudgetAccordion() {
-//   return null;
-// }
-
-// function BudgetAccordions() {
-//   return null;
-// }
 
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [budgets, setBudgets] = useState<IdToBudget>({});
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
 
-  const activeBudgets: Budget[] = useMemo(
-    () => R.values(R.pick(activeBudgetIds, budgets)),
+  const activeBudgets: CalculatedBudget[] = useMemo(
+    () =>
+      R.pipe(
+        R.pick(activeBudgetIds),
+        R.values,
+        R.map(getCalculatedCategories)
+      )(budgets),
     [activeBudgetIds, budgets]
   );
 
@@ -64,23 +62,19 @@ export default function FinancePage() {
     setLoading(false);
   }, []);
 
-  const firstBudgetExists =
-    activeBudgetIds.length > 0 && activeBudgetIds[0] in budgets;
-
-  const firstActiveBudget = budgets[activeBudgetIds[0]];
-  console.log(firstActiveBudget);
-
-  const calculatedCategories = getCalculatedCategories(firstActiveBudget);
-  console.log(calculatedCategories);
-
   return (
     <LoadingContainer loading={loading}>
-      {firstBudgetExists && (
+      {activeBudgets.length > 0 ? (
         <Stack sx={{ gap: 2 }}>
           <Typography variant="h1">{activeBudgets[0].name}</Typography>
           <Typography>Owner: {activeBudgets[0].user}</Typography>
           <Typography>Num Months: {activeBudgets[0].numMonths}</Typography>
+
+          <BudgetHeaders />
+          <BudgetAccordions activeBudgets={activeBudgets} />
         </Stack>
+      ) : (
+        <Typography>No active budgets.</Typography>
       )}
     </LoadingContainer>
   );
