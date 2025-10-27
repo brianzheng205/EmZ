@@ -1,5 +1,7 @@
-import { Box, TextField, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useState } from "react";
+
+import { TextFieldWrapper } from "@/components/TextFieldWrapper";
 
 import { VARIANT } from "./constants";
 
@@ -25,7 +27,7 @@ export function BudgetAmountCell({
     setEditMode(true);
   };
 
-  const handleBlur = () => {
+  const handleSubmit = () => {
     setEditMode(false);
     if (editable) {
       onActiveBudgetItemChange(amount);
@@ -36,19 +38,17 @@ export function BudgetAmountCell({
     <Box
       sx={{
         display: "flex",
-        width: "100%",
         justifyContent: "flex-end",
-        overflow: "hidden",
       }}
     >
       {editMode ? (
-        <TextField
+        <TextFieldWrapper
+          hiddenLabel
           type="number"
           value={amount}
           onChange={(e) => setAmount(Number(e.target.value) || 0)}
-          onBlur={handleBlur}
+          handleSubmit={handleSubmit}
           autoFocus
-          sx={{ width: "100%", textAlign: "right" }}
         />
       ) : (
         <Typography
