@@ -7,14 +7,11 @@ export type FbBudgetItem = {
 };
 
 export type FbBudget = {
+  id: string;
   name: string;
   numMonths: number;
   user: string;
   budgetItems: FbBudgetItem[];
-};
-
-export type IdToBudget = {
-  [id: string]: FbBudget;
 };
 
 export type BudgetItem = {
@@ -47,8 +44,21 @@ export type CalculatedCategories = {
 };
 
 export type CalculatedBudget = {
+  id: string;
   name: string;
   numMonths: number;
   user: string;
   categories: CalculatedCategories;
 };
+
+// functions
+export type OnActiveBudgetItemChangeFn = (
+  budgetId: string,
+  oldItem: BudgetItem,
+  newItem: FbBudgetItem
+) => void;
+export type OnActiveItemChangeFn = (
+  oldItem: BudgetItem,
+  newItem: FbBudgetItem
+) => void;
+export type OnItemChangeFn = (newItem: FbBudgetItem) => void;

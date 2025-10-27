@@ -10,7 +10,7 @@ import * as R from "ramda";
 import db from "@firebase";
 
 // FIREBASE
-export const fetchDocuments = async (
+export const fetchDocumentsMap = async (
   collectionName: string
 ): Promise<{ [id: string]: object }> => {
   const collectionRef = collection(db, collectionName);
@@ -21,6 +21,15 @@ export const fetchDocuments = async (
     docs[doc.id] = doc.data();
   });
   return docs;
+};
+
+export const fetchDocuments = async (
+  collectionName: string
+): Promise<object[]> => {
+  const collectionRef = collection(db, collectionName);
+  const querySnapshot = await getDocs(collectionRef);
+
+  return querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 };
 
 export const fetchDocument = async (docRef: DocumentReference) => {
