@@ -14,7 +14,7 @@ import * as R from "ramda";
 
 import db from "@firebase";
 
-import { FbBudget } from "./types";
+import { FbBudget, FbBudgetItem } from "./types";
 
 export const BUDGETS_COLLECTION = "budgets-v2";
 
@@ -50,8 +50,8 @@ export const deleteBudget = async (docRef: DocumentReference) => {
 
 export const updateBudgetItem = async (
   budgetId: string,
-  oldBudgetItem: FbBudget,
-  newBudgetItem: FbBudget
+  oldBudgetItem: FbBudgetItem,
+  newBudgetItem: FbBudgetItem
 ) => {
   try {
     const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);
