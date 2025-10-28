@@ -50,7 +50,9 @@ export default function ContentSearchBar({
 
       setOptions(
         data.results.filter(
-          (item) => item.media_type !== "person" && !rowIds.has(item.id)
+          (item) =>
+            (item.media_type == "tv" || item.media_type == "movie") &&
+            !rowIds.has(item.id)
         )
       );
       setLoading(false);
@@ -97,7 +99,7 @@ export default function ContentSearchBar({
             part["episodes"] = 1;
             part["ongoing"] = false;
             part["watch_providers"] =
-              collection["watch/providers"].results?.US || [];
+              collection["watch/providers"]?.results?.US || [];
 
             addContentToFirebase(part as EmZContent);
           }
@@ -158,7 +160,7 @@ export default function ContentSearchBar({
               key={option.id}
               src={`https://image.tmdb.org/t/p/w500/${option.poster_path}`}
               variant="square"
-              sx={{ height: 50, width: "auto" }}
+              sx={{ height: 200, width: "auto" }}
             />
             {option.media_type === "tv"
               ? (option as TVShow).name
