@@ -9,15 +9,9 @@ import LoadingContainer from "@/components/LoadingContainer";
 import { fetchData, fetchDocuments } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
-import { BUDGETS_COLLECTION, updateBudgetItem } from "./firebaseUtils";
-import {
-  BudgetItem,
-  CalculatedBudget,
-  FbBudget,
-  FbBudgetItem,
-  OnActiveBudgetItemChangeFn,
-} from "./types";
-import { getCalculatedCategories, getFbItemFromFrontendItem } from "./utils";
+import { updateBudgetItem } from "./firebaseUtils";
+import { CalculatedBudget, FbBudget, FbBudgetItem } from "./types";
+import { getCalculatedCategories } from "./utils";
 
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
@@ -35,9 +29,18 @@ export default function FinancePage() {
 
   useEffect(() => {
     const fetchAllBudgets = async () => {
+      const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
+
+      if (!financeCollectionName) {
+        console.error(
+          "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+        );
+        return;
+      }
+
       try {
         const budgetsData = (await fetchDocuments(
-          BUDGETS_COLLECTION
+          financeCollectionName
         )) as FbBudget[];
         setBudgets(budgetsData);
       } catch (error) {
@@ -67,16 +70,11 @@ export default function FinancePage() {
     setLoading(false);
   }, []);
 
-  const onItemChange: OnActiveBudgetItemChangeFn = (
+  const onItemChange = (
     budgetId: string,
-    oldItem: BudgetItem,
-    newItem: FbBudgetItem
+    oldItemName: string,
+    newItem: Partial<FbBudgetItem>
   ) => {
-    if (oldItem.type === "Liquid Assets") {
-      console.error("Cannot change liquid assets amount");
-      return;
-    }
-
     const targetBudget = budgets.find((budget) => budget.id === budgetId);
 
     if (!targetBudget) {
@@ -84,11 +82,11 @@ export default function FinancePage() {
       return;
     }
 
-    const targetItem = targetBudget.budgetItems.find(
-      (budgetItem) => budgetItem.name === newItem.name
+    const oldFbItem = targetBudget.budgetItems.find(
+      (budgetItem) => budgetItem.name === oldItemName
     );
 
-    if (!targetItem) {
+    if (!oldFbItem) {
       console.error("Budget item not found for update.");
       return;
     }
@@ -98,7 +96,7 @@ export default function FinancePage() {
         ? {
             ...budget,
             budgetItems: budget.budgetItems.map((budgetItem) =>
-              budgetItem.name === newItem.name
+              budgetItem.name === oldItemName
                 ? { ...budgetItem, ...newItem }
                 : budgetItem
             ),
@@ -107,13 +105,11 @@ export default function FinancePage() {
     );
     setBudgets(newBudgets);
 
-    const oldFbItem = getFbItemFromFrontendItem(oldItem);
-
-    if (!oldFbItem) {
-      return;
-    }
-
-    updateBudgetItem(budgetId, oldFbItem, newItem);
+    const newFbItem = {
+      ...oldFbItem,
+      ...newItem,
+    };
+    updateBudgetItem(budgetId, oldFbItem, newFbItem);
   };
 
   return (

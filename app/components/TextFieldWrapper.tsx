@@ -18,7 +18,7 @@ export const TextFieldWrapper = ({
   };
 
   return (
-    <TextField {...props} onKeyDown={handleKeyDown} onBlur={handleSubmit}>
+    <TextField {...props} onKeyDown={handleKeyDown}>
       {children}
     </TextField>
   );

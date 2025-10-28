@@ -1,1 +1,1 @@
-export const VARIANT = "h6";
+export const ACCORDION_SUMMAR_HEADING_VARIANT = "h6";

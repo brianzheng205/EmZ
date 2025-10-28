@@ -7,6 +7,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
+import * as R from "ramda";
 
 import {
   CategoryWithItems,
@@ -14,13 +15,16 @@ import {
   BudgetItem,
   CalculatedCategories,
   CategoryWithNoItems,
-  OnActiveBudgetItemChangeFn,
-  OnActiveItemChangeFn,
-  OnItemChangeFn,
+  FbBudgetItem,
 } from "../types";
 
-import { BudgetAmountCell } from "./BudgetCells";
-import { VARIANT } from "./constants";
+import {
+  EditableCurrencyCell,
+  EditableNameCell,
+  FixedCurrencyCell,
+  FixedNameCell,
+} from "./BudgetCells";
+import { ACCORDION_SUMMAR_HEADING_VARIANT } from "./constants";
 
 interface CategorySummaryProps {
   category: CategoryWithItems | CategoryWithNoItems;
@@ -30,16 +34,18 @@ function CategorySummary({ category }: CategorySummaryProps) {
   return (
     <Grid container spacing={2} sx={{ flexGrow: 1, alignItems: "center" }}>
       <Grid size={3}>
-        <Typography variant={VARIANT}>{category.name}</Typography>
+        <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}>
+          {category.name}
+        </Typography>
       </Grid>
       <Grid size={3}>
-        <Typography variant={VARIANT}></Typography>
+        <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}></Typography>
       </Grid>
       <Grid size={3}>
-        <BudgetAmountCell initialAmount={category.sumMonthly} isSummary />
+        <FixedCurrencyCell amount={category.sumMonthly} isSummary />
       </Grid>
       <Grid size={3}>
-        <BudgetAmountCell initialAmount={category.sumYearly} isSummary />
+        <FixedCurrencyCell amount={category.sumYearly} isSummary />
       </Grid>
     </Grid>
   );
@@ -47,51 +53,65 @@ function CategorySummary({ category }: CategorySummaryProps) {
 
 interface CategoryItemProps {
   item: BudgetItem;
-  onActiveBudgetItemChange?: OnItemChangeFn;
+  allItemNames: string[];
+  onActiveBudgetItemChange?: (newItem: Partial<FbBudgetItem>) => void;
 }
 
 function CategoryItem({
   item,
+  allItemNames,
   onActiveBudgetItemChange = () => {},
 }: CategoryItemProps) {
+  const isItemCalculated = item.type === "Liquid Assets";
+  const doesItemRepeat = item.repeatFreq === "Never";
+
   const onAmountChange = (
     amount: number,
     amountTimeSpan: "Monthly" | "Yearly"
   ) => {
-    if (item.type === "Liquid Assets") {
-      console.error("Cannot change liquid assets amount");
-      return;
-    }
-
     onActiveBudgetItemChange({
-      type: item.type,
-      name: item.name,
       amount,
       amountTimeSpan,
-      repeatFreq: item.repeatFreq,
     });
   };
+
+  const onNameChange = (name: string) => {
+    onActiveBudgetItemChange({ name });
+  };
+
   return (
     <Grid container spacing={2}>
-      <Grid size={3}>{item.name}</Grid>
+      <Grid size={3}>
+        {isItemCalculated ? (
+          <FixedNameCell name={item.name} />
+        ) : (
+          <EditableNameCell
+            name={item.name}
+            allItemNames={allItemNames}
+            onItemNameChange={onNameChange}
+          />
+        )}
+      </Grid>
       <Grid size={3}>{item.repeatFreq}</Grid>
       <Grid size={3}>
-        <BudgetAmountCell
-          initialAmount={item.amountMonthly}
-          editable
-          onActiveBudgetItemChange={(amount) =>
-            onAmountChange(amount, "Monthly")
-          }
-        />
+        {isItemCalculated || doesItemRepeat ? (
+          <FixedCurrencyCell amount={item.amountMonthly} />
+        ) : (
+          <EditableCurrencyCell
+            amount={item.amountMonthly}
+            onItemAmountChange={(amount) => onAmountChange(amount, "Monthly")}
+          />
+        )}
       </Grid>
       <Grid size={3}>
-        <BudgetAmountCell
-          initialAmount={item.amountYearly}
-          editable
-          onActiveBudgetItemChange={(amount) =>
-            onAmountChange(amount, "Yearly")
-          }
-        />
+        {isItemCalculated ? (
+          <FixedCurrencyCell amount={item.amountYearly} />
+        ) : (
+          <EditableCurrencyCell
+            amount={item.amountYearly}
+            onItemAmountChange={(amount) => onAmountChange(amount, "Yearly")}
+          />
+        )}
       </Grid>
     </Grid>
   );
@@ -99,11 +119,16 @@ function CategoryItem({
 
 interface BudgetAccordionProps {
   category: CategoryWithItems | CategoryWithNoItems;
-  onActiveBudgetItemChange: OnActiveItemChangeFn;
+  allItemNames: string[];
+  onActiveBudgetItemChange: (
+    oldItemName: string,
+    newItem: Partial<FbBudgetItem>
+  ) => void;
 }
 
 function CategoryAccordion({
   category,
+  allItemNames,
   onActiveBudgetItemChange,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
@@ -126,8 +151,9 @@ function CategoryAccordion({
             <CategoryItem
               key={index}
               item={item}
+              allItemNames={allItemNames}
               onActiveBudgetItemChange={(newItem) =>
-                onActiveBudgetItemChange(item, newItem)
+                onActiveBudgetItemChange(item.name, newItem)
               }
             />
           ))}
@@ -139,7 +165,11 @@ function CategoryAccordion({
 
 interface BudgetAccordionsProps {
   activeBudgets: CalculatedBudget[];
-  onItemChange: OnActiveBudgetItemChangeFn;
+  onItemChange: (
+    budgetId: string,
+    oldItemName: string,
+    newItem: Partial<FbBudgetItem>
+  ) => void;
 }
 
 export default function BudgetAccordions({
@@ -147,6 +177,16 @@ export default function BudgetAccordions({
   onItemChange,
 }: BudgetAccordionsProps) {
   // properties for just the first active budget
+  const allItemNames: string[] = [];
+
+  R.values(activeBudgets[0].categories).forEach((category) => {
+    if ("items" in category) {
+      category.items.forEach((item) => {
+        allItemNames.push(item.name);
+      });
+    }
+  });
+
   const categories = activeBudgets[0].categories;
   const categoryOrder: (keyof CalculatedCategories)[] = [
     "earnings",
@@ -165,6 +205,7 @@ export default function BudgetAccordions({
         <CategoryAccordion
           key={index}
           category={categories[key]}
+          allItemNames={allItemNames}
           onActiveBudgetItemChange={(oldItem, newItem) =>
             onItemChange(activeBudgets[0].id, oldItem, newItem)
           }
