@@ -1,30 +1,4 @@
-import {
-  FbBudget,
-  CalculatedBudget,
-  CalculatedCategories,
-  FbBudgetItem,
-  BudgetItem,
-} from "./types";
-
-export const getFbItemFromFrontendItem = (
-  item: BudgetItem
-): FbBudgetItem | null => {
-  if (item.type === "Liquid Assets") {
-    console.error("Cannot change liquid assets amount");
-    return null;
-  }
-
-  return {
-    type: item.type,
-    name: item.name,
-    amount:
-      item.amountTimeSpan === "Monthly"
-        ? item.amountMonthly
-        : item.amountYearly,
-    amountTimeSpan: item.amountTimeSpan,
-    repeatFreq: item.repeatFreq,
-  };
-};
+import { CalculatedBudget, CalculatedCategories, FbBudget } from "./types";
 
 const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
 

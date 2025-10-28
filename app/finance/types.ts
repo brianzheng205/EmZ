@@ -1,3 +1,5 @@
+// BACKEND BUDGET
+
 export type FbBudgetItem = {
   type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
   name: string;
@@ -14,14 +16,18 @@ export type FbBudget = {
   budgetItems: FbBudgetItem[];
 };
 
-export type BudgetItem = {
-  type: "Earnings" | "Deductions" | "Expenses" | "Retirement" | "Liquid Assets";
-  name: string;
+// FRONTEND BUDGET (TRANSFORMED FROM BACKEND)
+
+export type BudgetItem = Pick<
+  FbBudgetItem,
+  "name" | "amountTimeSpan" | "repeatFreq"
+> & {
+  type: FbBudgetItem["type"] | "Liquid Assets";
   amountMonthly: number;
   amountYearly: number;
-  amountTimeSpan: "Monthly" | "Yearly"; // if amount occurs every month or every year
-  repeatFreq: "Never" | "Monthly"; // add support for "biweekly" later
 };
+
+// FRONTEND CALCULATED BUDGET
 
 export type CategoryWithNoItems = {
   name: string;
@@ -50,15 +56,3 @@ export type CalculatedBudget = {
   user: string;
   categories: CalculatedCategories;
 };
-
-// functions
-export type OnActiveBudgetItemChangeFn = (
-  budgetId: string,
-  oldItem: BudgetItem,
-  newItem: FbBudgetItem
-) => void;
-export type OnActiveItemChangeFn = (
-  oldItem: BudgetItem,
-  newItem: FbBudgetItem
-) => void;
-export type OnItemChangeFn = (newItem: FbBudgetItem) => void;

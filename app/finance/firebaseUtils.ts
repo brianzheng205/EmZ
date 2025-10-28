@@ -16,8 +16,6 @@ import db from "@firebase";
 
 import { FbBudget, FbBudgetItem } from "./types";
 
-export const BUDGETS_COLLECTION = "budgets-v2";
-
 // BUDGETS
 
 export const createBudget = async (name: string, budgetToCopy: FbBudget) => {
@@ -53,8 +51,17 @@ export const updateBudgetItem = async (
   oldBudgetItem: FbBudgetItem,
   newBudgetItem: FbBudgetItem
 ) => {
+  const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
+
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
   try {
-    const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
     const batch = writeBatch(db);
 
     batch.update(budgetDocRef, {
@@ -78,8 +85,17 @@ export const deleteBudgetItem = async (
   budgetId: string,
   oldBudgetItem: FbBudget
 ) => {
+  const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
+
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
   try {
-    const budgetDocRef = doc(db, BUDGETS_COLLECTION, budgetId);
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
     await updateDoc(budgetDocRef, {
       budgetItems: arrayRemove(oldBudgetItem),
     });
