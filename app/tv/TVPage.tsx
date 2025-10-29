@@ -109,16 +109,17 @@ export default function TVPage() {
       data.docs.map(async (doc) => {
         const docData = doc.data();
         const getEpisodeName = async () => {
-          if (!docData.seasons) {
+          if (!docData.seasons || docData.watched === 0) {
             return null;
           }
+
           let seasonNum = 0;
           let episodeIndex = 0;
           let currentCount = 0;
 
           for (const season of docData.seasons) {
             if (season.season_number > 0) {
-              if (docData.watched < currentCount + season.episode_count) {
+              if (docData.watched <= currentCount + season.episode_count) {
                 episodeIndex = Math.max(docData.watched - currentCount, 1);
                 seasonNum = season.season_number;
                 const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
@@ -180,33 +181,6 @@ export default function TVPage() {
           rows={rows}
           fetchSearchResults={fetchContentSearchResults}
         />
-        {/* <Button
-              onClick={() => {
-                const func = async () => {
-                  const data = await fetchAllContentFromFirebase();
-                  for (const doc of data.docs) {
-                    const docData = doc.data();
-                    if (docData.media_type === "tv") {
-                      const tvData = await fetchDataFromTMDB(
-                        `https://api.themoviedb.org/3/tv/${docData.id}?append_to_response=watch%2Fproviders&language=en-US`
-                      );
-                      docData["watch_providers"] =
-                        tvData["watch/providers"].results?.US || [];
-                    } else {
-                      const movieData = await fetchDataFromTMDB(
-                        `https://api.themoviedb.org/3/movie/${docData.id}?append_to_response=watch%2Fproviders&language=en-US`
-                      );
-                      docData["watch_providers"] =
-                        movieData["watch/providers"].results?.US || [];
-                    }
-
-                    addContentToFirebase(docData as EmZContent);
-                  }
-                };
-
-                func();
-              }}
-            /> */}
         <Box sx={{ height: "80vh", width: "100%", justifyItems: "center" }}>
           <DataGrid
             slots={{ toolbar: TableToolbar }}
@@ -217,6 +191,7 @@ export default function TVPage() {
                 genres,
                 filters,
                 setFilters,
+                fetchData,
               } as CustomToolbarProps,
             }}
             initialState={{
@@ -241,6 +216,7 @@ export default function TVPage() {
               }
               return newRow;
             }}
+            getRowId={(row) => row.id}
             rows={applyFiltersAndSorts(rows, filters)}
             columns={[
               {
@@ -292,7 +268,7 @@ export default function TVPage() {
                 headerName: "Genre",
                 flex: 1,
                 valueGetter: (value, row) => {
-                  return row.genre_ids.map((id: number) => {
+                  return row.genre_ids?.map((id: number) => {
                     return genres ? genres[id] : id;
                   });
                 },
@@ -304,7 +280,7 @@ export default function TVPage() {
                       flexWrap: "wrap",
                     }}
                   >
-                    {params.value.map((g, index) => (
+                    {params.value?.map((g, index) => (
                       <Chip
                         key={index}
                         label={g.name}
@@ -397,6 +373,20 @@ export default function TVPage() {
                         });
                       }
                     }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        const value = Number(
+                          (event.target as HTMLInputElement).value
+                        );
+                        if (value >= 0 && value <= params.row.episodes) {
+                          params.api.setEditCellValue({
+                            id: params.id,
+                            field: params.field,
+                            value,
+                          });
+                        }
+                      }
+                    }}
                     sx={{
                       "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
                         {
@@ -432,9 +422,16 @@ export default function TVPage() {
                 headerName: "Next Episode",
                 cellClassName: "base-cell left-aligned-cell",
                 width: 120,
-                valueGetter: (value) => {
-                  if (value) {
-                    return (value as NextEpisodeToAir).air_date;
+                valueGetter: (value, row) => {
+                  if (row.media_type === "tv") {
+                    if (value) {
+                      return new Date((value as NextEpisodeToAir).air_date);
+                    }
+                  } else if (row.media_type === "movie") {
+                    const release_date = new Date(row.release_date);
+                    if (release_date > new Date()) {
+                      return release_date;
+                    }
                   }
                   return null;
                 },

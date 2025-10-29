@@ -36,7 +36,9 @@ export function addContentToFirebase(content: Content) {
   //   "title",
   //   "video",
   // ]);
-  return setDoc(doc(db, "tv-content", String(content.id)), content);
+  if (content.id) {
+    return setDoc(doc(db, "tv-content", String(content.id)), content);
+  }
 }
 
 export async function fetchAllContentFromFirebase() {
