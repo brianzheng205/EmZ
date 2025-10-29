@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { EditableCell, FixedCell } from "./Cell";
+import { EditableTextFieldCell, FixedCell } from "./Cell";
 
 type FixedCurrencyCellProps = {
   amount: number;
@@ -53,7 +53,7 @@ export function EditableCurrencyCell({
   };
 
   return (
-    <EditableCell
+    <EditableTextFieldCell
       type="number"
       value={newAmount}
       displayValue={`$${roundedAmount}`}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { EditableCell, FixedCell } from "./Cell";
+import { EditableTextFieldCell, FixedCell } from "./Cell";
 
 interface FixedNameCellProps {
   name: string;
@@ -45,7 +45,7 @@ export function EditableNameCell({
   };
 
   return (
-    <EditableCell
+    <EditableTextFieldCell
       type="text"
       value={newName}
       displayValue={name}
