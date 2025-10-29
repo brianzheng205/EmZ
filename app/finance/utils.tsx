@@ -1,4 +1,10 @@
-import { CalculatedBudget, CalculatedCategories, FbBudget } from "./types";
+import {
+  CalculatedBudget,
+  CalculatedCategories,
+  FbBudget,
+  ItemAmountTimeSpan,
+  ItemRepeatFreq,
+} from "./types";
 
 const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
 
@@ -121,16 +127,16 @@ export const getCalculatedCategories = (budget: FbBudget): CalculatedBudget => {
     name: "Post-Tax RSU",
     amountMonthly: postTaxRSUMonthly,
     amountYearly: postTaxRSUYearly,
-    amountTimeSpan: "Monthly",
-    repeatFreq: "Monthly",
+    amountTimeSpan: ItemAmountTimeSpan.MONTHLY,
+    repeatFreq: ItemRepeatFreq.MONTHLY,
   });
   categories.liquidAssets.items.push({
     type: "Liquid Assets",
     name: "Remaining",
     amountMonthly: remainingMonthly,
     amountYearly: remainingYearly,
-    amountTimeSpan: "Monthly",
-    repeatFreq: "Monthly",
+    amountTimeSpan: ItemAmountTimeSpan.MONTHLY,
+    repeatFreq: ItemRepeatFreq.MONTHLY,
   });
 
   return {

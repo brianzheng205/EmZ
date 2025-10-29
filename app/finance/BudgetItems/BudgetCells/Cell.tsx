@@ -28,7 +28,7 @@ export function FixedCell({
   );
 }
 
-type EditableCellProps = Omit<FixedCellProps, "isSummary"> & {
+type EditableTextFieldCellProps = Omit<FixedCellProps, "isSummary"> & {
   type: string;
   value: React.ComponentProps<typeof TextField>["value"];
   displayValue: string;
@@ -39,7 +39,7 @@ type EditableCellProps = Omit<FixedCellProps, "isSummary"> & {
   onBlur: () => void;
 };
 
-export function EditableCell({
+export function EditableTextFieldCell({
   type,
   value,
   displayValue,
@@ -48,7 +48,7 @@ export function EditableCell({
   onChange,
   onSubmit,
   onBlur,
-}: EditableCellProps) {
+}: EditableTextFieldCellProps) {
   const [editMode, setEditMode] = useState(false);
 
   const handleClick = () => {
@@ -81,7 +81,6 @@ export function EditableCell({
     >
       {editMode ? (
         <TextFieldWrapper
-          hiddenLabel
           type={type}
           value={value}
           error={error}
@@ -90,6 +89,7 @@ export function EditableCell({
           handleSubmit={handleSubmit}
           onBlur={handleBlur}
           autoFocus
+          hiddenLabel
         />
       ) : (
         <Typography
