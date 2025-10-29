@@ -16,6 +16,8 @@ import {
   CalculatedCategories,
   CategoryWithNoItems,
   FbBudgetItem,
+  ItemRepeatFreq,
+  ItemAmountTimeSpan,
 } from "../types";
 
 import {
@@ -24,6 +26,10 @@ import {
   FixedCurrencyCell,
   FixedNameCell,
 } from "./BudgetCells";
+import {
+  EditableRepeatFreqCell,
+  FixedRepeatFreqCell,
+} from "./BudgetCells/RepeatCell";
 import { ACCORDION_SUMMAR_HEADING_VARIANT } from "./constants";
 
 interface CategorySummaryProps {
@@ -65,18 +71,22 @@ function CategoryItem({
   const isItemCalculated = item.type === "Liquid Assets";
   const doesItemRepeat = item.repeatFreq === "Never";
 
+  const onNameChange = (name: string) => {
+    onActiveBudgetItemChange({ name });
+  };
+
+  const onRepeatFreqChange = (repeatFreq: ItemRepeatFreq) => {
+    onActiveBudgetItemChange({ repeatFreq });
+  };
+
   const onAmountChange = (
     amount: number,
-    amountTimeSpan: "Monthly" | "Yearly"
+    amountTimeSpan: ItemAmountTimeSpan
   ) => {
     onActiveBudgetItemChange({
       amount,
       amountTimeSpan,
     });
-  };
-
-  const onNameChange = (name: string) => {
-    onActiveBudgetItemChange({ name });
   };
 
   return (
@@ -92,14 +102,25 @@ function CategoryItem({
           />
         )}
       </Grid>
-      <Grid size={3}>{item.repeatFreq}</Grid>
+      <Grid size={3}>
+        {isItemCalculated ? (
+          <FixedRepeatFreqCell repeatFreq={item.repeatFreq} />
+        ) : (
+          <EditableRepeatFreqCell
+            repeatFreq={item.repeatFreq}
+            onItemRepeatFreqChange={onRepeatFreqChange}
+          />
+        )}
+      </Grid>
       <Grid size={3}>
         {isItemCalculated || doesItemRepeat ? (
           <FixedCurrencyCell amount={item.amountMonthly} />
         ) : (
           <EditableCurrencyCell
             amount={item.amountMonthly}
-            onItemAmountChange={(amount) => onAmountChange(amount, "Monthly")}
+            onItemAmountChange={(amount) =>
+              onAmountChange(amount, ItemAmountTimeSpan.MONTHLY)
+            }
           />
         )}
       </Grid>
@@ -109,7 +130,9 @@ function CategoryItem({
         ) : (
           <EditableCurrencyCell
             amount={item.amountYearly}
-            onItemAmountChange={(amount) => onAmountChange(amount, "Yearly")}
+            onItemAmountChange={(amount) =>
+              onAmountChange(amount, ItemAmountTimeSpan.YEARLY)
+            }
           />
         )}
       </Grid>
@@ -146,7 +169,9 @@ function CategoryAccordion({
         <CategorySummary category={category as CategoryWithItems} />
       </AccordionSummary>
       {hasItems && (
-        <AccordionDetails>
+        <AccordionDetails
+          sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+        >
           {(category as CategoryWithItems).items.map((item, index) => (
             <CategoryItem
               key={index}
@@ -206,8 +231,8 @@ export default function BudgetAccordions({
           key={index}
           category={categories[key]}
           allItemNames={allItemNames}
-          onActiveBudgetItemChange={(oldItem, newItem) =>
-            onItemChange(activeBudgets[0].id, oldItem, newItem)
+          onActiveBudgetItemChange={(oldItemName, newItem) =>
+            onItemChange(activeBudgets[0].id, oldItemName, newItem)
           }
         />
       ))}

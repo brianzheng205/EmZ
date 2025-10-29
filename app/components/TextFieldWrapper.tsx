@@ -1,6 +1,7 @@
 import { TextField, TextFieldProps } from "@mui/material";
+import { KeyboardEvent, PropsWithChildren } from "react";
 
-type TextFieldWrapperProps = React.PropsWithChildren<TextFieldProps> & {
+type TextFieldWrapperProps = PropsWithChildren<TextFieldProps> & {
   handleSubmit: () => void;
 };
 
@@ -9,7 +10,7 @@ export const TextFieldWrapper = ({
   handleSubmit,
   ...props
 }: TextFieldWrapperProps) => {
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
