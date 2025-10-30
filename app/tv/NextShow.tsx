@@ -36,7 +36,7 @@ export default function NextShow({ rows, genres }: NextShowProps) {
           <DialogContent>
             <Stack direction={"row"} spacing={2} alignItems={"center"}>
               <Avatar
-                src={`https:image.tmdb.org/t/p/w500${selectedContent.poster_path}`}
+                src={`https://image.tmdb.org/t/p/w500${selectedContent.poster_path}`}
                 variant="square"
                 sx={{ width: 100, height: "100%" }}
               />
