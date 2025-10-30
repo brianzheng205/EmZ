@@ -1,10 +1,12 @@
 "use client";
 
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Grid,
+  IconButton,
   Typography,
 } from "@mui/material";
 import * as R from "ramda";
@@ -30,7 +32,7 @@ import {
   EditableRepeatFreqCell,
   FixedRepeatFreqCell,
 } from "./BudgetCells/RepeatCell";
-import { ACCORDION_SUMMAR_HEADING_VARIANT } from "./constants";
+import { ACCORDION_SUMMAR_HEADING_VARIANT, gridSizes } from "./constants";
 
 interface CategorySummaryProps {
   category: CategoryWithItems | CategoryWithNoItems;
@@ -39,20 +41,19 @@ interface CategorySummaryProps {
 function CategorySummary({ category }: CategorySummaryProps) {
   return (
     <Grid container spacing={2} sx={{ flexGrow: 1, alignItems: "center" }}>
-      <Grid size={3}>
+      <Grid size={gridSizes.NAME}>
         <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}>
           {category.name}
         </Typography>
       </Grid>
-      <Grid size={3}>
-        <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}></Typography>
-      </Grid>
-      <Grid size={3}>
+      <Grid size={gridSizes.REPEAT_FREQ} />
+      <Grid size={gridSizes.AMOUNT_MONTHLY}>
         <FixedCurrencyCell amount={category.sumMonthly} isSummary />
       </Grid>
-      <Grid size={3}>
+      <Grid size={gridSizes.AMOUNT_YEARLY}>
         <FixedCurrencyCell amount={category.sumYearly} isSummary />
       </Grid>
+      <Grid size={gridSizes.DELETE} />
     </Grid>
   );
 }
@@ -60,13 +61,15 @@ function CategorySummary({ category }: CategorySummaryProps) {
 interface CategoryItemProps {
   item: BudgetItem;
   allItemNames: string[];
-  onActiveBudgetItemChange?: (newItem: Partial<FbBudgetItem>) => void;
+  onActiveBudgetItemChange: (newItem: Partial<FbBudgetItem>) => void;
+  onActiveBudgetItemDelete: () => void;
 }
 
 function CategoryItem({
   item,
   allItemNames,
-  onActiveBudgetItemChange = () => {},
+  onActiveBudgetItemChange,
+  onActiveBudgetItemDelete,
 }: CategoryItemProps) {
   const isItemCalculated = item.type === "Liquid Assets";
   const doesItemRepeat = item.repeatFreq === "Never";
@@ -91,7 +94,7 @@ function CategoryItem({
 
   return (
     <Grid container spacing={2}>
-      <Grid size={3}>
+      <Grid size={gridSizes.NAME}>
         {isItemCalculated ? (
           <FixedNameCell name={item.name} />
         ) : (
@@ -102,7 +105,7 @@ function CategoryItem({
           />
         )}
       </Grid>
-      <Grid size={3}>
+      <Grid size={gridSizes.REPEAT_FREQ}>
         {isItemCalculated ? (
           <FixedRepeatFreqCell repeatFreq={item.repeatFreq} />
         ) : (
@@ -112,7 +115,7 @@ function CategoryItem({
           />
         )}
       </Grid>
-      <Grid size={3}>
+      <Grid size={gridSizes.AMOUNT_MONTHLY}>
         {isItemCalculated || doesItemRepeat ? (
           <FixedCurrencyCell amount={item.amountMonthly} />
         ) : (
@@ -124,7 +127,7 @@ function CategoryItem({
           />
         )}
       </Grid>
-      <Grid size={3}>
+      <Grid size={gridSizes.AMOUNT_YEARLY}>
         {isItemCalculated ? (
           <FixedCurrencyCell amount={item.amountYearly} />
         ) : (
@@ -134,6 +137,20 @@ function CategoryItem({
               onAmountChange(amount, ItemAmountTimeSpan.YEARLY)
             }
           />
+        )}
+      </Grid>
+      <Grid
+        size={gridSizes.DELETE}
+        sx={{ display: "flex", justifyContent: "center" }}
+      >
+        {!isItemCalculated && (
+          <IconButton
+            aria-label="delete"
+            onClick={onActiveBudgetItemDelete}
+            sx={{ padding: 0 }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
         )}
       </Grid>
     </Grid>
@@ -147,12 +164,14 @@ interface BudgetAccordionProps {
     oldItemName: string,
     newItem: Partial<FbBudgetItem>
   ) => void;
+  onActiveBudgetItemDelete: (name: string) => void;
 }
 
 function CategoryAccordion({
   category,
   allItemNames,
   onActiveBudgetItemChange,
+  onActiveBudgetItemDelete,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
 
@@ -180,6 +199,9 @@ function CategoryAccordion({
               onActiveBudgetItemChange={(newItem) =>
                 onActiveBudgetItemChange(item.name, newItem)
               }
+              onActiveBudgetItemDelete={() =>
+                onActiveBudgetItemDelete(item.name)
+              }
             />
           ))}
         </AccordionDetails>
@@ -195,11 +217,13 @@ interface BudgetAccordionsProps {
     oldItemName: string,
     newItem: Partial<FbBudgetItem>
   ) => void;
+  onItemDelete: (budgetId: string, itemName: string) => void;
 }
 
 export default function BudgetAccordions({
   activeBudgets,
   onItemChange,
+  onItemDelete,
 }: BudgetAccordionsProps) {
   // properties for just the first active budget
   const allItemNames: string[] = [];
@@ -233,6 +257,9 @@ export default function BudgetAccordions({
           allItemNames={allItemNames}
           onActiveBudgetItemChange={(oldItemName, newItem) =>
             onItemChange(activeBudgets[0].id, oldItemName, newItem)
+          }
+          onActiveBudgetItemDelete={(itemName) =>
+            onItemDelete(activeBudgets[0].id, itemName)
           }
         />
       ))}

@@ -83,7 +83,7 @@ export const updateBudgetItem = async (
 
 export const deleteBudgetItem = async (
   budgetId: string,
-  oldBudgetItem: FbBudget
+  oldBudgetItem: FbBudgetItem
 ) => {
   const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
 

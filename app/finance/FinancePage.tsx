@@ -9,7 +9,7 @@ import LoadingContainer from "@/components/LoadingContainer";
 import { fetchData, fetchDocuments } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
-import { updateBudgetItem } from "./firebaseUtils";
+import { deleteBudgetItem, updateBudgetItem } from "./firebaseUtils";
 import { CalculatedBudget, FbBudget, FbBudgetItem } from "./types";
 import { getCalculatedCategories } from "./utils";
 
@@ -112,6 +112,38 @@ export default function FinancePage() {
     updateBudgetItem(budgetId, oldFbItem, newFbItem);
   };
 
+  const onItemDelete = (budgetId: string, itemName: string) => {
+    const targetBudet = budgets.find((budget) => budget.id === budgetId);
+
+    if (!targetBudet) {
+      console.error("Budget not found for delete.");
+      return;
+    }
+
+    const targetItem = targetBudet.budgetItems.find(
+      (budgetItem) => budgetItem.name === itemName
+    );
+
+    if (!targetItem) {
+      console.error("Budget item not found for delete.");
+      return;
+    }
+
+    const newBudgets = budgets.map((budget) =>
+      budget.id === budgetId
+        ? {
+            ...budget,
+            budgetItems: budget.budgetItems.filter(
+              (budgetItem) => budgetItem.name !== itemName
+            ),
+          }
+        : budget
+    );
+    setBudgets(newBudgets);
+
+    deleteBudgetItem(budgetId, targetItem);
+  };
+
   return (
     <LoadingContainer loading={loading}>
       {activeBudgets.length > 0 ? (
@@ -124,6 +156,7 @@ export default function FinancePage() {
           <BudgetAccordions
             activeBudgets={activeBudgets}
             onItemChange={onItemChange}
+            onItemDelete={onItemDelete}
           />
         </Stack>
       ) : (
