@@ -149,7 +149,7 @@ function CategoryItem({
             onClick={onActiveBudgetItemDelete}
             sx={{ padding: 0 }}
           >
-            <DeleteIcon fontSize="small" />
+            <DeleteIcon fontSize="small" color="primary" />
           </IconButton>
         )}
       </Grid>
