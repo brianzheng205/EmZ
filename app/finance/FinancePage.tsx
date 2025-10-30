@@ -9,6 +9,7 @@ import LoadingContainer from "@/components/LoadingContainer";
 import { fetchData, fetchDocuments } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
+import BudgetToolBar from "./BudgetItems/BudgetToolBar";
 import { deleteBudgetItem, updateBudgetItem } from "./firebaseUtils";
 import { CalculatedBudget, FbBudget, FbBudgetItem } from "./types";
 import { getCalculatedCategories } from "./utils";
@@ -27,7 +28,7 @@ export default function FinancePage() {
     [activeBudgetIds, budgets]
   );
 
-  useEffect(() => {
+  const fetchBudgetsData = async () => {
     const fetchAllBudgets = async () => {
       const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
 
@@ -68,6 +69,10 @@ export default function FinancePage() {
     fetchAllBudgets();
     fetchActiveBudgets();
     setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchBudgetsData();
   }, []);
 
   const onItemChange = (
@@ -149,8 +154,7 @@ export default function FinancePage() {
       {activeBudgets.length > 0 ? (
         <Stack sx={{ gap: 2, marginBottom: 4 }}>
           <Typography variant="h1">{activeBudgets[0].name}</Typography>
-          <Typography>Owner: {activeBudgets[0].user}</Typography>
-          <Typography>Num Months: {activeBudgets[0].numMonths}</Typography>
+          <BudgetToolBar onRefresh={fetchBudgetsData} />
 
           <BudgetHeaders />
           <BudgetAccordions
