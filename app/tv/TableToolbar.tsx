@@ -154,6 +154,9 @@ export default function TableToolbar({
           const func = async () => {
             const startTime = performance.now();
             const data = await fetchAllContentFromFirebase();
+            if (!data) {
+              return;
+            }
             const updateTasks: Promise<void>[] = [];
             data.docs.map((doc) => {
               const docData = doc.data();
