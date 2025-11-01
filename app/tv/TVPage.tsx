@@ -431,7 +431,9 @@ export default function TVPage() {
                 valueGetter: (value, row) => {
                   if (row.media_type === "tv") {
                     if (value) {
-                      return new Date((value as NextEpisodeToAir).air_date);
+                      return new Date(
+                        (value as NextEpisodeToAir).air_date + "T00:00:00"
+                      );
                     }
                   } else if (row.media_type === "movie") {
                     const release_date = new Date(row.release_date);
