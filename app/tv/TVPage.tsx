@@ -101,6 +101,9 @@ export default function TVPage() {
   };
   const fetchData = useCallback(async () => {
     const data = await fetchAllContentFromFirebase();
+    if (!data) {
+      return;
+    }
 
     const genreData = genres ? genres : await fetchGenres();
 
@@ -152,6 +155,9 @@ export default function TVPage() {
 
   const fetchProviders = async () => {
     const data = await fetchAllProvidersFromFirebase();
+    if (!data) {
+      return;
+    }
 
     const rowsData = data.docs.map((doc) => {
       const docData = doc.data();
