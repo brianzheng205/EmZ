@@ -436,7 +436,9 @@ export default function TVPage() {
                       );
                     }
                   } else if (row.media_type === "movie") {
-                    const release_date = new Date(row.release_date);
+                    const release_date = new Date(
+                      row.release_date + "T00:00:00"
+                    );
                     if (release_date > new Date()) {
                       return release_date;
                     }
