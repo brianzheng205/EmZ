@@ -13,13 +13,7 @@ import {
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
 import NextShow from "./NextShow";
-import {
-  Content,
-  EmZContent,
-  fetchDataFromTMDB,
-  Filter,
-  TMDBGenre,
-} from "./utils";
+import { EmZContent, fetchDataFromTMDB, Filter, TMDBGenre } from "./utils";
 import { EmZGenre } from "./utils";
 export type TableToolbarProps = {
   filters: Record<string, Filter<EmZContent>>;
@@ -72,66 +66,117 @@ export default function TableToolbar({
       />
       <IconButton
         onClick={() => {
-          const func = async () => {
-            const data = await fetchAllContentFromFirebase();
-            for (const doc of data.docs) {
-              const docData = doc.data();
+          const RATE_LIMIT_RETRY_DELAY = 1000; // Retry after 1 second if a 429 is hit
+          const delay = (ms: number) =>
+            new Promise((resolve) => setTimeout(resolve, ms));
 
-              if (docData.media_type === "tv") {
-                const tvData = await fetchDataFromTMDB(
-                  `https://api.themoviedb.org/3/tv/${docData.id}?append_to_response=watch%2Fproviders&language=en-US`
-                );
-                docData.origin_country = tvData.origin_country;
-                docData.original_name = tvData.original_name;
-                docData.first_air_date = tvData.first_air_date;
-                docData.name = tvData.name;
-                docData.next_episode_to_air = tvData.next_episode_to_air;
-                docData.seasons = tvData.seasons;
-                docData.watch_providers =
-                  tvData["watch/providers"].results.US || [];
-                docData.who = docData.who || "Both";
-                docData.episodes = tvData.number_of_episodes;
-                docData.ongoing = tvData.in_production;
-                docData.adult = tvData.adult;
-                docData.backdrop_path = tvData.backdrop_path;
-                docData.genre_ids = tvData.genres.map(
-                  (genre: TMDBGenre) => genre.id
-                );
-                docData.original_language = tvData.original_language;
-                docData.overview = tvData.overview;
-                docData.popularity = tvData.popularity;
-                docData.poster_path = tvData.poster_path;
-                docData.vote_average = tvData.vote_average;
-                docData.vote_count = tvData.vote_count;
-              } else if (docData.media_type === "movie") {
-                const movieData = await fetchDataFromTMDB(
-                  `https://api.themoviedb.org/3/movie/${docData.id}?append_to_response=watch%2Fproviders&language=en-US`
-                );
-                docData.adult = movieData.adult;
-                docData.backdrop_path = movieData.backdrop_path;
-                docData.genre_ids = movieData.genres.map(
-                  (genre: TMDBGenre) => genre.id
-                );
-                docData.original_language = movieData.original_language;
-                docData.overview = movieData.overview;
-                docData.popularity = movieData.popularity;
-                docData.poster_path = movieData.poster_path;
-                docData.vote_average = movieData.vote_average;
-                docData.vote_count = movieData.vote_count;
-                docData.who = docData.who || "Both";
-                docData.episodes = 1;
-                docData.ongoing = false;
-                docData.original_title = movieData.original_title;
-                docData.release_date = movieData.release_date;
-                docData.title = movieData.title;
-                docData.video = movieData.video;
-                docData.watch_providers =
-                  movieData["watch/providers"].results.US || [];
+          const fetchWithRetry = async (
+            url: string,
+            docData: EmZContent,
+            isTv: boolean
+          ) => {
+            let attempts = 0;
+            const MAX_ATTEMPTS = 5;
+
+            while (attempts < MAX_ATTEMPTS) {
+              try {
+                const tmdbData = await fetchDataFromTMDB(url);
+                if (!tmdbData) {
+                  console.error("No data returned from TMDB for URL:", url);
+                  return;
+                }
+                if (isTv) {
+                  // docData.origin_country = tvData.origin_country;
+                  docData.original_name = tmdbData.original_name;
+                  // docData.first_air_date = tmdbData.first_air_date;
+                  docData.name = tmdbData.name;
+                  docData.next_episode_to_air = tmdbData.next_episode_to_air;
+                  docData.seasons = tmdbData.seasons;
+                  docData.watch_providers =
+                    tmdbData["watch/providers"].results.US || [];
+                  // docData.who = docData.who || "Both";
+                  docData.episodes = tmdbData.number_of_episodes;
+                  docData.ongoing = tmdbData.in_production;
+                  docData.adult = tmdbData.adult;
+                  docData.backdrop_path = tmdbData.backdrop_path;
+                  docData.genre_ids = tmdbData.genres.map(
+                    (genre: TMDBGenre) => genre.id
+                  );
+                  docData.original_language = tmdbData.original_language;
+                  docData.overview = tmdbData.overview;
+                  docData.popularity = tmdbData.popularity;
+                  docData.poster_path = tmdbData.poster_path;
+                  docData.vote_average = tmdbData.vote_average;
+                  docData.vote_count = tmdbData.vote_count;
+                } else {
+                  docData.adult = tmdbData.adult;
+                  docData.backdrop_path = tmdbData.backdrop_path;
+                  docData.genre_ids = tmdbData.genres.map(
+                    (genre: TMDBGenre) => genre.id
+                  );
+                  // docData.original_language = tmdbData.original_language;
+                  docData.overview = tmdbData.overview;
+                  docData.popularity = tmdbData.popularity;
+                  docData.poster_path = tmdbData.poster_path;
+                  docData.vote_average = tmdbData.vote_average;
+                  docData.vote_count = tmdbData.vote_count;
+                  // docData.who = docData.who || "Both";
+                  docData.episodes = 1;
+                  docData.ongoing = false;
+                  docData.original_title = tmdbData.original_title;
+                  docData.release_date = tmdbData.release_date;
+                  docData.title = tmdbData.title;
+                  docData.video = tmdbData.video;
+                  docData.watch_providers =
+                    tmdbData["watch/providers"].results.US || [];
+                }
+
+                await addContentToFirebase(docData);
+                return;
+              } catch (error) {
+                console.log("Example error", error);
+                if (error.status === 429 || error.code === 429) {
+                  attempts++;
+                  console.warn(
+                    `Rate limit hit. Retrying in ${RATE_LIMIT_RETRY_DELAY}ms. Attempt ${attempts}/${MAX_ATTEMPTS}`
+                  );
+                  await delay(RATE_LIMIT_RETRY_DELAY);
+                } else {
+                  throw error;
+                }
               }
-
-              addContentToFirebase(docData as Content);
             }
-            fetchData();
+            console.error(
+              `Failed to update doc ${docData.id} after ${MAX_ATTEMPTS} attempts.`
+            );
+          };
+
+          const func = async () => {
+            const startTime = performance.now();
+            const data = await fetchAllContentFromFirebase();
+            const updateTasks: Promise<void>[] = [];
+            data.docs.map((doc) => {
+              const docData = doc.data();
+              updateTasks.push(
+                docData.media_type === "tv"
+                  ? fetchWithRetry(
+                      `https://api.themoviedb.org/3/tv/${docData.id}?append_to_response=watch%2Fproviders&language=en-US`,
+                      docData as EmZContent,
+                      true
+                    )
+                  : fetchWithRetry(
+                      `https://api.themoviedb.org/3/movie/${docData.id}?append_to_response=watch%2Fproviders&language=en-US`,
+                      docData as EmZContent,
+                      false
+                    )
+              );
+            });
+
+            await Promise.all(updateTasks);
+            fetchData().then(() => {
+              const endTime = performance.now();
+              console.log(`Elapsed time: ${endTime - startTime} milliseconds`);
+            });
           };
 
           func();
