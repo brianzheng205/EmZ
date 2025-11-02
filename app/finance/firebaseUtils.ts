@@ -10,27 +10,57 @@ import {
   arrayRemove,
   arrayUnion,
 } from "firebase/firestore";
-import * as R from "ramda";
 
 import db from "@firebase";
 
-import { FbBudget, FbBudgetItem } from "./types";
+import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "./types";
 
 // BUDGETS
 
-export const createBudget = async (name: string, budgetToCopy: FbBudget) => {
+const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
+
+export const createBudget = async (newBudget: FbBudget) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
   try {
-    const newBudgetRef = await addDoc(collection(db, "budgets"), {
-      ...R.clone(budgetToCopy),
-      name,
-    });
-
+    const newBudgetRef = await addDoc(
+      collection(db, financeCollectionName),
+      newBudget
+    );
     const newBudgetSnap = await getDoc(newBudgetRef);
-    const newBudget = newBudgetSnap.data() as FbBudget;
-
-    return { id: newBudgetRef.id, newBudget };
+    const newBudgetData = newBudgetSnap.data() as FbBudget;
+    return { id: newBudgetRef.id, newBudgetData };
   } catch (error) {
     console.error("Error creating budget:", error);
+    return null;
+  }
+};
+
+export const updateBudgetMetadata = async (
+  budgetId: string,
+  newMetadata: FbBudgetMetadata
+) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
+  try {
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    return await updateDoc(budgetDocRef, {
+      name: newMetadata.name,
+      numMonths: newMetadata.numMonths,
+      user: newMetadata.user,
+    });
+  } catch (error) {
+    console.error("Error updating budget metadata:", error);
     return null;
   }
 };
@@ -51,8 +81,6 @@ export const updateBudgetItem = async (
   oldBudgetItem: FbBudgetItem,
   newBudgetItem: FbBudgetItem
 ) => {
-  const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
-
   if (!financeCollectionName) {
     console.error(
       "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."

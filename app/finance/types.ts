@@ -1,5 +1,3 @@
-// BACKEND BUDGET
-
 // TODO: add support for "biweekly" for paychecks
 export enum ItemAmountTimeSpan {
   MONTHLY = "Monthly",
@@ -11,6 +9,8 @@ export enum ItemRepeatFreq {
   MONTHLY = "Monthly",
 }
 
+// BACKEND BUDGET
+
 export type FbBudgetItem = {
   type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
   name: string;
@@ -19,13 +19,17 @@ export type FbBudgetItem = {
   repeatFreq: ItemRepeatFreq;
 };
 
-export type FbBudget = {
-  id: string;
+export type FbBudgetMetadata = {
   name: string;
   numMonths: number;
   user: string;
+};
+
+export type FbBudget = FbBudgetMetadata & {
   budgetItems: FbBudgetItem[];
 };
+
+export type FbBudgetWithId = FbBudget & { id: string };
 
 // FRONTEND BUDGET (TRANSFORMED FROM BACKEND)
 
