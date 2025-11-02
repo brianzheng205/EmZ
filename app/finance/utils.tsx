@@ -1,7 +1,7 @@
 import {
   CalculatedBudget,
   CalculatedCategories,
-  FbBudget,
+  FbBudgetWithId,
   ItemAmountTimeSpan,
   ItemRepeatFreq,
 } from "./types";
@@ -17,7 +17,9 @@ const TEMP_RSU_TAKE_HOME_RATE = 1 - TEMP_RSU_TAX_RATE;
  *
  * @param budgetItems - a budget's items
  */
-export const getCalculatedCategories = (budget: FbBudget): CalculatedBudget => {
+export const getCalculatedCategories = (
+  budget: FbBudgetWithId
+): CalculatedBudget => {
   const budgetItems = budget.budgetItems;
 
   const categories: CalculatedCategories = {

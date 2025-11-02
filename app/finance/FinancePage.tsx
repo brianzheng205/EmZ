@@ -6,23 +6,34 @@ import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
 import LoadingContainer from "@/components/LoadingContainer";
-import { fetchData, fetchDocuments } from "@/utils";
+import { fetchData, fetchDocuments, fetchDocumentsMap } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
 import BudgetToolBar from "./BudgetItems/BudgetToolBar";
-import { deleteBudgetItem, updateBudgetItem } from "./firebaseUtils";
-import { CalculatedBudget, FbBudget, FbBudgetItem } from "./types";
+import {
+  deleteBudgetItem,
+  updateBudgetMetadata,
+  updateBudgetItem,
+} from "./firebaseUtils";
+import {
+  CalculatedBudget,
+  FbBudgetWithId,
+  FbBudgetItem,
+  FbBudgetMetadata,
+} from "./types";
 import { getCalculatedCategories } from "./utils";
 
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
-  const [budgets, setBudgets] = useState<FbBudget[]>([]);
+  const [budgets, setBudgets] = useState<FbBudgetWithId[]>([]);
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
 
   const activeBudgets: CalculatedBudget[] = useMemo(
     () =>
       R.pipe(
-        R.filter((budget: FbBudget) => activeBudgetIds.includes(budget.id)),
+        R.filter((budget: FbBudgetWithId) =>
+          activeBudgetIds.includes(budget.id)
+        ),
         R.map(getCalculatedCategories)
       )(budgets),
     [activeBudgetIds, budgets]
@@ -42,8 +53,10 @@ export default function FinancePage() {
       try {
         const budgetsData = (await fetchDocuments(
           financeCollectionName
-        )) as FbBudget[];
+        )) as FbBudgetWithId[];
         setBudgets(budgetsData);
+        const test = await fetchDocumentsMap(financeCollectionName);
+        console.log("Budgets fetched:", test);
       } catch (error) {
         console.error("Error fetching all budgets:", error);
       }
@@ -75,7 +88,23 @@ export default function FinancePage() {
     fetchBudgetsData();
   }, []);
 
-  const onItemChange = (
+  const handleBudgetMetadataChange = (newMetadata: FbBudgetMetadata) => {
+    const activeBudgetId = activeBudgetIds[0];
+
+    const newBudgets = budgets.map((budget) =>
+      budget.id === activeBudgetId
+        ? {
+            ...budget,
+            ...newMetadata,
+          }
+        : budget
+    );
+    setBudgets(newBudgets);
+
+    updateBudgetMetadata(activeBudgetId, newMetadata);
+  };
+
+  const handleItemChange = (
     budgetId: string,
     oldItemName: string,
     newItem: Partial<FbBudgetItem>
@@ -117,7 +146,7 @@ export default function FinancePage() {
     updateBudgetItem(budgetId, oldFbItem, newFbItem);
   };
 
-  const onItemDelete = (budgetId: string, itemName: string) => {
+  const handleItemDelete = (budgetId: string, itemName: string) => {
     const targetBudet = budgets.find((budget) => budget.id === budgetId);
 
     if (!targetBudet) {
@@ -154,13 +183,22 @@ export default function FinancePage() {
       {activeBudgets.length > 0 ? (
         <Stack sx={{ gap: 2, marginBottom: 4 }}>
           <Typography variant="h1">{activeBudgets[0].name}</Typography>
-          <BudgetToolBar onRefresh={fetchBudgetsData} />
+          <BudgetToolBar
+            budget={{
+              name: activeBudgets[0].name,
+              numMonths: activeBudgets[0].numMonths,
+              user: activeBudgets[0].user,
+              budgetItems: [],
+            }}
+            onEditMetadata={handleBudgetMetadataChange}
+            onRefresh={fetchBudgetsData}
+          />
 
           <BudgetHeaders />
           <BudgetAccordions
             activeBudgets={activeBudgets}
-            onItemChange={onItemChange}
-            onItemDelete={onItemDelete}
+            onItemChange={handleItemChange}
+            onItemDelete={handleItemDelete}
           />
         </Stack>
       ) : (
