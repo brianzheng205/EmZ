@@ -1,0 +1,112 @@
+{
+  "user": "emily",
+  "numMonths": 12,
+  "name": "2026 Google",
+  "budgetItems": [
+    {
+      "repeatFreq": "Never",
+      "type": "Retirement",
+      "name": "Roth IRA",
+      "amountTimeSpan": "Yearly",
+      "amount": 0
+    },
+    {
+      "name": "IRA",
+      "amountTimeSpan": "Yearly",
+      "amount": 7000,
+      "type": "Retirement",
+      "repeatFreq": "Never"
+    },
+    {
+      "name": "401k",
+      "amount": 23500,
+      "type": "Deductions",
+      "repeatFreq": "Monthly",
+      "amountTimeSpan": "Yearly"
+    },
+    {
+      "type": "Expenses",
+      "amountTimeSpan": "Yearly",
+      "repeatFreq": "Never",
+      "amount": 0,
+      "name": "Dates"
+    },
+    {
+      "amountTimeSpan": "Monthly",
+      "amount": 300,
+      "repeatFreq": "Monthly",
+      "type": "Expenses",
+      "name": "Medical"
+    },
+    {
+      "repeatFreq": "Monthly",
+      "amountTimeSpan": "Monthly",
+      "name": "Rent",
+      "type": "Expenses",
+      "amount": 450
+    },
+    {
+      "type": "Earnings",
+      "name": "RSU",
+      "amountTimeSpan": "Monthly",
+      "amount": 2992,
+      "repeatFreq": "Monthly"
+    },
+    {
+      "name": "Sign On",
+      "type": "Earnings",
+      "amountTimeSpan": "Yearly",
+      "amount": 0,
+      "repeatFreq": "Never"
+    },
+    {
+      "repeatFreq": "Never",
+      "name": "Bonus",
+      "amountTimeSpan": "Yearly",
+      "type": "Earnings",
+      "amount": 0
+    },
+    {
+      "repeatFreq": "Never",
+      "amount": 0,
+      "name": "Car Payments",
+      "amountTimeSpan": "Monthly",
+      "type": "Expenses"
+    },
+    {
+      "type": "Expenses",
+      "name": "giving",
+      "amountTimeSpan": "Monthly",
+      "repeatFreq": "Monthly",
+      "amount": 833.3333333333334
+    },
+    {
+      "name": "Commuter",
+      "type": "Deductions",
+      "amount": 648,
+      "repeatFreq": "Never",
+      "amountTimeSpan": "Yearly"
+    },
+    {
+      "amountTimeSpan": "Monthly",
+      "amount": 121,
+      "name": "Health",
+      "type": "Deductions",
+      "repeatFreq": "Monthly"
+    },
+    {
+      "repeatFreq": "Never",
+      "amountTimeSpan": "Yearly",
+      "type": "Expenses",
+      "amount": 12000,
+      "name": "Food"
+    },
+    {
+      "amount": 158000,
+      "amountTimeSpan": "Yearly",
+      "type": "Earnings",
+      "name": "Base",
+      "repeatFreq": "Monthly"
+    }
+  ]
+}
