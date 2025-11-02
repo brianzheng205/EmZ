@@ -31,11 +31,16 @@ export default function DialogWrapper({
   sx,
   contentSx,
 }: DialogWrapperProps) {
+  const handleSubmit = () => {
+    onSubmit();
+    onClose();
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" && !disabled) {
       event.preventDefault();
       event.stopPropagation();
-      onSubmit();
+      handleSubmit();
     }
   };
 
@@ -48,14 +53,22 @@ export default function DialogWrapper({
       onKeyDown={handleKeyDown}
     >
       <DialogTitle>{title}</DialogTitle>
-      <DialogContent sx={{ overflow: "visible", ...contentSx }}>
+      <DialogContent
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+          overflow: "visible",
+          ...contentSx,
+        }}
+      >
         {children}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="error">
           Cancel
         </Button>
-        <Button onClick={onSubmit} disabled={disabled}>
+        <Button onClick={handleSubmit} disabled={disabled}>
           {submitText || "Submit"}
         </Button>
       </DialogActions>
