@@ -100,6 +100,31 @@ export default function TVPage() {
     setCellModesModel(newModel);
   };
 
+  const getEpisodeName = async (docData: EmZContent) => {
+    if (!docData.seasons || docData.watched === 0) {
+      return null;
+    }
+
+    let seasonNum = 0;
+    let episodeIndex = 0;
+    let currentCount = 0;
+
+    for (const season of docData.seasons) {
+      if (season.season_number > 0) {
+        if (docData.watched <= currentCount + season.episode_count) {
+          episodeIndex = Math.max(docData.watched - currentCount, 1);
+          seasonNum = season.season_number;
+          const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
+          const data = await fetchDataFromTMDB(url);
+          return data.name;
+        } else {
+          currentCount += season.episode_count;
+        }
+      }
+    }
+    return null;
+  };
+
   const fetchData = useCallback(async () => {
     const data = await fetchAllContentFromFirebase();
     if (!data) {
@@ -112,32 +137,9 @@ export default function TVPage() {
     const rowsData = await Promise.all(
       data.docs.map(async (doc) => {
         const docData = doc.data();
-        const getEpisodeName = async () => {
-          if (!docData.seasons || docData.watched === 0) {
-            return null;
-          }
 
-          let seasonNum = 0;
-          let episodeIndex = 0;
-          let currentCount = 0;
-
-          for (const season of docData.seasons) {
-            if (season.season_number > 0) {
-              if (docData.watched <= currentCount + season.episode_count) {
-                episodeIndex = Math.max(docData.watched - currentCount, 1);
-                seasonNum = season.season_number;
-                const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
-                const data = await fetchDataFromTMDB(url);
-                return data.name;
-              } else {
-                currentCount += season.episode_count;
-              }
-            }
-          }
-          return null;
-        };
         showMenuItems[docData.id] = false;
-        const episodeName = await getEpisodeName();
+        const episodeName = await getEpisodeName(docData as EmZContent);
         if (episodeName) {
           return {
             ...docData,
@@ -226,6 +228,21 @@ export default function TVPage() {
 
               try {
                 await addContentToFirebase(newRow as EmZContent);
+                const watchedPropertyBeingChanged = Object.keys(newRow).find(
+                  (key) => newRow[key] !== oldRow[key]
+                );
+
+                if (
+                  watchedPropertyBeingChanged === "watched" &&
+                  newRow.media_type === "tv"
+                ) {
+                  const episodeName = await getEpisodeName(
+                    newRow as EmZContent
+                  );
+                  if (episodeName) {
+                    newRow.watched_name = episodeName;
+                  }
+                }
                 setRows((prevRows) =>
                   prevRows.map((row) => (row.id === newRow.id ? newRow : row))
                 );
