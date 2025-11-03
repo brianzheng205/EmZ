@@ -29,14 +29,14 @@ export type CustomToolbarProps = {
   setFilters: Dispatch<
     React.SetStateAction<Record<string, Filter<EmZContent>>>
   >;
-  fetchData: () => Promise<void>;
+  setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
 };
 export default function TableToolbar({
   rows,
   genres,
   filters,
   setFilters,
-  fetchData,
+  setRows,
 }: CustomToolbarProps) {
   return (
     <GridToolbarContainer>
@@ -131,7 +131,17 @@ export default function TableToolbar({
                     tmdbData["watch/providers"].results.US || [];
                 }
 
-                await addContentToFirebase(docData);
+                await addContentToFirebase(docData)
+                  .then(() => {
+                    setRows((prevRows: GridRowsProp) => {
+                      return prevRows.map((row) =>
+                        row.id === docData.id ? { ...docData } : row
+                      );
+                    });
+                  })
+                  .catch((error) => {
+                    console.error("Error updating content:", error);
+                  });
                 return;
               } catch (error) {
                 console.log("Example error", error);
@@ -175,8 +185,7 @@ export default function TableToolbar({
               );
             });
 
-            await Promise.all(updateTasks);
-            fetchData().then(() => {
+            await Promise.all(updateTasks).then(() => {
               const endTime = performance.now();
               console.log(`Elapsed time: ${endTime - startTime} milliseconds`);
             });

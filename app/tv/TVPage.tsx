@@ -99,6 +99,7 @@ export default function TVPage() {
   const handleCellModesModelChange = (newModel: GridCellModesModel) => {
     setCellModesModel(newModel);
   };
+
   const fetchData = useCallback(async () => {
     const data = await fetchAllContentFromFirebase();
     if (!data) {
@@ -153,7 +154,7 @@ export default function TVPage() {
     setRows(rowsData);
   }, [genres]);
 
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     const data = await fetchAllProvidersFromFirebase();
     if (!data) {
       return;
@@ -165,16 +166,21 @@ export default function TVPage() {
     });
 
     setProviders(rowsData);
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
     fetchProviders();
-  }, [fetchData]);
+  }, [fetchData, fetchProviders]);
 
   const handleDelete = (id: number) => {
-    deleteContentFromFirebase(id);
-    fetchData();
+    deleteContentFromFirebase(id)
+      .then(() => {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+      })
+      .catch((error) => {
+        console.error("Error deleting content:", error);
+      });
   };
 
   return (
@@ -183,7 +189,7 @@ export default function TVPage() {
     >
       <Stack sx={{ gap: 2, width: "95%", alignItems: "center" }}>
         <ContentSearchBar
-          fetchData={fetchData}
+          setRows={setRows}
           rows={rows}
           fetchSearchResults={fetchContentSearchResults}
         />
@@ -197,7 +203,7 @@ export default function TVPage() {
                 genres,
                 filters,
                 setFilters,
-                fetchData,
+                setRows,
               } as CustomToolbarProps,
             }}
             initialState={{
@@ -212,15 +218,22 @@ export default function TVPage() {
             cellModesModel={cellModesModel}
             onCellModesModelChange={handleCellModesModelChange}
             onCellClick={handleCellClick}
-            processRowUpdate={(
+            processRowUpdate={async (
               newRow: GridValidRowModel,
               oldRow: GridValidRowModel
             ) => {
-              if (!isEqual(newRow, oldRow)) {
-                addContentToFirebase(newRow as EmZContent);
-                fetchData();
+              if (isEqual(newRow, oldRow)) return oldRow;
+
+              try {
+                await addContentToFirebase(newRow as EmZContent);
+                setRows((prevRows) =>
+                  prevRows.map((row) => (row.id === newRow.id ? newRow : row))
+                );
+                return newRow;
+              } catch {
+                console.log("Failed to update, reverting changes");
+                return oldRow;
               }
-              return newRow;
             }}
             getRowId={(row) => row.id}
             rows={applyFiltersAndSorts(rows, filters)}
@@ -467,7 +480,7 @@ export default function TVPage() {
                         justifyContent: "center",
                       }}
                     >
-                      {Object.keys(params.value)
+                      {Object.keys(params.value || {})
                         .filter((key) => key !== "link")
                         .map((buyType) =>
                           params.value[buyType]
@@ -533,7 +546,7 @@ export default function TVPage() {
           <Typography>Providers</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <NetworkPage providers={providers} fetchProviders={fetchProviders} />
+          <NetworkPage providers={providers} setProviders={setProviders} />
         </AccordionDetails>
       </Accordion>
     </Stack>

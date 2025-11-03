@@ -38,20 +38,20 @@ export function addContentToFirebase(content: Content) {
   // ]);
   const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
   if (!dbPath) {
-    console.error("Firebase TV collection is not defined");
-    return;
+    throw new Error("Firebase TV collection is not defined");
   }
 
   if (content.id) {
     return setDoc(doc(db, dbPath, String(content.id)), content);
   }
+
+  return Promise.resolve();
 }
 
 export async function fetchAllContentFromFirebase() {
   const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
   if (!dbPath) {
-    console.error("Firebase TV collection is not defined");
-    return;
+    throw new Error("Firebase TV collection is not defined");
   }
   return await getDocs(collection(db, dbPath));
 }
@@ -59,8 +59,7 @@ export async function fetchAllContentFromFirebase() {
 export async function deleteContentFromFirebase(id: number) {
   const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
   if (!dbPath) {
-    console.error("Firebase TV collection is not defined");
-    return;
+    throw new Error("Firebase TV collection is not defined");
   }
   return await deleteDoc(doc(db, dbPath, String(id)));
 }
@@ -68,8 +67,7 @@ export async function deleteContentFromFirebase(id: number) {
 export async function fetchAllProvidersFromFirebase() {
   const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
   if (!dbPath) {
-    console.error("Firebase TV providers collection is not defined");
-    return;
+    throw new Error("Firebase TV Providers collection is not defined");
   }
   return await getDocs(collection(db, dbPath));
 }
@@ -77,8 +75,7 @@ export async function fetchAllProvidersFromFirebase() {
 export async function addProviderToFirebase(provider: Provider) {
   const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
   if (!dbPath) {
-    console.error("Firebase TV providers collection is not defined");
-    return;
+    throw new Error("Firebase TV Providers collection is not defined");
   }
   return setDoc(doc(db, dbPath, String(provider.provider_id)), provider);
 }
@@ -86,8 +83,7 @@ export async function addProviderToFirebase(provider: Provider) {
 export async function deleteProviderFromFirebase(id: number) {
   const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
   if (!dbPath) {
-    console.error("Firebase TV providers collection is not defined");
-    return;
+    throw new Error("Firebase TV Providers collection is not defined");
   }
   return await deleteDoc(doc(db, dbPath, String(id)));
 }
