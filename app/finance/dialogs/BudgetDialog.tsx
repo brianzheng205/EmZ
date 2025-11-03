@@ -25,15 +25,27 @@ export default function BudgetDialog({
 }: BudgetDialogProps) {
   const [newBudget, setNewBudget] = useState(budget);
 
-  useEffect(() => {
-    console.log("updating budget");
-    setNewBudget(budget);
-  }, [budget]);
+  // TODO disable if metadata is the same as current or if metadata is invalid
+  const isNameEmpty = newBudget.name.trim() === "";
+  const disabled = isNameEmpty;
 
-  const disabled = false; // TODO disable if metadata is the same as current or if metadata is invalid
+  useEffect(() => {
+    if (open) {
+      setNewBudget((prev) => ({
+        ...prev,
+        name: budget.name,
+        numMonths: budget.numMonths,
+        user: budget.user,
+      }));
+    }
+  }, [budget.name, budget.numMonths, budget.user, open]);
 
   const handleSubmit = () => {
-    onSubmit(newBudget);
+    const newSanitizedBudget: FbBudget = {
+      ...newBudget,
+      name: newBudget.name.trim(),
+    };
+    onSubmit(newSanitizedBudget);
   };
 
   return (
@@ -53,6 +65,8 @@ export default function BudgetDialog({
         }
         required
         fullWidth
+        error={isNameEmpty}
+        helperText={isNameEmpty ? "Please provide a name" : ""}
       />
       <SelectWrapper
         id="budget-number-of-months-select"
