@@ -23,7 +23,6 @@ export default function EditBudgetDialog({
     };
 
     onSubmit(newMetadata);
-    onClose();
   };
 
   return (
