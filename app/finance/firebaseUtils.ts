@@ -17,6 +17,8 @@ import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "./types";
 
 // BUDGETS
 
+// TODO default to empty string to avoid undefined checks and only
+// check for empty and console error during fetching
 const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
 
 export const createBudget = async (newBudget: FbBudget) => {
@@ -75,6 +77,27 @@ export const deleteBudget = async (docRef: DocumentReference) => {
 };
 
 // BUDGET ITEMS
+
+export const createBudgetItem = async (
+  budgetId: string,
+  newBudgetItem: FbBudgetItem
+) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
+  try {
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    await updateDoc(budgetDocRef, {
+      budgetItems: arrayUnion(newBudgetItem),
+    });
+  } catch (error) {
+    console.error("Error creating budget item:", error);
+  }
+};
 
 export const updateBudgetItem = async (
   budgetId: string,

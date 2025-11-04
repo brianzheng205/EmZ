@@ -1,4 +1,11 @@
 // TODO: add support for "biweekly" for paychecks
+export enum ItemType {
+  EARNINGS = "Earnings",
+  DEDUCTIONS = "Deductions",
+  EXPENSES = "Expenses",
+  RETIREMENT = "Retirement",
+}
+
 export enum ItemAmountTimeSpan {
   MONTHLY = "Monthly",
   YEARLY = "Yearly",
@@ -12,7 +19,7 @@ export enum ItemRepeatFreq {
 // BACKEND BUDGET
 
 export type FbBudgetItem = {
-  type: "Earnings" | "Deductions" | "Expenses" | "Retirement";
+  type: ItemType;
   name: string;
   amount: number;
   amountTimeSpan: ItemAmountTimeSpan; // if amount occurs every month or every year
