@@ -46,13 +46,14 @@ export default function DialogWrapper({
 
   return (
     <Dialog
-      fullWidth={true}
+      fullWidth
       open={open}
       onClose={onClose}
       sx={sx}
       onKeyDown={handleKeyDown}
     >
       <DialogTitle>{title}</DialogTitle>
+
       <DialogContent
         sx={{
           display: "flex",
@@ -64,6 +65,7 @@ export default function DialogWrapper({
       >
         {children}
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose} color="error">
           Cancel

@@ -6,7 +6,7 @@ import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
 import LoadingContainer from "@/components/LoadingContainer";
-import { fetchData, fetchDocuments, fetchDocumentsMap } from "@/utils";
+import { fetchData, fetchDocuments } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
 import BudgetToolBar from "./BudgetItems/BudgetToolBar";
@@ -14,12 +14,14 @@ import {
   deleteBudgetItem,
   updateBudgetMetadata,
   updateBudgetItem,
+  createBudgetItem,
 } from "./firebaseUtils";
 import {
   CalculatedBudget,
   FbBudgetWithId,
   FbBudgetItem,
   FbBudgetMetadata,
+  FbBudget,
 } from "./types";
 import { getCalculatedCategories } from "./utils";
 
@@ -55,8 +57,6 @@ export default function FinancePage() {
           financeCollectionName
         )) as FbBudgetWithId[];
         setBudgets(budgetsData);
-        const test = await fetchDocumentsMap(financeCollectionName);
-        console.log("Budgets fetched:", test);
       } catch (error) {
         console.error("Error fetching all budgets:", error);
       }
@@ -104,7 +104,23 @@ export default function FinancePage() {
     updateBudgetMetadata(activeBudgetId, newMetadata);
   };
 
-  const handleItemChange = (
+  const handleAddItem = (item: FbBudgetItem) => {
+    const activeBudgetId = activeBudgetIds[0];
+
+    const newBudgets = budgets.map((budget) =>
+      budget.id === activeBudgetId
+        ? {
+            ...budget,
+            budgetItems: [...budget.budgetItems, item],
+          }
+        : budget
+    );
+    setBudgets(newBudgets);
+
+    createBudgetItem(activeBudgetId, item);
+  };
+
+  const handleChangeItem = (
     budgetId: string,
     oldItemName: string,
     newItem: Partial<FbBudgetItem>
@@ -146,7 +162,7 @@ export default function FinancePage() {
     updateBudgetItem(budgetId, oldFbItem, newFbItem);
   };
 
-  const handleItemDelete = (budgetId: string, itemName: string) => {
+  const handleDeleteItem = (budgetId: string, itemName: string) => {
     const targetBudet = budgets.find((budget) => budget.id === budgetId);
 
     if (!targetBudet) {
@@ -184,21 +200,20 @@ export default function FinancePage() {
         <Stack sx={{ gap: 2, marginBottom: 4 }}>
           <Typography variant="h1">{activeBudgets[0].name}</Typography>
           <BudgetToolBar
-            budget={{
-              name: activeBudgets[0].name,
-              numMonths: activeBudgets[0].numMonths,
-              user: activeBudgets[0].user,
-              budgetItems: [],
-            }}
+            budget={
+              budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
+              ({} as FbBudget)
+            }
             onEditMetadata={handleBudgetMetadataChange}
+            onAddItem={handleAddItem}
             onRefresh={fetchBudgetsData}
           />
 
           <BudgetHeaders />
           <BudgetAccordions
             activeBudgets={activeBudgets}
-            onItemChange={handleItemChange}
-            onItemDelete={handleItemDelete}
+            onItemChange={handleChangeItem}
+            onItemDelete={handleDeleteItem}
           />
         </Stack>
       ) : (
