@@ -55,6 +55,7 @@ export default function TVPage() {
     {}
   );
   const [providers, setProviders] = useState<GridRowsProp>([]);
+  const [rowsLoading, setRowsLoading] = useState<boolean>(false);
 
   const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
     if (!params.isEditable) {
@@ -126,6 +127,7 @@ export default function TVPage() {
   };
 
   const fetchData = useCallback(async () => {
+    setRowsLoading(true);
     const data = await fetchAllContentFromFirebase();
     if (!data) {
       return;
@@ -150,6 +152,7 @@ export default function TVPage() {
       setGenres(genreData as Record<number, EmZGenre>);
     }
     setRows(rowsData);
+    setRowsLoading(false);
   }, [genres]);
 
   const fetchProviders = useCallback(async () => {
@@ -202,6 +205,7 @@ export default function TVPage() {
                 filters,
                 setFilters,
                 setRows,
+                setRowsLoading,
               } as CustomToolbarProps,
             }}
             initialState={{
@@ -213,6 +217,7 @@ export default function TVPage() {
             showToolbar
             disableVirtualization
             getRowHeight={() => "auto"}
+            loading={rowsLoading}
             cellModesModel={cellModesModel}
             onCellModesModelChange={handleCellModesModelChange}
             onCellClick={handleCellClick}

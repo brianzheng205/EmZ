@@ -30,6 +30,7 @@ export type CustomToolbarProps = {
     React.SetStateAction<Record<string, Filter<EmZContent>>>
   >;
   setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
+  setRowsLoading: Dispatch<React.SetStateAction<boolean>>;
 };
 export default function TableToolbar({
   rows,
@@ -37,6 +38,7 @@ export default function TableToolbar({
   filters,
   setFilters,
   setRows,
+  setRowsLoading,
 }: CustomToolbarProps) {
   return (
     <GridToolbarContainer>
@@ -163,6 +165,7 @@ export default function TableToolbar({
 
           const func = async () => {
             const startTime = performance.now();
+            setRowsLoading(true);
             const data = await fetchAllContentFromFirebase();
             if (!data) {
               return;
@@ -186,6 +189,7 @@ export default function TableToolbar({
             });
 
             await Promise.all(updateTasks).then(() => {
+              setRowsLoading(false);
               const endTime = performance.now();
               console.log(`Elapsed time: ${endTime - startTime} milliseconds`);
             });
