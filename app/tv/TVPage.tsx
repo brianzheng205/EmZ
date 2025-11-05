@@ -140,14 +140,10 @@ export default function TVPage() {
 
         showMenuItems[docData.id] = false;
         const episodeName = await getEpisodeName(docData as EmZContent);
-        if (episodeName) {
-          return {
-            ...docData,
-            watched_name: episodeName,
-          };
-        }
-
-        return docData;
+        return {
+          ...docData,
+          watched_name: episodeName,
+        };
       })
     );
     if (!genres) {
@@ -227,7 +223,6 @@ export default function TVPage() {
               if (isEqual(newRow, oldRow)) return oldRow;
 
               try {
-                await addContentToFirebase(newRow as EmZContent);
                 const watchedPropertyBeingChanged = Object.keys(newRow).find(
                   (key) => newRow[key] !== oldRow[key]
                 );
@@ -239,10 +234,10 @@ export default function TVPage() {
                   const episodeName = await getEpisodeName(
                     newRow as EmZContent
                   );
-                  if (episodeName) {
-                    newRow.watched_name = episodeName;
-                  }
+                  newRow.watched_name = episodeName;
                 }
+                await addContentToFirebase(newRow as EmZContent);
+
                 setRows((prevRows) =>
                   prevRows.map((row) => (row.id === newRow.id ? newRow : row))
                 );
