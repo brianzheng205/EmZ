@@ -7,21 +7,21 @@ import {
   Button,
   TextField,
 } from "@mui/material";
-import { GridRowsProp } from "@mui/x-data-grid";
+import { GridRowsProp, GridValidRowModel } from "@mui/x-data-grid";
 import { debounce } from "lodash";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Dispatch, SetStateAction } from "react";
 
 import { addProviderToFirebase } from "./firebaseUtils";
 import { Provider } from "./utils";
 
 type SearchBarProps<T> = {
-  fetchData: () => void;
+  setRows: Dispatch<SetStateAction<readonly GridValidRowModel[]>>;
   rows: GridRowsProp;
   fetchSearchResults: (query: string) => Promise<T>;
 };
 
 export default function ProviderSearchBar({
-  fetchData,
+  setRows,
   rows,
   fetchSearchResults,
 }: SearchBarProps<Provider[]>) {
@@ -52,8 +52,13 @@ export default function ProviderSearchBar({
   };
 
   const addProvider = async (value: Provider) => {
-    addProviderToFirebase(value);
-    fetchData();
+    addProviderToFirebase(value)
+      .then(() => {
+        setRows((prevRows) => [...prevRows, value]);
+      })
+      .catch((error) => {
+        console.error("Error adding provider:", error);
+      });
   };
   return (
     <Stack

@@ -55,6 +55,7 @@ export default function TVPage() {
     {}
   );
   const [providers, setProviders] = useState<GridRowsProp>([]);
+  const [rowsLoading, setRowsLoading] = useState<boolean>(false);
 
   const handleCellClick = (params: GridCellParams, event: MouseEvent) => {
     if (!params.isEditable) {
@@ -99,8 +100,38 @@ export default function TVPage() {
   const handleCellModesModelChange = (newModel: GridCellModesModel) => {
     setCellModesModel(newModel);
   };
+
+  const getEpisodeName = async (docData: EmZContent) => {
+    if (!docData.seasons || docData.watched === 0) {
+      return null;
+    }
+
+    let seasonNum = 0;
+    let episodeIndex = 0;
+    let currentCount = 0;
+
+    for (const season of docData.seasons) {
+      if (season.season_number > 0) {
+        if (docData.watched <= currentCount + season.episode_count) {
+          episodeIndex = Math.max(docData.watched - currentCount, 1);
+          seasonNum = season.season_number;
+          const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
+          const data = await fetchDataFromTMDB(url);
+          return data.name;
+        } else {
+          currentCount += season.episode_count;
+        }
+      }
+    }
+    return null;
+  };
+
   const fetchData = useCallback(async () => {
+    setRowsLoading(true);
     const data = await fetchAllContentFromFirebase();
+    if (!data) {
+      return;
+    }
 
     const genreData = genres ? genres : await fetchGenres();
 
@@ -108,50 +139,27 @@ export default function TVPage() {
     const rowsData = await Promise.all(
       data.docs.map(async (doc) => {
         const docData = doc.data();
-        const getEpisodeName = async () => {
-          if (!docData.seasons || docData.watched === 0) {
-            return null;
-          }
 
-          let seasonNum = 0;
-          let episodeIndex = 0;
-          let currentCount = 0;
-
-          for (const season of docData.seasons) {
-            if (season.season_number > 0) {
-              if (docData.watched <= currentCount + season.episode_count) {
-                episodeIndex = Math.max(docData.watched - currentCount, 1);
-                seasonNum = season.season_number;
-                const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
-                const data = await fetchDataFromTMDB(url);
-                return data.name;
-              } else {
-                currentCount += season.episode_count;
-              }
-            }
-          }
-          return null;
-        };
         showMenuItems[docData.id] = false;
-        const episodeName = await getEpisodeName();
-        if (episodeName) {
-          return {
-            ...docData,
-            watched_name: episodeName,
-          };
-        }
-
-        return docData;
+        const episodeName = await getEpisodeName(docData as EmZContent);
+        return {
+          ...docData,
+          watched_name: episodeName,
+        };
       })
     );
     if (!genres) {
       setGenres(genreData as Record<number, EmZGenre>);
     }
     setRows(rowsData);
+    setRowsLoading(false);
   }, [genres]);
 
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     const data = await fetchAllProvidersFromFirebase();
+    if (!data) {
+      return;
+    }
 
     const rowsData = data.docs.map((doc) => {
       const docData = doc.data();
@@ -159,16 +167,21 @@ export default function TVPage() {
     });
 
     setProviders(rowsData);
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
     fetchProviders();
-  }, [fetchData]);
+  }, [fetchData, fetchProviders]);
 
   const handleDelete = (id: number) => {
-    deleteContentFromFirebase(id);
-    fetchData();
+    deleteContentFromFirebase(id)
+      .then(() => {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+      })
+      .catch((error) => {
+        console.error("Error deleting content:", error);
+      });
   };
 
   return (
@@ -177,7 +190,7 @@ export default function TVPage() {
     >
       <Stack sx={{ gap: 2, width: "95%", alignItems: "center" }}>
         <ContentSearchBar
-          fetchData={fetchData}
+          setRows={setRows}
           rows={rows}
           fetchSearchResults={fetchContentSearchResults}
         />
@@ -191,7 +204,8 @@ export default function TVPage() {
                 genres,
                 filters,
                 setFilters,
-                fetchData,
+                setRows,
+                setRowsLoading,
               } as CustomToolbarProps,
             }}
             initialState={{
@@ -203,18 +217,40 @@ export default function TVPage() {
             showToolbar
             disableVirtualization
             getRowHeight={() => "auto"}
+            loading={rowsLoading}
             cellModesModel={cellModesModel}
             onCellModesModelChange={handleCellModesModelChange}
             onCellClick={handleCellClick}
-            processRowUpdate={(
+            processRowUpdate={async (
               newRow: GridValidRowModel,
               oldRow: GridValidRowModel
             ) => {
-              if (!isEqual(newRow, oldRow)) {
-                addContentToFirebase(newRow as EmZContent);
-                fetchData();
+              if (isEqual(newRow, oldRow)) return oldRow;
+
+              try {
+                const watchedPropertyBeingChanged = Object.keys(newRow).find(
+                  (key) => newRow[key] !== oldRow[key]
+                );
+
+                if (
+                  watchedPropertyBeingChanged === "watched" &&
+                  newRow.media_type === "tv"
+                ) {
+                  const episodeName = await getEpisodeName(
+                    newRow as EmZContent
+                  );
+                  newRow.watched_name = episodeName;
+                }
+                await addContentToFirebase(newRow as EmZContent);
+
+                setRows((prevRows) =>
+                  prevRows.map((row) => (row.id === newRow.id ? newRow : row))
+                );
+                return newRow;
+              } catch {
+                console.log("Failed to update, reverting changes");
+                return oldRow;
               }
-              return newRow;
             }}
             getRowId={(row) => row.id}
             rows={applyFiltersAndSorts(rows, filters)}
@@ -425,10 +461,14 @@ export default function TVPage() {
                 valueGetter: (value, row) => {
                   if (row.media_type === "tv") {
                     if (value) {
-                      return new Date((value as NextEpisodeToAir).air_date);
+                      return new Date(
+                        (value as NextEpisodeToAir).air_date + "T00:00:00"
+                      );
                     }
                   } else if (row.media_type === "movie") {
-                    const release_date = new Date(row.release_date);
+                    const release_date = new Date(
+                      row.release_date + "T00:00:00"
+                    );
                     if (release_date > new Date()) {
                       return release_date;
                     }
@@ -457,7 +497,7 @@ export default function TVPage() {
                         justifyContent: "center",
                       }}
                     >
-                      {Object.keys(params.value)
+                      {Object.keys(params.value || {})
                         .filter((key) => key !== "link")
                         .map((buyType) =>
                           params.value[buyType]
@@ -523,7 +563,7 @@ export default function TVPage() {
           <Typography>Providers</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <NetworkPage providers={providers} fetchProviders={fetchProviders} />
+          <NetworkPage providers={providers} setProviders={setProviders} />
         </AccordionDetails>
       </Accordion>
     </Stack>
