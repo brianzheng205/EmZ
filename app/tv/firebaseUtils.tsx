@@ -36,30 +36,54 @@ export function addContentToFirebase(content: Content) {
   //   "title",
   //   "video",
   // ]);
-  if (content.id) {
-    return setDoc(doc(db, "tv-content", String(content.id)), content);
+  const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV collection is not defined");
   }
+
+  if (content.id) {
+    return setDoc(doc(db, dbPath, String(content.id)), content);
+  }
+
+  return Promise.resolve();
 }
 
 export async function fetchAllContentFromFirebase() {
-  return await getDocs(collection(db, "tv-content"));
+  const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV collection is not defined");
+  }
+  return await getDocs(collection(db, dbPath));
 }
 
 export async function deleteContentFromFirebase(id: number) {
-  return await deleteDoc(doc(db, "tv-content", String(id)));
+  const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV collection is not defined");
+  }
+  return await deleteDoc(doc(db, dbPath, String(id)));
 }
 
 export async function fetchAllProvidersFromFirebase() {
-  return await getDocs(collection(db, "tv-providers"));
+  const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV Providers collection is not defined");
+  }
+  return await getDocs(collection(db, dbPath));
 }
 
 export async function addProviderToFirebase(provider: Provider) {
-  return setDoc(
-    doc(db, "tv-providers", String(provider.provider_id)),
-    provider
-  );
+  const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV Providers collection is not defined");
+  }
+  return setDoc(doc(db, dbPath, String(provider.provider_id)), provider);
 }
 
 export async function deleteProviderFromFirebase(id: number) {
-  return await deleteDoc(doc(db, "tv-providers", String(id)));
+  const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV Providers collection is not defined");
+  }
+  return await deleteDoc(doc(db, dbPath, String(id)));
 }

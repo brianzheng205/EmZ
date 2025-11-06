@@ -1,39 +1,39 @@
 import { Add } from "@mui/icons-material";
 import {
-  Stack,
   Autocomplete,
   Avatar,
   Box,
   Button,
-  TextField,
-  Select,
   MenuItem,
+  Select,
+  Stack,
+  TextField,
 } from "@mui/material";
 import { GridRowsProp } from "@mui/x-data-grid";
 import { debounce } from "lodash";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { addContentToFirebase } from "./firebaseUtils";
 import {
-  TVShow,
-  Movie,
   Content,
-  WhoSelection,
-  TMDBSearchMultiResponse,
-  whoOptions,
-  fetchDataFromTMDB,
   EmZContent,
+  fetchDataFromTMDB,
+  Movie,
+  TMDBSearchMultiResponse,
+  TVShow,
+  whoOptions,
+  WhoSelection,
 } from "./utils";
 
 type SearchBarProps<T> = {
-  fetchData: () => void;
   rows: GridRowsProp;
+  setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
   fetchSearchResults: (query: string) => Promise<T>;
 };
 
 export default function ContentSearchBar({
-  fetchData,
   rows,
+  setRows,
   fetchSearchResults,
 }: SearchBarProps<TMDBSearchMultiResponse>) {
   const [inputValue, setInputValue] = useState("");
@@ -101,7 +101,15 @@ export default function ContentSearchBar({
             part["watch_providers"] =
               collection["watch/providers"]?.results?.US || [];
 
-            addContentToFirebase(part as EmZContent);
+            addContentToFirebase(part as EmZContent)
+              .then(() => {
+                setRows((prevRows: GridRowsProp[]) => {
+                  return [...prevRows, { ...part }];
+                });
+              })
+              .catch((error) => {
+                console.error("Error adding content from collection:", error);
+              });
           }
         }
       }
@@ -110,8 +118,15 @@ export default function ContentSearchBar({
       value["ongoing"] = false;
       value["watch_providers"] = movieData["watch/providers"].results?.US || [];
     }
-    addContentToFirebase(value as EmZContent);
-    fetchData();
+    addContentToFirebase(value as EmZContent)
+      .then(() => {
+        setRows((prevRows: GridRowsProp[]) => {
+          return [...prevRows, { ...value }];
+        });
+      })
+      .catch((error) => {
+        console.error("Error adding content:", error);
+      });
   };
   return (
     <Stack
