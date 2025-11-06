@@ -1,6 +1,12 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Stack, Avatar, IconButton } from "@mui/material";
-import { DataGrid, GridRowsProp, GridRenderCellParams } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridRowsProp,
+  GridRenderCellParams,
+  GridValidRowModel,
+} from "@mui/x-data-grid";
+import { Dispatch, SetStateAction } from "react";
 
 import { deleteProviderFromFirebase } from "./firebaseUtils";
 import ProviderSearchBar from "./ProviderSearchBar";
@@ -8,11 +14,11 @@ import { fetchWatchProvidersSearchResults } from "./utils";
 
 export type NetworkPageProps = {
   providers: GridRowsProp;
-  fetchProviders: () => void;
+  setProviders: Dispatch<SetStateAction<readonly GridValidRowModel[]>>;
 };
 export default function NetworkPage({
   providers,
-  fetchProviders,
+  setProviders,
 }: NetworkPageProps) {
   const columns = [
     {
@@ -50,13 +56,20 @@ export default function NetworkPage({
   ];
 
   const handleDelete = (id: number) => {
-    deleteProviderFromFirebase(id);
-    fetchProviders();
+    deleteProviderFromFirebase(id)
+      .then(() => {
+        setProviders((prevProviders) =>
+          prevProviders.filter((provider) => provider.provider_id !== id)
+        );
+      })
+      .catch((error) => {
+        console.error("Error deleting provider:", error);
+      });
   };
   return (
     <Stack sx={{ gap: 2 }}>
       <ProviderSearchBar
-        fetchData={fetchProviders}
+        setRows={setProviders}
         rows={providers}
         fetchSearchResults={fetchWatchProvidersSearchResults}
       />
