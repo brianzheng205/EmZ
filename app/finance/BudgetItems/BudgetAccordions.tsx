@@ -86,12 +86,15 @@ function CategoryItem({
 
   const onAmountChange = (
     amount: number,
+    hasAmountChanged: boolean,
     amountTimeSpan: ItemAmountTimeSpan
   ) => {
-    onActiveBudgetItemChange({
-      amount,
-      amountTimeSpan,
-    });
+    if (hasAmountChanged || amountTimeSpan !== item.amountTimeSpan) {
+      onActiveBudgetItemChange({
+        amount,
+        amountTimeSpan,
+      });
+    }
   };
 
   return (
@@ -130,8 +133,12 @@ function CategoryItem({
           <EditableCurrencyCell
             displayAmount={item.amountMonthly}
             editAmount={item.amountMonthly}
-            onItemAmountChange={(amount) =>
-              onAmountChange(amount, ItemAmountTimeSpan.MONTHLY)
+            onItemAmountChange={(amount, hasAmountChanged) =>
+              onAmountChange(
+                amount,
+                hasAmountChanged,
+                ItemAmountTimeSpan.MONTHLY
+              )
             }
             isHighlighted={
               item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY &&
@@ -157,8 +164,12 @@ function CategoryItem({
                 ? (item.amountYearly / numMonths) * 12
                 : item.amountYearly
             }
-            onItemAmountChange={(amount) =>
-              onAmountChange(amount, ItemAmountTimeSpan.YEARLY)
+            onItemAmountChange={(amount, hasAmountChanged) =>
+              onAmountChange(
+                amount,
+                hasAmountChanged,
+                ItemAmountTimeSpan.YEARLY
+              )
             }
             isHighlighted={
               item.amountTimeSpan === ItemAmountTimeSpan.YEARLY ||
