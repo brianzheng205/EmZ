@@ -63,6 +63,7 @@ interface CategoryItemProps {
   allItemNames: string[];
   onActiveBudgetItemChange: (newItem: Partial<FbBudgetItem>) => void;
   onActiveBudgetItemDelete: () => void;
+  numMonths: number;
 }
 
 function CategoryItem({
@@ -70,6 +71,7 @@ function CategoryItem({
   allItemNames,
   onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
+  numMonths,
 }: CategoryItemProps) {
   const isItemCalculated = item.type === "Liquid Assets";
   const doesItemRepeat = item.repeatFreq === "Never";
@@ -117,24 +119,50 @@ function CategoryItem({
       </Grid>
       <Grid size={gridSizes.AMOUNT_MONTHLY}>
         {isItemCalculated || doesItemRepeat ? (
-          <FixedCurrencyCell amount={item.amountMonthly} />
+          <FixedCurrencyCell
+            amount={item.amountMonthly}
+            isHighlighted={
+              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY &&
+              item.repeatFreq !== ItemRepeatFreq.NEVER
+            }
+          />
         ) : (
           <EditableCurrencyCell
-            amount={item.amountMonthly}
+            displayAmount={item.amountMonthly}
+            editAmount={item.amountMonthly}
             onItemAmountChange={(amount) =>
               onAmountChange(amount, ItemAmountTimeSpan.MONTHLY)
+            }
+            isHighlighted={
+              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY &&
+              item.repeatFreq !== ItemRepeatFreq.NEVER
             }
           />
         )}
       </Grid>
       <Grid size={gridSizes.AMOUNT_YEARLY}>
         {isItemCalculated ? (
-          <FixedCurrencyCell amount={item.amountYearly} />
+          <FixedCurrencyCell
+            amount={item.amountYearly}
+            isHighlighted={
+              item.amountTimeSpan === ItemAmountTimeSpan.YEARLY ||
+              item.repeatFreq === ItemRepeatFreq.NEVER
+            }
+          />
         ) : (
           <EditableCurrencyCell
-            amount={item.amountYearly}
+            displayAmount={item.amountYearly}
+            editAmount={
+              item.amountTimeSpan === ItemAmountTimeSpan.YEARLY
+                ? (item.amountYearly / numMonths) * 12
+                : item.amountYearly
+            }
             onItemAmountChange={(amount) =>
               onAmountChange(amount, ItemAmountTimeSpan.YEARLY)
+            }
+            isHighlighted={
+              item.amountTimeSpan === ItemAmountTimeSpan.YEARLY ||
+              item.repeatFreq === ItemRepeatFreq.NEVER
             }
           />
         )}
@@ -165,6 +193,7 @@ interface BudgetAccordionProps {
     newItem: Partial<FbBudgetItem>
   ) => void;
   onActiveBudgetItemDelete: (name: string) => void;
+  numMonths: number;
 }
 
 function CategoryAccordion({
@@ -172,6 +201,7 @@ function CategoryAccordion({
   allItemNames,
   onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
+  numMonths,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
 
@@ -202,6 +232,7 @@ function CategoryAccordion({
               onActiveBudgetItemDelete={() =>
                 onActiveBudgetItemDelete(item.name)
               }
+              numMonths={numMonths}
             />
           ))}
         </AccordionDetails>
@@ -261,6 +292,7 @@ export default function BudgetAccordions({
           onActiveBudgetItemDelete={(itemName) =>
             onItemDelete(activeBudgets[0].id, itemName)
           }
+          numMonths={activeBudgets[0].numMonths}
         />
       ))}
     </>

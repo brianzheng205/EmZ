@@ -43,10 +43,12 @@ export const getCalculatedCategories = (
         ? 0
         : item.amountTimeSpan === "Monthly"
         ? item.amount
-        : item.amount / budget.numMonths;
+        : item.amount / 12;
     const amountYearly =
-      item.amountTimeSpan === "Yearly"
+      item.repeatFreq === "Never"
         ? item.amount
+        : item.amountTimeSpan === "Yearly"
+        ? item.amount * (budget.numMonths / 12)
         : item.amount * budget.numMonths;
 
     // TODO: change backend field name from "type" to "category"
