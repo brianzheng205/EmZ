@@ -105,7 +105,7 @@ export function EditableTextFieldCell({
             fontWeight: isHighlighted ? "bold" : "normal",
             color: isHighlighted ? "primary.main" : "inherit",
             "&:hover": {
-              color: "primary.main",
+              color: isHighlighted ? "primary.dark" : "primary.main",
             },
           }}
         >
