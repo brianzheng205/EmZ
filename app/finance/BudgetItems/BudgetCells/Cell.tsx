@@ -9,18 +9,22 @@ type FixedCellProps = {
   type: string;
   displayValue: string;
   isSummary?: boolean;
+  isHighlighted?: boolean;
 };
 
 export function FixedCell({
   type,
   displayValue,
   isSummary = false,
+  isHighlighted = false,
 }: FixedCellProps) {
   return (
     <Typography
       variant={isSummary ? ACCORDION_SUMMAR_HEADING_VARIANT : "body1"}
       sx={{
         textAlign: type == "number" ? "right" : "left",
+        fontWeight: isHighlighted ? "bold" : "normal",
+        color: isHighlighted ? "primary.main" : "inherit",
       }}
     >
       {displayValue}
@@ -48,6 +52,7 @@ export function EditableTextFieldCell({
   onChange,
   onSubmit,
   onBlur,
+  isHighlighted = false,
 }: EditableTextFieldCellProps) {
   const [editMode, setEditMode] = useState(false);
 
@@ -97,6 +102,8 @@ export function EditableTextFieldCell({
           sx={{
             textAlign: type == "number" ? "right" : "left",
             cursor: "pointer",
+            fontWeight: isHighlighted ? "bold" : "normal",
+            color: isHighlighted ? "primary.main" : "inherit",
             "&:hover": {
               color: "primary.main",
             },
