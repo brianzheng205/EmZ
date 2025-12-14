@@ -27,6 +27,7 @@ import {
   EditableNameCell,
   FixedCurrencyCell,
   FixedNameCell,
+  DisabledCell,
 } from "./BudgetCells";
 import {
   EditableRepeatFreqCell,
@@ -74,7 +75,7 @@ function CategoryItem({
   numMonths,
 }: CategoryItemProps) {
   const isItemCalculated = item.type === "Liquid Assets";
-  const doesItemRepeat = item.repeatFreq === "Never";
+  const itemNeverRepeats = item.repeatFreq === ItemRepeatFreq.NEVER;
 
   const onNameChange = (name: string) => {
     onActiveBudgetItemChange({ name });
@@ -121,12 +122,14 @@ function CategoryItem({
         )}
       </Grid>
       <Grid size={gridSizes.AMOUNT_MONTHLY}>
-        {isItemCalculated || doesItemRepeat ? (
+        {itemNeverRepeats ? (
+          <DisabledCell />
+        ) : isItemCalculated ? (
           <FixedCurrencyCell
             amount={item.amountMonthly}
             isHighlighted={
-              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY &&
-              item.repeatFreq !== ItemRepeatFreq.NEVER
+              !isItemCalculated &&
+              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY
             }
           />
         ) : (
@@ -141,8 +144,8 @@ function CategoryItem({
               )
             }
             isHighlighted={
-              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY &&
-              item.repeatFreq !== ItemRepeatFreq.NEVER
+              isItemCalculated &&
+              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY
             }
           />
         )}
