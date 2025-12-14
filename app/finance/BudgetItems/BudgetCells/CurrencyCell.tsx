@@ -5,11 +5,13 @@ import { EditableTextFieldCell, FixedCell } from "./Cell";
 type FixedCurrencyCellProps = {
   amount: number;
   isSummary?: boolean;
+  isHighlighted?: boolean;
 };
 
 export function FixedCurrencyCell({
   amount,
   isSummary = false,
+  isHighlighted = false,
 }: FixedCurrencyCellProps) {
   const displayValue = `$${Math.round(amount)}`;
 
@@ -18,25 +20,32 @@ export function FixedCurrencyCell({
       type="number"
       displayValue={displayValue}
       isSummary={isSummary}
+      isHighlighted={isHighlighted}
     />
   );
 }
 
-type EditableCurrencyCellProps = Omit<FixedCurrencyCellProps, "isSummary"> & {
+type EditableCurrencyCellProps = {
+  displayAmount: number;
+  editAmount: number;
   onItemAmountChange: (amount: number) => void;
+  isHighlighted?: boolean;
 };
 
 export function EditableCurrencyCell({
-  amount,
+  displayAmount,
+  editAmount,
   onItemAmountChange,
+  isHighlighted = false,
 }: EditableCurrencyCellProps) {
-  const roundedAmount = Math.round(amount);
+  const roundedDisplayAmount = Math.round(displayAmount);
+  const initialEditAmount = Math.round(editAmount);
 
-  const [newAmount, setNewAmount] = useState(roundedAmount);
+  const [newAmount, setNewAmount] = useState(initialEditAmount);
 
   useEffect(() => {
-    setNewAmount(amount);
-  }, [amount]);
+    setNewAmount(Math.round(editAmount));
+  }, [editAmount]);
 
   const error = newAmount < 0;
   const errorMessage = newAmount < 0 ? "Amount cannot be negative" : "";
@@ -45,23 +54,26 @@ export function EditableCurrencyCell({
     setNewAmount(Number(e.target.value));
 
   const handleSubmit = () => {
-    onItemAmountChange(newAmount);
+    if (Math.round(newAmount) !== Math.round(editAmount)) {
+      onItemAmountChange(Math.round(newAmount));
+    }
   };
 
   const handleBlur = () => {
-    setNewAmount(amount);
+    setNewAmount(Math.round(editAmount));
   };
 
   return (
     <EditableTextFieldCell
       type="number"
       value={newAmount}
-      displayValue={`$${roundedAmount}`}
+      displayValue={`$${roundedDisplayAmount}`}
       error={error}
       errorMessage={errorMessage}
       onChange={handleChange}
       onSubmit={handleSubmit}
       onBlur={handleBlur}
+      isHighlighted={isHighlighted}
     />
   );
 }
