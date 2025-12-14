@@ -28,7 +28,7 @@ export function FixedCurrencyCell({
 type EditableCurrencyCellProps = {
   displayAmount: number;
   editAmount: number;
-  onItemAmountChange: (amount: number) => void;
+  onItemAmountChange: (amount: number, hasAmountChanged: boolean) => void;
   isHighlighted?: boolean;
 };
 
@@ -54,9 +54,10 @@ export function EditableCurrencyCell({
     setNewAmount(Number(e.target.value));
 
   const handleSubmit = () => {
-    if (Math.round(newAmount) !== Math.round(editAmount)) {
-      onItemAmountChange(Math.round(newAmount));
-    }
+    onItemAmountChange(
+      Math.round(newAmount),
+      Math.round(newAmount) !== Math.round(editAmount)
+    );
   };
 
   const handleBlur = () => {
