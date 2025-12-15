@@ -125,13 +125,7 @@ function CategoryItem({
         {itemNeverRepeats ? (
           <DisabledCell />
         ) : isItemCalculated ? (
-          <FixedCurrencyCell
-            amount={item.amountMonthly}
-            isHighlighted={
-              !isItemCalculated &&
-              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY
-            }
-          />
+          <FixedCurrencyCell amount={item.amountMonthly} />
         ) : (
           <EditableCurrencyCell
             displayAmount={item.amountMonthly}
@@ -143,22 +137,13 @@ function CategoryItem({
                 ItemAmountTimeSpan.MONTHLY
               )
             }
-            isHighlighted={
-              isItemCalculated &&
-              item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY
-            }
+            isHighlighted={item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY}
           />
         )}
       </Grid>
       <Grid size={gridSizes.AMOUNT_YEARLY}>
         {isItemCalculated ? (
-          <FixedCurrencyCell
-            amount={item.amountYearly}
-            isHighlighted={
-              item.amountTimeSpan === ItemAmountTimeSpan.YEARLY ||
-              item.repeatFreq === ItemRepeatFreq.NEVER
-            }
-          />
+          <FixedCurrencyCell amount={item.amountYearly} />
         ) : (
           <EditableCurrencyCell
             displayAmount={item.amountYearly}
@@ -174,10 +159,7 @@ function CategoryItem({
                 ItemAmountTimeSpan.YEARLY
               )
             }
-            isHighlighted={
-              item.amountTimeSpan === ItemAmountTimeSpan.YEARLY ||
-              item.repeatFreq === ItemRepeatFreq.NEVER
-            }
+            isHighlighted={item.amountTimeSpan === ItemAmountTimeSpan.YEARLY}
           />
         )}
       </Grid>
