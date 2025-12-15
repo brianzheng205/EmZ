@@ -37,6 +37,8 @@ export const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
       formatter,
       parser,
       onChange,
+      onKeyDown,
+      onBlur,
       ...other
     } = props;
     /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -49,7 +51,7 @@ export const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
         ref={ref}
         {...other}
         inputRef={inputRef}
-        inputProps={getInputProps()}
+        inputProps={getInputProps({ onKeyDown, onBlur })}
         endAdornment={
           <>
             {endAdornment}
