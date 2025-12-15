@@ -9,22 +9,18 @@ type FixedCellProps = {
   type: string;
   displayValue: string;
   isSummary?: boolean;
-  isHighlighted?: boolean;
 };
 
 export function FixedCell({
   type,
   displayValue,
   isSummary = false,
-  isHighlighted = false,
 }: FixedCellProps) {
   return (
     <Typography
       variant={isSummary ? ACCORDION_SUMMAR_HEADING_VARIANT : "body1"}
       sx={{
         textAlign: type == "number" ? "right" : "left",
-        fontWeight: isHighlighted ? "bold" : "normal",
-        color: isHighlighted ? "primary.main" : "inherit",
       }}
     >
       {displayValue}
@@ -41,6 +37,7 @@ type EditableTextFieldCellProps = Omit<FixedCellProps, "isSummary"> & {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: () => void;
   onBlur: () => void;
+  isHighlighted?: boolean;
 };
 
 export function EditableTextFieldCell({
