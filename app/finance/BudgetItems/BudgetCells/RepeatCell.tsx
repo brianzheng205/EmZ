@@ -68,6 +68,7 @@ export function EditableRepeatFreqCell({
           onClose={handleBlur}
           open={selectOpen}
           autoFocus
+          size="small"
         >
           <MenuItem value={ItemRepeatFreq.NEVER}>
             {ItemRepeatFreq.NEVER}

@@ -93,8 +93,9 @@ export function EditableCurrencyCell({
           error={error}
           helperText={error ? errorMessage : undefined}
           autoFocus
+          size="small"
           sx={{
-            "& .MuiInputBase-input": { textAlign: "right" },
+            "& .MuiInputBase-input": { textAlign: "right", py: 0 },
           }}
         />
       </Box>
