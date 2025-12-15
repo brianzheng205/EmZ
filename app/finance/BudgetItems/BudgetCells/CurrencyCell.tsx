@@ -7,13 +7,11 @@ import { FixedCell } from "./Cell";
 type FixedCurrencyCellProps = {
   amount: number;
   isSummary?: boolean;
-  isHighlighted?: boolean;
 };
 
 export function FixedCurrencyCell({
   amount,
   isSummary = false,
-  isHighlighted = false,
 }: FixedCurrencyCellProps) {
   const displayValue = `$${Math.round(amount)}`;
 
@@ -22,7 +20,6 @@ export function FixedCurrencyCell({
       type="number"
       displayValue={displayValue}
       isSummary={isSummary}
-      isHighlighted={isHighlighted}
     />
   );
 }
