@@ -82,7 +82,18 @@ function CategoryItem({
   };
 
   const onRepeatFreqChange = (repeatFreq: ItemRepeatFreq) => {
-    onActiveBudgetItemChange({ repeatFreq });
+    if (
+      repeatFreq === ItemRepeatFreq.NEVER &&
+      item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY
+    ) {
+      onActiveBudgetItemChange({
+        repeatFreq,
+        amountTimeSpan: ItemAmountTimeSpan.YEARLY,
+        amount: item.amountMonthly * 12,
+      });
+    } else {
+      onActiveBudgetItemChange({ repeatFreq });
+    }
   };
 
   const onAmountChange = (
