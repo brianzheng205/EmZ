@@ -92,6 +92,10 @@ export function EditableTextFieldCell({
           onBlur={handleBlur}
           autoFocus
           hiddenLabel
+          size="small"
+          sx={{
+            "& .MuiInputBase-input": { py: 0 },
+          }}
         />
       ) : (
         <Typography
