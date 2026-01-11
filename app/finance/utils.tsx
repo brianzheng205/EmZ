@@ -8,7 +8,7 @@ import {
 
 const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
 
-const TEMP_RSU_TAX_RATE = 0.24; // flat tax rate for post-vesting RSU income
+const TEMP_RSU_TAX_RATE = 0.34; // flat tax rate for post-vesting RSU income
 const TEMP_RSU_TAKE_HOME_RATE = 1 - TEMP_RSU_TAX_RATE;
 
 /**
@@ -102,11 +102,15 @@ export const getCalculatedCategories = (
     taxableIncomeNoRSUYearly * TEMP_TAX_RATE +
     taxableRSUYearly * TEMP_RSU_TAX_RATE;
 
-  // take home = taxable income - taxes
+  // take home = gross income - deductions - taxes
   categories.takeHome.sumMonthly =
-    totalEarningsMonthly - categories.taxes.sumMonthly;
+    totalEarningsMonthly -
+    categories.deductions.sumMonthly -
+    categories.taxes.sumMonthly;
   categories.takeHome.sumYearly =
-    totalEarningsYearly - categories.taxes.sumYearly;
+    totalEarningsYearly -
+    categories.deductions.sumYearly -
+    categories.taxes.sumYearly;
 
   // liquid assets = take home - retirement - expenses
   categories.liquidAssets.sumMonthly =
