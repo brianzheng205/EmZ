@@ -36,7 +36,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "jest"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
