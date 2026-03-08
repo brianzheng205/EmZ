@@ -3,10 +3,10 @@ import { Box } from "@mui/system";
 import { useState } from "react";
 
 import SelectWrapper from "@/components/SelectWrapper";
-import { ItemRepeatFreq } from "@/finance/types";
+import { Frequency } from "@/finance/types";
 
 interface FixedRepeatFreqCellProps {
-  repeatFreq: ItemRepeatFreq;
+  repeatFreq: Frequency;
 }
 
 export function FixedRepeatFreqCell({ repeatFreq }: FixedRepeatFreqCellProps) {
@@ -23,8 +23,8 @@ export function FixedRepeatFreqCell({ repeatFreq }: FixedRepeatFreqCellProps) {
 }
 
 interface EditableRepeatFreqCellProps {
-  repeatFreq: ItemRepeatFreq;
-  onItemRepeatFreqChange: (repeatFreq: ItemRepeatFreq) => void;
+  repeatFreq: Frequency;
+  onItemRepeatFreqChange: (repeatFreq: Frequency) => void;
 }
 
 export function EditableRepeatFreqCell({
@@ -44,7 +44,7 @@ export function EditableRepeatFreqCell({
   };
 
   const handleSubmit = (event: SelectChangeEvent) => {
-    onItemRepeatFreqChange(event.target.value as ItemRepeatFreq);
+    onItemRepeatFreqChange(event.target.value as Frequency);
     handleBlur();
   };
 
@@ -62,7 +62,7 @@ export function EditableRepeatFreqCell({
       {editMode ? (
         <SelectWrapper
           id="repeat-freq-select"
-          label="Repeat?"
+          label="Frequency"
           value={repeatFreq}
           onChange={handleSubmit}
           onClose={handleBlur}
@@ -70,12 +70,11 @@ export function EditableRepeatFreqCell({
           autoFocus
           size="small"
         >
-          <MenuItem value={ItemRepeatFreq.NEVER}>
-            {ItemRepeatFreq.NEVER}
-          </MenuItem>
-          <MenuItem value={ItemRepeatFreq.MONTHLY}>
-            {ItemRepeatFreq.MONTHLY}
-          </MenuItem>
+          {Object.values(Frequency).map((freq) => (
+            <MenuItem key={freq} value={freq}>
+              {freq}
+            </MenuItem>
+          ))}
         </SelectWrapper>
       ) : (
         <Chip

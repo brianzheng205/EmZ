@@ -1,4 +1,4 @@
-import { FbBudget, FbBudgetMetadata } from "../types";
+import { FbBudget, FbBudgetMetadata } from "../../types";
 
 import BudgetDialog from "./BudgetDialog";
 

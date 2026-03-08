@@ -5,19 +5,14 @@ import DialogWrapper from "@/components/DialogWrapper";
 import SelectWrapper from "@/components/SelectWrapper";
 import { NumberInputField } from "mui-treasury/components/number-input";
 
-import {
-  FbBudgetItem,
-  ItemAmountTimeSpan,
-  ItemRepeatFreq,
-  ItemType,
-} from "../types";
+import { AmountBasis, FbBudgetItem, Frequency, ItemType } from "../../types";
 
 const DEFAULT_ITEM: FbBudgetItem = {
   name: "",
   type: ItemType.EXPENSES,
   amount: 100,
-  amountTimeSpan: ItemAmountTimeSpan.MONTHLY,
-  repeatFreq: ItemRepeatFreq.MONTHLY,
+  frequency: Frequency.MONTHLY,
+  basis: AmountBasis.MONTHLY,
 };
 
 interface AddItemDialogProps {
@@ -47,7 +42,8 @@ export default function AddItemDialog({
   }, [open]);
 
   const handleAmountChange = useCallback((value: number) => {
-    if (!value) {
+    if (!value && value !== 0) {
+      // check for NaN/null but allow 0
       return;
     }
 
@@ -84,8 +80,8 @@ export default function AddItemDialog({
           isNameEmpty
             ? "Please provide a name"
             : isNameTaken
-            ? "Name already exists"
-            : ""
+              ? "Name already exists"
+              : ""
         }
       />
 
@@ -111,42 +107,24 @@ export default function AddItemDialog({
         label="Amount"
         value={newItem.amount}
         onChange={handleAmountChange}
-        min={1}
+        min={0}
         step={100}
       />
 
       <SelectWrapper
-        id="budget-item-amount-time-span-select"
-        label="Amount Time Span"
-        value={newItem.amountTimeSpan}
+        id="budget-item-frequency-select"
+        label="Frequency"
+        value={newItem.frequency}
         onChange={(event) =>
           setNewItem((prev) => ({
             ...prev,
-            amountTimeSpan: event.target.value as ItemAmountTimeSpan,
+            frequency: event.target.value as Frequency,
           }))
         }
       >
-        {Object.entries(ItemAmountTimeSpan).map(([key, value]) => (
-          <MenuItem key={key} value={value}>
-            {value}
-          </MenuItem>
-        ))}
-      </SelectWrapper>
-
-      <SelectWrapper
-        id="budget-item-repeat-freq-select"
-        label="Repeat Frequency"
-        value={newItem.repeatFreq}
-        onChange={(event) =>
-          setNewItem((prev) => ({
-            ...prev,
-            repeatFreq: event.target.value as ItemRepeatFreq,
-          }))
-        }
-      >
-        {Object.entries(ItemRepeatFreq).map(([key, value]) => (
-          <MenuItem key={key} value={value}>
-            {value}
+        {Object.values(Frequency).map((freq) => (
+          <MenuItem key={freq} value={freq}>
+            {freq}
           </MenuItem>
         ))}
       </SelectWrapper>

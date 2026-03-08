@@ -18,9 +18,11 @@ import {
   CalculatedCategories,
   CategoryWithNoItems,
   FbBudgetItem,
-  ItemRepeatFreq,
-  ItemAmountTimeSpan,
+  Frequency,
+  AmountBasis,
+  ViewType,
 } from "../types";
+import { convertBudgetItemAmount } from "../utils";
 
 import {
   EditableCurrencyCell,
@@ -65,6 +67,7 @@ interface CategoryItemProps {
   onActiveBudgetItemChange: (newItem: Partial<FbBudgetItem>) => void;
   onActiveBudgetItemDelete: () => void;
   numMonths: number;
+  viewType: ViewType;
 }
 
 function CategoryItem({
@@ -73,41 +76,18 @@ function CategoryItem({
   onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
   numMonths,
+  viewType,
 }: CategoryItemProps) {
   const isItemCalculated = item.type === "Liquid Assets";
-  const itemNeverRepeats = item.repeatFreq === ItemRepeatFreq.NEVER;
+  const itemNeverRepeats = item.frequency === Frequency.ONE_TIME;
 
-  const onNameChange = (name: string) => {
-    onActiveBudgetItemChange({ name });
-  };
+  const onNameChange = (name: string) => onActiveBudgetItemChange({ name });
 
-  const onRepeatFreqChange = (repeatFreq: ItemRepeatFreq) => {
-    if (
-      repeatFreq === ItemRepeatFreq.NEVER &&
-      item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY
-    ) {
-      onActiveBudgetItemChange({
-        repeatFreq,
-        amountTimeSpan: ItemAmountTimeSpan.YEARLY,
-        amount: item.amountMonthly * 12,
-      });
-    } else {
-      onActiveBudgetItemChange({ repeatFreq });
-    }
-  };
+  const onFrequencyChange = (frequency: Frequency) =>
+    onActiveBudgetItemChange({ frequency });
 
-  const onAmountChange = (
-    amount: number,
-    hasAmountChanged: boolean,
-    amountTimeSpan: ItemAmountTimeSpan
-  ) => {
-    if (hasAmountChanged || amountTimeSpan !== item.amountTimeSpan) {
-      onActiveBudgetItemChange({
-        amount,
-        amountTimeSpan,
-      });
-    }
-  };
+  const onAmountChange = (newAmount: number, newBasis: AmountBasis) =>
+    onActiveBudgetItemChange({ amount: newAmount, basis: newBasis });
 
   return (
     <Grid container spacing={2}>
@@ -124,11 +104,11 @@ function CategoryItem({
       </Grid>
       <Grid size={gridSizes.REPEAT_FREQ}>
         {isItemCalculated ? (
-          <FixedRepeatFreqCell repeatFreq={item.repeatFreq} />
+          <FixedRepeatFreqCell repeatFreq={item.frequency} />
         ) : (
           <EditableRepeatFreqCell
-            repeatFreq={item.repeatFreq}
-            onItemRepeatFreqChange={onRepeatFreqChange}
+            repeatFreq={item.frequency}
+            onItemRepeatFreqChange={onFrequencyChange}
           />
         )}
       </Grid>
@@ -136,41 +116,33 @@ function CategoryItem({
         {itemNeverRepeats ? (
           <DisabledCell />
         ) : isItemCalculated ? (
-          <FixedCurrencyCell amount={item.amountMonthly} />
+          <FixedCurrencyCell
+            amount={convertBudgetItemAmount(item, AmountBasis.MONTHLY)}
+          />
         ) : (
           <EditableCurrencyCell
-            displayAmount={item.amountMonthly}
-            editAmount={item.amountMonthly}
-            onItemAmountChange={(amount, hasAmountChanged) =>
-              onAmountChange(
-                amount,
-                hasAmountChanged,
-                ItemAmountTimeSpan.MONTHLY
-              )
+            displayAmount={convertBudgetItemAmount(item, AmountBasis.MONTHLY)}
+            editAmount={convertBudgetItemAmount(item, AmountBasis.MONTHLY)}
+            onItemAmountChange={(amount) =>
+              onAmountChange(amount, AmountBasis.MONTHLY)
             }
-            isHighlighted={item.amountTimeSpan === ItemAmountTimeSpan.MONTHLY}
+            isHighlighted={item.basis === AmountBasis.MONTHLY}
           />
         )}
       </Grid>
       <Grid size={gridSizes.AMOUNT_YEARLY}>
         {isItemCalculated ? (
-          <FixedCurrencyCell amount={item.amountYearly} />
+          <FixedCurrencyCell
+            amount={convertBudgetItemAmount(item, AmountBasis.YEARLY)}
+          />
         ) : (
           <EditableCurrencyCell
-            displayAmount={item.amountYearly}
-            editAmount={
-              item.amountTimeSpan === ItemAmountTimeSpan.YEARLY
-                ? (item.amountYearly / numMonths) * 12
-                : item.amountYearly
+            displayAmount={convertBudgetItemAmount(item, AmountBasis.YEARLY)}
+            editAmount={convertBudgetItemAmount(item, AmountBasis.YEARLY)}
+            onItemAmountChange={(amount) =>
+              onAmountChange(amount, AmountBasis.YEARLY)
             }
-            onItemAmountChange={(amount, hasAmountChanged) =>
-              onAmountChange(
-                amount,
-                hasAmountChanged,
-                ItemAmountTimeSpan.YEARLY
-              )
-            }
-            isHighlighted={item.amountTimeSpan === ItemAmountTimeSpan.YEARLY}
+            isHighlighted={item.basis === AmountBasis.YEARLY}
           />
         )}
       </Grid>
@@ -197,10 +169,11 @@ interface BudgetAccordionProps {
   allItemNames: string[];
   onActiveBudgetItemChange: (
     oldItemName: string,
-    newItem: Partial<FbBudgetItem>
+    newItem: Partial<FbBudgetItem>,
   ) => void;
   onActiveBudgetItemDelete: (name: string) => void;
   numMonths: number;
+  viewType: ViewType;
 }
 
 function CategoryAccordion({
@@ -209,6 +182,7 @@ function CategoryAccordion({
   onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
   numMonths,
+  viewType,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
 
@@ -240,6 +214,7 @@ function CategoryAccordion({
                 onActiveBudgetItemDelete(item.name)
               }
               numMonths={numMonths}
+              viewType={viewType}
             />
           ))}
         </AccordionDetails>
@@ -253,15 +228,17 @@ interface BudgetAccordionsProps {
   onItemChange: (
     budgetId: string,
     oldItemName: string,
-    newItem: Partial<FbBudgetItem>
+    newItem: Partial<FbBudgetItem>,
   ) => void;
   onItemDelete: (budgetId: string, itemName: string) => void;
+  viewType: ViewType;
 }
 
 export default function BudgetAccordions({
   activeBudgets,
   onItemChange,
   onItemDelete,
+  viewType,
 }: BudgetAccordionsProps) {
   // properties for just the first active budget
   const allItemNames: string[] = [];
@@ -300,6 +277,7 @@ export default function BudgetAccordions({
             onItemDelete(activeBudgets[0].id, itemName)
           }
           numMonths={activeBudgets[0].numMonths}
+          viewType={viewType}
         />
       ))}
     </>

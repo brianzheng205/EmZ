@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { EditableTextFieldCell, FixedCell } from "./Cell";
 
@@ -23,6 +23,10 @@ export function EditableNameCell({
 }: EditableNameCellProps) {
   const [newName, setNewName] = useState(name);
 
+  useEffect(() => {
+    setNewName(name);
+  }, [name]);
+
   const isNameTaken = allItemNames.includes(newName) && newName !== name;
   const isNameEmpty = newName === "";
 
@@ -30,8 +34,8 @@ export function EditableNameCell({
   const errorMessage = isNameTaken
     ? "Name already exists"
     : isNameEmpty
-    ? "Name cannot be empty"
-    : "";
+      ? "Name cannot be empty"
+      : "";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setNewName(e.target.value);
