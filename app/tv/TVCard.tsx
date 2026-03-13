@@ -131,7 +131,16 @@ export default function TVCard({
               ? "info"
               : "default"
           }
-          sx={{ position: "absolute", top: 12, left: 12, fontWeight: "bold" }}
+          sx={{ 
+            position: "absolute", 
+            top: 12, 
+            left: 12, 
+            fontWeight: "bold",
+            ...(status === "Not Started" && {
+              bgcolor: "rgba(255, 255, 255, 0.9)",
+              color: "rgba(0, 0, 0, 0.87)"
+            })
+          }}
         />
 
         {/* Delete Button */}
