@@ -1,14 +1,15 @@
 "use client";
-import { ArrowDropDown } from "@mui/icons-material";
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Box,
   Stack,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Typography,
   Grid,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton
 } from "@mui/material";
 import { useState, useEffect, useCallback } from "react";
 
@@ -28,6 +29,7 @@ import {
   fetchGenres,
   EmZGenre,
   Filter,
+  Provider,
   applyFiltersAndSorts,
   fetchDataFromTMDB,
   fetchContentSearchResults,
@@ -39,9 +41,9 @@ export default function TVPage() {
   const [filters, setFilters] = useState<Record<string, Filter<EmZContent>>>(
     {}
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [providers, setProviders] = useState<any[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [rowsLoading, setRowsLoading] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleUpdateInfo = async (updatedItem: EmZContent) => {
     try {
@@ -126,7 +128,7 @@ export default function TVPage() {
     }
 
     const rowsData = data.docs.map((doc) => {
-      const docData = doc.data();
+      const docData = doc.data() as Provider;
       return docData;
     });
 
@@ -153,6 +155,7 @@ export default function TVPage() {
       sx={{ alignItems: "center", marginTop: "3%", width: "100%", gap: 4 }}
     >
       <Stack sx={{ gap: 2, width: "95%", alignItems: "center" }}>
+
         <ContentSearchBar
           setRows={setRows}
           rows={rows}
@@ -167,6 +170,7 @@ export default function TVPage() {
              setFilters={setFilters}
              setRows={setRows}
              setRowsLoading={setRowsLoading}
+             onOpenSettings={() => setIsSettingsOpen(true)}
           />
           <Box sx={{ flexGrow: 1, width: "100%", mt: 2 }}>
             <Grid container spacing={3}>
@@ -185,14 +189,30 @@ export default function TVPage() {
           </Box>
         </Box>
       </Stack>
-      <Accordion sx={{ width: "95%" }}>
-        <AccordionSummary expandIcon={<ArrowDropDown />}>
-          <Typography>Providers</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
+      
+      <Dialog 
+        open={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: "background.default",
+            borderRadius: 3,
+            p: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h5" fontWeight="bold" color="primary">Manage Providers</Typography>
+          <IconButton onClick={() => setIsSettingsOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
           <NetworkPage providers={providers} setProviders={setProviders} />
-        </AccordionDetails>
-      </Accordion>
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 }

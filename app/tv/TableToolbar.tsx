@@ -1,5 +1,6 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { IconButton, Stack } from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { IconButton, Stack, Box } from "@mui/material";
 import { GridRowsProp } from "@mui/x-data-grid";
 import { Dispatch } from "react";
 
@@ -27,6 +28,7 @@ export type CustomToolbarProps = {
   >;
   setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
   setRowsLoading: Dispatch<React.SetStateAction<boolean>>;
+  onOpenSettings: () => void;
 };
 export default function TableToolbar({
   rows,
@@ -35,6 +37,7 @@ export default function TableToolbar({
   setFilters,
   setRows,
   setRowsLoading,
+  onOpenSettings,
 }: CustomToolbarProps) {
   return (
     <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: "center", flexWrap: "wrap" }}>
@@ -61,6 +64,34 @@ export default function TableToolbar({
             ),
         }}
         buttonText="Filter Out Completed and Not Ongoing"
+      />
+      
+      <Box sx={{ flexGrow: 1 }} />
+      
+      <input 
+        type="search"
+        placeholder="Search table..."
+        style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #ccc', outline: 'none' }}
+        onChange={(e) => {
+          const val = e.target.value.toLowerCase();
+          setFilters((prev) => {
+             const newFilters = { ...prev };
+             if (val) {
+               newFilters['quickFilter'] = {
+                 name: 'quickFilter',
+                 filter: (items) => items.filter(item => {
+                   const nameMatch = item.name?.toLowerCase().includes(val) || item.title?.toLowerCase().includes(val);
+                   const genreMatch = item.genre_ids?.some(id => genres?.[id]?.name.toLowerCase().includes(val));
+                   const whoMatch = item.who?.toLowerCase().includes(val);
+                   return nameMatch || genreMatch || whoMatch;
+                 })
+               };
+             } else {
+               delete newFilters['quickFilter'];
+             }
+             return newFilters;
+          });
+        }}
       />
       <IconButton
         onClick={() => {
@@ -196,31 +227,9 @@ export default function TableToolbar({
       >
         <RefreshIcon />
       </IconButton>
-      <input 
-        type="search"
-        placeholder="Search table..."
-        style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #ccc', outline: 'none' }}
-        onChange={(e) => {
-          const val = e.target.value.toLowerCase();
-          setFilters((prev) => {
-             const newFilters = { ...prev };
-             if (val) {
-               newFilters['quickFilter'] = {
-                 name: 'quickFilter',
-                 filter: (items) => items.filter(item => {
-                   const nameMatch = item.name?.toLowerCase().includes(val) || item.title?.toLowerCase().includes(val);
-                   const genreMatch = item.genre_ids?.some(id => genres?.[id]?.name.toLowerCase().includes(val));
-                   const whoMatch = item.who?.toLowerCase().includes(val);
-                   return nameMatch || genreMatch || whoMatch;
-                 })
-               };
-             } else {
-               delete newFilters['quickFilter'];
-             }
-             return newFilters;
-          });
-        }}
-      />
+      <IconButton onClick={onOpenSettings} title="Manage Providers">
+        <SettingsIcon color="primary" />
+      </IconButton>
     </Stack>
   );
 }
