@@ -190,33 +190,29 @@ export const convertToMonthlyAmount = (
   numMonths: number = NUM_MONTHS_IN_YEAR,
 ): number => {
   if (item.frequency === Frequency.ONE_TIME) {
-    if (viewType === ViewType.MONTHLY_AVERAGE) {
-      return item.amount / numMonths;
-    }
     return 0;
-  }
-
-  if (!item.isDefinedYearly && item.frequency === Frequency.MONTHLY) {
-    return item.amount;
-  } else if (!item.isDefinedYearly && item.frequency === Frequency.BIWEEKLY) {
-    if (viewType === ViewType.MONTHLY_AVERAGE) {
-      return item.amount * (NUM_PAYCHECKS_IN_YEAR / numMonths);
-    } else if (viewType === ViewType.TWO_PAYCHECK) {
-      return item.amount * 2;
-    } else if (viewType === ViewType.THREE_PAYCHECK) {
-      return item.amount * 3;
-    }
   } else if (item.isDefinedYearly) {
-    if (viewType === ViewType.MONTHLY_AVERAGE) {
-      return item.amount / numMonths;
-    } else if (viewType === ViewType.TWO_PAYCHECK) {
-      // TODO: add support for prorated year calculations
-      return item.amount * (2 / NUM_PAYCHECKS_IN_YEAR);
-    } else if (viewType === ViewType.THREE_PAYCHECK) {
-      // TODO: add support for prorated year calculations
-      return item.amount * (3 / NUM_PAYCHECKS_IN_YEAR);
+    switch (viewType) {
+      case ViewType.MONTHLY_AVERAGE:
+        return item.amount / numMonths;
+      case ViewType.TWO_PAYCHECK:
+        return item.amount * (2 / NUM_PAYCHECKS_IN_YEAR);
+      case ViewType.THREE_PAYCHECK:
+        return item.amount * (3 / NUM_PAYCHECKS_IN_YEAR);
+    }
+  } else {
+    switch (item.frequency) {
+      case Frequency.MONTHLY:
+        return item.amount;
+      case Frequency.BIWEEKLY:
+        switch (viewType) {
+          case ViewType.MONTHLY_AVERAGE:
+            return item.amount * (NUM_PAYCHECKS_IN_YEAR / numMonths);
+          case ViewType.TWO_PAYCHECK:
+            return item.amount * 2;
+          case ViewType.THREE_PAYCHECK:
+            return item.amount * 3;
+        }
     }
   }
-
-  throw new Error("Unsupported monthly conversion");
 };
