@@ -18,6 +18,7 @@ export interface EmZContent extends Movie, TVShow {
   watched: number;
   episodes: number;
   ongoing: boolean;
+  watched_name?: string | null;
 }
 
 export interface TVShow extends Content {

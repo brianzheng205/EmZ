@@ -1,0 +1,337 @@
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import RemoveIcon from "@mui/icons-material/Remove";
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  Typography,
+  Box,
+  LinearProgress,
+  IconButton,
+  Chip,
+  Stack,
+  Menu,
+  MenuItem,
+  Avatar,
+  Tooltip,
+} from "@mui/material";
+import { useState } from "react";
+
+import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
+
+import {
+  EmZContent,
+  EmZGenre,
+  whoOptions,
+  NextEpisodeToAir,
+  Provider,
+} from "./utils";
+
+interface TVCardProps {
+  item: EmZContent & { watched_name?: string | null };
+  genres: Record<number, EmZGenre> | null;
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  providers: any[];
+  onUpdate: (updatedItem: EmZContent) => Promise<void>;
+  onDelete: (id: number) => void;
+}
+
+export default function TVCard({
+  item,
+  genres,
+  providers,
+  onUpdate,
+  onDelete,
+}: TVCardProps) {
+  const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
+
+  const title = item.media_type === "movie" ? item.title : item.name;
+  const progress =
+    item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
+
+  const status =
+    item.watched === 0
+      ? "Not Started"
+      : item.watched < item.episodes
+      ? "In Progress"
+      : "Completed";
+
+  const nextAirDate = (() => {
+    if (item.media_type === "tv" && item.next_episode_to_air) {
+      return new Date(
+        (item.next_episode_to_air as NextEpisodeToAir).air_date +
+          "T00:00:00"
+      );
+    } else if (item.media_type === "movie" && item.release_date) {
+      const release_date = new Date(item.release_date + "T00:00:00");
+      if (release_date > new Date()) {
+        return release_date;
+      }
+    }
+    return null;
+  })();
+
+  const handleWatchedChange = (newWatched: number) => {
+    if (newWatched >= 0 && newWatched <= item.episodes) {
+      onUpdate({ ...item, watched: newWatched });
+    }
+  };
+
+  const currentProviders = Object.keys(item.watch_providers || {})
+    .filter((key) => key !== "link")
+    .flatMap((buyType) => {
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      const providerList = (item.watch_providers as any)[buyType] || [];
+      return providerList.filter(
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        (provider: any) =>
+          buyType === "free" ||
+          buyType === "ads" ||
+          providers.some((p) => p.provider_id === provider.provider_id)
+      );
+    })
+    .filter(
+      (v, i, a) => a.findIndex((t) => t.provider_id === v.provider_id) === i
+    ); // unique
+
+  return (
+    <Card
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "background.paper", // Themed peach paper background
+        borderRadius: 3,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        height: "100%",
+        position: "relative",
+      }}
+    >
+      <Box sx={{ position: "relative" }}>
+        <CardMedia
+          component="img"
+          height="300"
+          image={
+            item.poster_path
+              ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+              : "/favicon.png"
+          }
+          alt={title}
+          sx={{ objectFit: "cover" }}
+        />
+
+        {/* Status Chip */}
+        <Chip
+          label={status}
+          size="small"
+          color={
+            status === "Completed"
+              ? "success"
+              : status === "In Progress"
+              ? "info"
+              : "default"
+          }
+          sx={{ position: "absolute", top: 12, left: 12, fontWeight: "bold" }}
+        />
+
+        {/* Delete Button */}
+        <IconButton
+          size="small"
+          onClick={() => onDelete(item.id)}
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            bgcolor: "rgba(255,255,255,0.7)",
+            "&:hover": { bgcolor: "white" },
+          }}
+        >
+          <DeleteIcon fontSize="small" color="error" />
+        </IconButton>
+      </Box>
+
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+          pb: "16px !important",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
+          <Typography
+            variant="h6"
+            fontWeight="bold"
+            sx={{ lineHeight: 1.2, color: "primary.main" }}
+          >
+            {title}
+          </Typography>
+          <Box sx={{ ml: 1 }}>
+            <CircularProgressWithLabel value={progress} size={40} />
+          </Box>
+        </Box>
+
+        {/* Genres */}
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+          {item.genre_ids?.map((id) => {
+            const genre = genres?.[id];
+            return genre ? (
+              <Chip
+                key={id}
+                label={genre.name}
+                size="small"
+                sx={{ bgcolor: genre.color, fontSize: "0.7rem", height: 20 }}
+              />
+            ) : null;
+          })}
+        </Box>
+
+        <Box
+          sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Watched: {item.watched} / {item.episodes}
+            </Typography>
+            <Box>
+              <IconButton
+                size="small"
+                onClick={() => handleWatchedChange(item.watched - 1)}
+                disabled={item.watched <= 0}
+              >
+                <RemoveIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => handleWatchedChange(item.watched + 1)}
+                disabled={item.watched >= item.episodes}
+              >
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+
+          <LinearProgress
+            variant="determinate"
+            value={progress}
+            sx={{
+              height: 6,
+              borderRadius: 3,
+              bgcolor: "background.default",
+              "& .MuiLinearProgress-bar": {
+                bgcolor: "primary.main",
+              },
+            }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mt: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="body2" fontWeight="medium">
+              For:
+            </Typography>
+            <Chip
+              label={item.who}
+              size="small"
+              onClick={(e) => setWhoAnchorEl(e.currentTarget)}
+              sx={{
+                bgcolor:
+                  item.who === "Emily"
+                    ? "primary.main"
+                    : item.who === "Brian"
+                    ? "secondary.main"
+                    : "default",
+                color: item.who === "Both" ? "inherit" : "white",
+                cursor: "pointer",
+                fontWeight: "bold",
+              }}
+            />
+            <Menu
+              anchorEl={whoAnchorEl}
+              open={Boolean(whoAnchorEl)}
+              onClose={() => setWhoAnchorEl(null)}
+            >
+              {whoOptions.map((option) => (
+                <MenuItem
+                  key={option}
+                  onClick={() => {
+                    onUpdate({ ...item, who: option });
+                    setWhoAnchorEl(null);
+                  }}
+                  selected={item.who === option}
+                >
+                  {option}
+                </MenuItem>
+              ))}
+            </Menu>
+          </Box>
+
+          {/* Providers */}
+          {currentProviders.length > 0 && (
+            <Stack direction="row" spacing={0.5}>
+              {currentProviders.slice(0, 3).map((provider: Provider, idx) => (
+                <Tooltip key={idx} title={provider.provider_name}>
+                  <Avatar
+                    variant="rounded"
+                    src={`https://image.tmdb.org/t/p/w200${provider.logo_path}`}
+                    sx={{ width: 24, height: 24 }}
+                  />
+                </Tooltip>
+              ))}
+              {currentProviders.length > 3 && (
+                <Typography variant="caption" color="text.secondary">
+                  +{currentProviders.length - 3}
+                </Typography>
+              )}
+            </Stack>
+          )}
+        </Box>
+
+        {nextAirDate && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mt: 0.5 }}
+          >
+            Next: {nextAirDate.toLocaleDateString()}
+          </Typography>
+        )}
+        {item.watched_name && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: "block",
+              fontStyle: "italic",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            Ep: {item.watched_name}
+          </Typography>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

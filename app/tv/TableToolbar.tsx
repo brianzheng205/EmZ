@@ -1,10 +1,6 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { IconButton } from "@mui/material";
-import {
-  GridToolbarContainer,
-  GridToolbarQuickFilter,
-  GridRowsProp,
-} from "@mui/x-data-grid";
+import { IconButton, Stack } from "@mui/material";
+import { GridRowsProp } from "@mui/x-data-grid";
 import { Dispatch } from "react";
 
 import FilterButton from "./Filter";
@@ -41,7 +37,7 @@ export default function TableToolbar({
   setRowsLoading,
 }: CustomToolbarProps) {
   return (
-    <GridToolbarContainer>
+    <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: "center", flexWrap: "wrap" }}>
       <NextShow rows={rows} genres={genres} />
 
       <FilterButton
@@ -200,7 +196,31 @@ export default function TableToolbar({
       >
         <RefreshIcon />
       </IconButton>
-      <GridToolbarQuickFilter />
-    </GridToolbarContainer>
+      <input 
+        type="search"
+        placeholder="Search table..."
+        style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #ccc', outline: 'none' }}
+        onChange={(e) => {
+          const val = e.target.value.toLowerCase();
+          setFilters((prev) => {
+             const newFilters = { ...prev };
+             if (val) {
+               newFilters['quickFilter'] = {
+                 name: 'quickFilter',
+                 filter: (items) => items.filter(item => {
+                   const nameMatch = item.name?.toLowerCase().includes(val) || item.title?.toLowerCase().includes(val);
+                   const genreMatch = item.genre_ids?.some(id => genres?.[id]?.name.toLowerCase().includes(val));
+                   const whoMatch = item.who?.toLowerCase().includes(val);
+                   return nameMatch || genreMatch || whoMatch;
+                 })
+               };
+             } else {
+               delete newFilters['quickFilter'];
+             }
+             return newFilters;
+          });
+        }}
+      />
+    </Stack>
   );
 }
