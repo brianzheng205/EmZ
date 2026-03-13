@@ -84,7 +84,7 @@ export default function TVPage() {
           seasonNum = season.season_number;
           const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
           const data = await fetchDataFromTMDB(url);
-          return data.name;
+          return data?.name || null;
         } else {
           currentCount += season.episode_count;
         }
@@ -94,11 +94,12 @@ export default function TVPage() {
   };
 
   const fetchData = useCallback(async () => {
-    setRowsLoading(true);
-    const data = await fetchAllContentFromFirebase();
-    if (!data) {
-      return;
-    }
+    try {
+      setRowsLoading(true);
+      const data = await fetchAllContentFromFirebase();
+      if (!data) {
+        return;
+      }
 
     const genreData = genres ? genres : await fetchGenres();
 
@@ -118,7 +119,11 @@ export default function TVPage() {
       setGenres(genreData as Record<number, EmZGenre>);
     }
     setRows(rowsData);
-    setRowsLoading(false);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setRowsLoading(false);
+    }
   }, [genres]);
 
   const fetchProviders = useCallback(async () => {
@@ -162,7 +167,6 @@ export default function TVPage() {
           fetchSearchResults={fetchContentSearchResults}
         />
         <Box sx={{ width: "100%" }}>
-          {rowsLoading && <CircularProgress sx={{ display: "block", mx: "auto", my: 2 }} />}
           <TableToolbar
              rows={rows}
              genres={genres}
@@ -187,6 +191,7 @@ export default function TVPage() {
               ))}
             </Grid>
           </Box>
+          {rowsLoading && <CircularProgress sx={{ display: "block", mx: "auto", my: 4 }} />}
         </Box>
       </Stack>
       

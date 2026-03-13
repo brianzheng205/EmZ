@@ -10,7 +10,7 @@ import {
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
 import NextShow from "./NextShow";
-import { EmZContent, fetchDataFromTMDB, Filter, TMDBGenre } from "./utils";
+import { EmZContent, fetchDataFromTMDB, Filter, TMDBGenre, TMDBError } from "./utils";
 import { EmZGenre } from "./utils";
 export type TableToolbarProps = {
   filters: Record<string, Filter<EmZContent>>;
@@ -174,7 +174,7 @@ export default function TableToolbar({
                 return;
               } catch (error) {
                 console.log("Example error", error);
-                if (error.status === 429 || error.code === 429) {
+                if ((error as TMDBError).status === 429) {
                   attempts++;
                   console.warn(
                     `Rate limit hit. Retrying in ${RATE_LIMIT_RETRY_DELAY}ms. Attempt ${attempts}/${MAX_ATTEMPTS}`
@@ -215,11 +215,13 @@ export default function TableToolbar({
               );
             });
 
-            await Promise.all(updateTasks).then(() => {
+            try {
+              await Promise.allSettled(updateTasks);
+            } finally {
               setRowsLoading(false);
               const endTime = performance.now();
               console.log(`Elapsed time: ${endTime - startTime} milliseconds`);
-            });
+            }
           };
 
           func();

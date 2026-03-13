@@ -31,8 +31,7 @@ import {
 interface TVCardProps {
   item: EmZContent & { watched_name?: string | null };
   genres: Record<number, EmZGenre> | null;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  providers: any[];
+  providers: Provider[];
   onUpdate: (updatedItem: EmZContent) => Promise<void>;
   onDelete: (id: number) => void;
 }
@@ -81,11 +80,9 @@ export default function TVCard({
   const currentProviders = Object.keys(item.watch_providers || {})
     .filter((key) => key !== "link")
     .flatMap((buyType) => {
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-      const providerList = (item.watch_providers as any)[buyType] || [];
+      const providerList = (item.watch_providers as unknown as Record<string, Provider[]>)[buyType] || [];
       return providerList.filter(
-        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        (provider: any) =>
+        (provider: Provider) =>
           buyType === "free" ||
           buyType === "ads" ||
           providers.some((p) => p.provider_id === provider.provider_id)
