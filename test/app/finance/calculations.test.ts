@@ -23,6 +23,7 @@ describe("getCalculatedCategories", () => {
       type: ItemType.EXPENSES,
       amount: 1000,
       frequency: Frequency.MONTHLY,
+      isDefinedYearly: false,
     };
     const budget = { ...dummyBudget, budgetItems: [item] };
 
@@ -39,6 +40,7 @@ describe("getCalculatedCategories", () => {
       type: ItemType.EARNINGS,
       amount: 2000,
       frequency: Frequency.BIWEEKLY,
+      isDefinedYearly: false,
     };
     const budget = { ...dummyBudget, budgetItems: [item] };
 
@@ -63,6 +65,7 @@ describe("getCalculatedCategories", () => {
       type: ItemType.EARNINGS,
       amount: 500,
       frequency: Frequency.ONE_TIME,
+      isDefinedYearly: true,
     };
     const budget = { ...dummyBudget, budgetItems: [item] };
 

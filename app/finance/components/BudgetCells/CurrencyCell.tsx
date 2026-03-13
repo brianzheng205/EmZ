@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 
 import { NumberInputWrapper } from "../../../components/cells/NumberInputWrapper";
 import { FixedCell } from "./Cell";
-import { AmountBasis } from "@/finance/types";
 
 type FixedCurrencyCellProps = {
   amount: number;

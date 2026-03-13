@@ -3,7 +3,6 @@ import {
   CalculatedCategories,
   FbBudgetWithId,
   Frequency,
-  AmountBasis,
   ViewType,
   BudgetItem,
 } from "./types";
@@ -71,11 +70,15 @@ export const calculateCategories = (
       name: "RSU",
       amount: 0,
       frequency: Frequency.ONE_TIME,
-      basis: AmountBasis.YEARLY,
+      isDefinedYearly: true,
     } as BudgetItem);
 
-  const rsuAmountMonthly = convertBudgetItemAmount(RSU, AmountBasis.MONTHLY);
-  const rsuAmountYearly = convertBudgetItemAmount(RSU, AmountBasis.YEARLY);
+  const rsuAmountMonthly = convertToMonthlyAmount(
+    RSU,
+    viewType,
+    budget.numMonths,
+  );
+  const rsuAmountYearly = convertToYearlyAmount(RSU, budget.numMonths);
 
   // earnings
   const totalEarningsMonthly = categories.earnings.sumMonthly;
@@ -131,14 +134,14 @@ export const calculateCategories = (
     type: "Liquid Assets",
     name: "Post-Tax RSU",
     amount: postTaxRSUYearly,
-    basis: AmountBasis.YEARLY,
+    isDefinedYearly: true,
     frequency: Frequency.MONTHLY,
   });
   categories.liquidAssets.items.push({
     type: "Liquid Assets",
     name: "Remaining",
     amount: remainingYearly,
-    basis: AmountBasis.YEARLY,
+    isDefinedYearly: true,
     frequency: Frequency.MONTHLY,
   });
 
@@ -152,46 +155,22 @@ export const calculateCategories = (
 };
 
 /**
- * Converts a budget item's amount from one basis to another.
- */
-export const convertBudgetItemAmount = (
-  item: BudgetItem,
-  targetBasis: AmountBasis,
-  numMonths: number = NUM_MONTHS_IN_YEAR,
-): number => {
-  if (
-    item.frequency === Frequency.ONE_TIME &&
-    targetBasis === AmountBasis.MONTHLY
-  ) {
-    return 0;
-  } else if (item.basis == targetBasis) {
-    return item.amount;
-  } else if (
-    item.basis === AmountBasis.MONTHLY &&
-    targetBasis === AmountBasis.YEARLY
-  ) {
-    return item.amount * numMonths;
-  } else if (
-    item.basis === AmountBasis.YEARLY &&
-    targetBasis === AmountBasis.MONTHLY
-  ) {
-    return item.amount / numMonths;
-  }
-
-  throw new Error("Invalid basis or targetBasis");
-};
-
-/**
  * Converts a budget item's amount to its yearly equivalent
  */
 export const convertToYearlyAmount = (
   item: BudgetItem,
   numMonths: number = NUM_MONTHS_IN_YEAR,
 ): number => {
-  if (item.basis === AmountBasis.YEARLY) {
+  if (item.frequency === Frequency.ONE_TIME) {
     return item.amount;
-  } else if (item.basis === AmountBasis.MONTHLY) {
+  }
+
+  if (item.isDefinedYearly) {
+    return item.amount;
+  } else if (item.frequency === Frequency.MONTHLY) {
     return item.amount * numMonths;
+  } else if (item.frequency === Frequency.BIWEEKLY) {
+    return item.amount * NUM_PAYCHECKS_IN_YEAR;
   }
 
   throw new Error("Unsupported yearly conversion");
@@ -210,19 +189,24 @@ export const convertToMonthlyAmount = (
   viewType: ViewType,
   numMonths: number = NUM_MONTHS_IN_YEAR,
 ): number => {
-  if (item.frequency == Frequency.ONE_TIME) {
+  if (item.frequency === Frequency.ONE_TIME) {
+    if (viewType === ViewType.MONTHLY_AVERAGE) {
+      return item.amount / numMonths;
+    }
     return 0;
-  } else if (item.basis === AmountBasis.MONTHLY) {
+  }
+
+  if (!item.isDefinedYearly && item.frequency === Frequency.MONTHLY) {
     return item.amount;
-  } else if (
-    item.basis === AmountBasis.YEARLY &&
-    item.frequency === Frequency.MONTHLY
-  ) {
-    return item.amount / numMonths;
-  } else if (
-    item.basis === AmountBasis.YEARLY &&
-    item.frequency === Frequency.BIWEEKLY
-  ) {
+  } else if (!item.isDefinedYearly && item.frequency === Frequency.BIWEEKLY) {
+    if (viewType === ViewType.MONTHLY_AVERAGE) {
+      return item.amount * (NUM_PAYCHECKS_IN_YEAR / numMonths);
+    } else if (viewType === ViewType.TWO_PAYCHECK) {
+      return item.amount * 2;
+    } else if (viewType === ViewType.THREE_PAYCHECK) {
+      return item.amount * 3;
+    }
+  } else if (item.isDefinedYearly) {
     if (viewType === ViewType.MONTHLY_AVERAGE) {
       return item.amount / numMonths;
     } else if (viewType === ViewType.TWO_PAYCHECK) {

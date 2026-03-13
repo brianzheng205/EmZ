@@ -19,10 +19,9 @@ import {
   CategoryWithNoItems,
   FbBudgetItem,
   Frequency,
-  AmountBasis,
   ViewType,
 } from "../types";
-import { convertBudgetItemAmount } from "../utils";
+import { convertToMonthlyAmount, convertToYearlyAmount } from "../utils";
 
 import {
   EditableCurrencyCell,
@@ -83,11 +82,23 @@ function CategoryItem({
 
   const onNameChange = (name: string) => onActiveBudgetItemChange({ name });
 
-  const onFrequencyChange = (frequency: Frequency) =>
-    onActiveBudgetItemChange({ frequency });
+  const onFrequencyChange = (newFrequency: Frequency) => {
+    if (newFrequency === Frequency.ONE_TIME && !item.isDefinedYearly) {
+      // If switching to One Time from a monthly input, calculate the yearly
+      // equivalent and upgrade the stored amount and basis flag to yearly.
+      const yearlyAmount = convertToYearlyAmount(item, numMonths);
+      onActiveBudgetItemChange({
+        frequency: newFrequency,
+        isDefinedYearly: true,
+        amount: yearlyAmount,
+      });
+    } else {
+      onActiveBudgetItemChange({ frequency: newFrequency });
+    }
+  };
 
-  const onAmountChange = (newAmount: number, newBasis: AmountBasis) =>
-    onActiveBudgetItemChange({ amount: newAmount, basis: newBasis });
+  const onAmountChange = (newAmount: number, isDefinedYearly: boolean) =>
+    onActiveBudgetItemChange({ amount: newAmount, isDefinedYearly });
 
   return (
     <Grid container spacing={2}>
@@ -117,32 +128,26 @@ function CategoryItem({
           <DisabledCell />
         ) : isItemCalculated ? (
           <FixedCurrencyCell
-            amount={convertBudgetItemAmount(item, AmountBasis.MONTHLY)}
+            amount={convertToMonthlyAmount(item, viewType, numMonths)}
           />
         ) : (
           <EditableCurrencyCell
-            displayAmount={convertBudgetItemAmount(item, AmountBasis.MONTHLY)}
-            editAmount={convertBudgetItemAmount(item, AmountBasis.MONTHLY)}
-            onItemAmountChange={(amount) =>
-              onAmountChange(amount, AmountBasis.MONTHLY)
-            }
-            isHighlighted={item.basis === AmountBasis.MONTHLY}
+            displayAmount={convertToMonthlyAmount(item, viewType, numMonths)}
+            editAmount={convertToMonthlyAmount(item, viewType, numMonths)}
+            onItemAmountChange={(amount) => onAmountChange(amount, false)}
+            isHighlighted={!item.isDefinedYearly}
           />
         )}
       </Grid>
       <Grid size={gridSizes.AMOUNT_YEARLY}>
         {isItemCalculated ? (
-          <FixedCurrencyCell
-            amount={convertBudgetItemAmount(item, AmountBasis.YEARLY)}
-          />
+          <FixedCurrencyCell amount={convertToYearlyAmount(item, numMonths)} />
         ) : (
           <EditableCurrencyCell
-            displayAmount={convertBudgetItemAmount(item, AmountBasis.YEARLY)}
-            editAmount={convertBudgetItemAmount(item, AmountBasis.YEARLY)}
-            onItemAmountChange={(amount) =>
-              onAmountChange(amount, AmountBasis.YEARLY)
-            }
-            isHighlighted={item.basis === AmountBasis.YEARLY}
+            displayAmount={convertToYearlyAmount(item, numMonths)}
+            editAmount={convertToYearlyAmount(item, numMonths)}
+            onItemAmountChange={(amount) => onAmountChange(amount, true)}
+            isHighlighted={item.isDefinedYearly}
           />
         )}
       </Grid>

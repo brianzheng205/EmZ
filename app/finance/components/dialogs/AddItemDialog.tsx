@@ -5,14 +5,14 @@ import DialogWrapper from "@/components/DialogWrapper";
 import SelectWrapper from "@/components/SelectWrapper";
 import { NumberInputField } from "mui-treasury/components/number-input";
 
-import { AmountBasis, FbBudgetItem, Frequency, ItemType } from "../../types";
+import { FbBudgetItem, Frequency, ItemType } from "../../types";
 
 const DEFAULT_ITEM: FbBudgetItem = {
   name: "",
   type: ItemType.EXPENSES,
   amount: 100,
   frequency: Frequency.MONTHLY,
-  basis: AmountBasis.MONTHLY,
+  isDefinedYearly: false,
 };
 
 interface AddItemDialogProps {

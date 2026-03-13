@@ -12,11 +12,6 @@ export enum Frequency {
   MONTHLY = "Monthly",
 }
 
-export enum AmountBasis {
-  MONTHLY = "Monthly",
-  YEARLY = "Yearly",
-}
-
 export enum ViewType {
   MONTHLY_AVERAGE = "Monthly Average",
   TWO_PAYCHECK = "Two Paycheck Month",
@@ -30,7 +25,7 @@ export type FbBudgetItem = {
   name: string;
   amount: number;
   frequency: Frequency;
-  basis: AmountBasis;
+  isDefinedYearly: boolean;
 };
 
 export type FbBudgetMetadata = {
@@ -49,7 +44,7 @@ export type FbBudgetWithId = FbBudget & { id: string };
 
 export type BudgetItem = Pick<
   FbBudgetItem,
-  "name" | "frequency" | "basis" | "amount"
+  "name" | "frequency" | "isDefinedYearly" | "amount"
 > & {
   type: FbBudgetItem["type"] | "Liquid Assets";
 };
