@@ -3,11 +3,13 @@ import {
   Autocomplete,
   Avatar,
   Box,
-  Button,
   MenuItem,
   Select,
-  Stack,
+  Typography,
   TextField,
+  Paper,
+  Divider,
+  IconButton,
 } from "@mui/material";
 import { GridRowsProp } from "@mui/x-data-grid";
 import { debounce } from "lodash";
@@ -52,8 +54,8 @@ export default function ContentSearchBar({
         data.results.filter(
           (item) =>
             (item.media_type == "tv" || item.media_type == "movie") &&
-            !rowIds.has(item.id)
-        )
+            !rowIds.has(item.id),
+        ),
       );
       setLoading(false);
     };
@@ -74,7 +76,7 @@ export default function ContentSearchBar({
 
     if (value.media_type === "tv") {
       const tvData = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/tv/${value.id}?append_to_response=watch%2Fproviders&language=en-US`
+        `https://api.themoviedb.org/3/tv/${value.id}?append_to_response=watch%2Fproviders&language=en-US`,
       );
 
       value["episodes"] = tvData.number_of_episodes;
@@ -84,12 +86,12 @@ export default function ContentSearchBar({
       value["watch_providers"] = tvData["watch/providers"].results?.US || [];
     } else {
       const movieData = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/movie/${value.id}?append_to_response=watch%2Fproviders&language=en-US`
+        `https://api.themoviedb.org/3/movie/${value.id}?append_to_response=watch%2Fproviders&language=en-US`,
       );
 
       if (movieData.belongs_to_collection) {
         const collection = await fetchDataFromTMDB(
-          `https://api.themoviedb.org/3/collection/${movieData.belongs_to_collection.id}?append_to_response=watch%2Fproviders&language=en-US`
+          `https://api.themoviedb.org/3/collection/${movieData.belongs_to_collection.id}?append_to_response=watch%2Fproviders&language=en-US`,
         );
 
         for (const part of collection.parts) {
@@ -129,12 +131,15 @@ export default function ContentSearchBar({
       });
   };
   return (
-    <Stack
-      direction={"row"}
+    <Paper
+      elevation={2}
       sx={{
-        gap: 2,
+        display: "flex",
         width: "100%",
-        justifyContent: "center",
+        maxWidth: 800,
+        borderRadius: 8,
+        overflow: "hidden",
+        bgcolor: "background.paper",
         alignItems: "center",
       }}
     >
@@ -147,8 +152,8 @@ export default function ContentSearchBar({
           return typeof option === "string"
             ? option
             : option.media_type === "tv"
-            ? (option as TVShow).name
-            : (option as Movie).title;
+              ? (option as TVShow).name
+              : (option as Movie).title;
         }}
         onInputChange={handleInputChange}
         onChange={(event, value) => {
@@ -156,15 +161,45 @@ export default function ContentSearchBar({
         }}
         loading={loading}
         sx={{ flex: 1 }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              mt: 1,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              overflow: "hidden",
+            },
+          },
+        }}
         renderInput={(params) => (
-          <TextField {...params} label="Search Content" />
+          <TextField
+            {...params}
+            placeholder="Search TV Shows or Movies..."
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  border: "none",
+                },
+              },
+            }}
+            InputProps={{
+              ...params.InputProps,
+              sx: { px: 3, py: 0.5, fontSize: "1.1rem", height: "100%" },
+            }}
+          />
         )}
         renderOption={(props, option) => (
           <Box
             component="li"
             {...props}
             key={`${option.media_type}-${option.id}`}
-            sx={{ display: "flex", gap: 2 }}
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              p: "8px !important",
+            }}
           >
             <Avatar
               alt={
@@ -173,30 +208,82 @@ export default function ContentSearchBar({
                   : (option as Movie).title
               }
               key={option.id}
-              src={`https://image.tmdb.org/t/p/w500/${option.poster_path}`}
-              variant="square"
-              sx={{ height: 200, width: "auto" }}
+              src={`https://image.tmdb.org/t/p/w154/${option.poster_path}`}
+              variant="rounded"
+              sx={{ height: 120, width: 80 }}
             />
-            {option.media_type === "tv"
-              ? (option as TVShow).name
-              : (option as Movie).title}
+            <Box>
+              <Typography variant="body1" fontWeight="medium">
+                {option.media_type === "tv"
+                  ? (option as TVShow).name
+                  : (option as Movie).title}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ textTransform: "uppercase" }}
+              >
+                {option.media_type}
+              </Typography>
+            </Box>
           </Box>
         )}
       />
+
+      <Divider orientation="vertical" flexItem />
+
       <Select
         value={who}
+        variant="standard"
+        disableUnderline
         onChange={(event) => {
           setWho(event.target.value as WhoSelection);
         }}
+        sx={{
+          minWidth: 100,
+          pl: 2,
+          pr: 1,
+          fontFamily: "inherit",
+          fontWeight: "bold",
+          color:
+            who === "Emily"
+              ? "primary.main"
+              : who === "Brian"
+                ? "secondary.main"
+                : "text.primary",
+        }}
       >
         {whoOptions.map((option) => (
-          <MenuItem key={option} value={option}>
+          <MenuItem
+            key={option}
+            value={option}
+            sx={{
+              color:
+                option === "Emily"
+                  ? "primary.main"
+                  : option === "Brian"
+                    ? "secondary.main"
+                    : "text.primary",
+              fontWeight: "bold",
+            }}
+          >
             {option}
           </MenuItem>
         ))}
       </Select>
-      <Button
-        startIcon={<Add />}
+
+      <IconButton
+        color="primary"
+        sx={{
+          borderRadius: 0,
+          px: 3,
+          alignSelf: "stretch",
+          bgcolor: "primary.main",
+          color: "white",
+          "&:hover": {
+            bgcolor: "primary.dark",
+          },
+        }}
         onClick={() => {
           if (selectedContent) {
             addContent(selectedContent, who);
@@ -206,8 +293,8 @@ export default function ContentSearchBar({
           }
         }}
       >
-        Add Content
-      </Button>
-    </Stack>
+        <Add />
+      </IconButton>
+    </Paper>
   );
 }
