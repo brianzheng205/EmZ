@@ -1,6 +1,7 @@
 "use client";
 
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   Accordion,
   AccordionDetails,
@@ -10,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import * as R from "ramda";
+import { useState } from "react";
 
 import {
   CategoryWithItems,
@@ -35,6 +37,7 @@ import {
   FixedRepeatFreqCell,
 } from "./BudgetCells/RepeatCell";
 import { ACCORDION_SUMMAR_HEADING_VARIANT, gridSizes } from "./constants";
+import EditItemDialog from "./dialogs/EditItemDialog";
 
 interface CategorySummaryProps {
   category: CategoryWithItems | CategoryWithNoItems;
@@ -65,6 +68,7 @@ interface CategoryItemProps {
   allItemNames: string[];
   onActiveBudgetItemChange: (newItem: Partial<FbBudgetItem>) => void;
   onActiveBudgetItemDelete: () => void;
+  onEditItem: () => void;
   numMonths: number;
   viewType: ViewType;
 }
@@ -74,6 +78,7 @@ function CategoryItem({
   allItemNames,
   onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
+  onEditItem,
   numMonths,
   viewType,
 }: CategoryItemProps) {
@@ -156,13 +161,22 @@ function CategoryItem({
         sx={{ display: "flex", justifyContent: "center" }}
       >
         {!isItemCalculated && (
-          <IconButton
-            aria-label="delete"
-            onClick={onActiveBudgetItemDelete}
-            sx={{ padding: 0 }}
-          >
-            <DeleteIcon fontSize="small" color="primary" />
-          </IconButton>
+          <>
+            <IconButton
+              aria-label="edit"
+              onClick={onEditItem}
+              sx={{ padding: 0, mr: 0.5 }}
+            >
+              <EditIcon fontSize="small" color="primary" />
+            </IconButton>
+            <IconButton
+              aria-label="delete"
+              onClick={onActiveBudgetItemDelete}
+              sx={{ padding: 0 }}
+            >
+              <DeleteIcon fontSize="small" color="primary" />
+            </IconButton>
+          </>
         )}
       </Grid>
     </Grid>
@@ -177,6 +191,7 @@ interface BudgetAccordionProps {
     newItem: Partial<FbBudgetItem>,
   ) => void;
   onActiveBudgetItemDelete: (name: string) => void;
+  onEditItem: (item: BudgetItem) => void;
   numMonths: number;
   viewType: ViewType;
 }
@@ -186,6 +201,7 @@ function CategoryAccordion({
   allItemNames,
   onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
+  onEditItem,
   numMonths,
   viewType,
 }: BudgetAccordionProps) {
@@ -218,6 +234,7 @@ function CategoryAccordion({
               onActiveBudgetItemDelete={() =>
                 onActiveBudgetItemDelete(item.name)
               }
+              onEditItem={() => onEditItem(item)}
               numMonths={numMonths}
               viewType={viewType}
             />
@@ -245,6 +262,8 @@ export default function BudgetAccordions({
   onItemDelete,
   viewType,
 }: BudgetAccordionsProps) {
+  const [itemToEdit, setItemToEdit] = useState<BudgetItem | null>(null);
+
   // properties for just the first active budget
   const allItemNames: string[] = [];
 
@@ -281,10 +300,22 @@ export default function BudgetAccordions({
           onActiveBudgetItemDelete={(itemName) =>
             onItemDelete(activeBudgets[0].id, itemName)
           }
+          onEditItem={setItemToEdit}
           numMonths={activeBudgets[0].numMonths}
           viewType={viewType}
         />
       ))}
+
+      <EditItemDialog
+        open={!!itemToEdit}
+        item={itemToEdit}
+        allItemNames={allItemNames}
+        onClose={() => setItemToEdit(null)}
+        onSubmit={(oldItemName, newItem) => {
+          onItemChange(activeBudgets[0].id, oldItemName, newItem);
+          setItemToEdit(null);
+        }}
+      />
     </>
   );
 }
