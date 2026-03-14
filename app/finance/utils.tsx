@@ -192,13 +192,18 @@ export const convertToMonthlyAmount = (
   if (item.frequency === Frequency.ONE_TIME) {
     return 0;
   } else if (item.isDefinedYearly) {
-    switch (viewType) {
-      case ViewType.MONTHLY_AVERAGE:
-        return item.amount / numMonths;
-      case ViewType.TWO_PAYCHECK:
-        return item.amount * (2 / NUM_PAYCHECKS_IN_YEAR);
-      case ViewType.THREE_PAYCHECK:
-        return item.amount * (3 / NUM_PAYCHECKS_IN_YEAR);
+    switch (item.frequency) {
+      case Frequency.MONTHLY:
+        return item.amount / NUM_MONTHS_IN_YEAR;
+      case Frequency.BIWEEKLY:
+        switch (viewType) {
+          case ViewType.MONTHLY_AVERAGE:
+            return item.amount / NUM_MONTHS_IN_YEAR;
+          case ViewType.TWO_PAYCHECK:
+            return item.amount * (2 / NUM_PAYCHECKS_IN_YEAR);
+          case ViewType.THREE_PAYCHECK:
+            return item.amount * (3 / NUM_PAYCHECKS_IN_YEAR);
+        }
     }
   } else {
     switch (item.frequency) {
@@ -207,7 +212,7 @@ export const convertToMonthlyAmount = (
       case Frequency.BIWEEKLY:
         switch (viewType) {
           case ViewType.MONTHLY_AVERAGE:
-            return item.amount * (NUM_PAYCHECKS_IN_YEAR / numMonths);
+            return item.amount * (NUM_PAYCHECKS_IN_YEAR / NUM_MONTHS_IN_YEAR);
           case ViewType.TWO_PAYCHECK:
             return item.amount * 2;
           case ViewType.THREE_PAYCHECK:
