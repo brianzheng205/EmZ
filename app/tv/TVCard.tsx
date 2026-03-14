@@ -57,16 +57,15 @@ export default function TVCard({
       : "Completed";
 
   const nextAirDate = (() => {
+    let date: Date | null = null;
     if (item.media_type === "tv" && item.next_episode_to_air) {
-      return new Date(
-        (item.next_episode_to_air as NextEpisodeToAir).air_date +
-          "T00:00:00"
-      );
+      date = new Date((item.next_episode_to_air as NextEpisodeToAir).air_date + "T00:00:00");
     } else if (item.media_type === "movie" && item.release_date) {
-      const release_date = new Date(item.release_date + "T00:00:00");
-      if (release_date > new Date()) {
-        return release_date;
-      }
+      date = new Date(item.release_date + "T00:00:00");
+    }
+
+    if (date && date >= new Date(new Date().setHours(0, 0, 0, 0))) {
+      return date;
     }
     return null;
   })();
@@ -80,7 +79,8 @@ export default function TVCard({
   const currentProviders = Object.keys(item.watch_providers || {})
     .filter((key) => key !== "link")
     .flatMap((buyType) => {
-      const providerList = (item.watch_providers as unknown as Record<string, Provider[]>)[buyType] || [];
+      const providersObj = item.watch_providers as unknown as Record<string, Provider[]>;
+      const providerList = providersObj ? providersObj[buyType] || [] : [];
       return providerList.filter(
         (provider: Provider) =>
           buyType === "free" ||

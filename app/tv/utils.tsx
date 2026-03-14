@@ -124,16 +124,12 @@ export const fetchWatchProvidersSearchResults = async (query: string) => {
 
 export const fetchGenres = async () => {
   const movieUrl = "https://api.themoviedb.org/3/genre/movie/list";
-
-  const movieGenres: TMDBGenre[] = await fetchDataFromTMDB(movieUrl).then(
-    (res) => res.genres
-  );
+  const movieData = await fetchDataFromTMDB(movieUrl);
+  const movieGenres: TMDBGenre[] = movieData?.genres || [];
 
   const tvUrl = "https://api.themoviedb.org/3/genre/tv/list";
-
-  const tvGenres: TMDBGenre[] = await fetchDataFromTMDB(tvUrl).then(
-    (res) => res.genres
-  );
+  const tvData = await fetchDataFromTMDB(tvUrl);
+  const tvGenres: TMDBGenre[] = tvData?.genres || [];
 
   return [...movieGenres, ...tvGenres].reduce((prev: Record<number, EmZGenre>, curr) => {
     prev[curr.id] = {

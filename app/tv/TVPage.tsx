@@ -108,7 +108,12 @@ export default function TVPage() {
       data.docs.map(async (doc) => {
         const docData = doc.data() as EmZContent;
         showMenuItems[docData.id] = false;
-        const episodeName = await getEpisodeName(docData);
+        let episodeName = null;
+        try {
+          episodeName = await getEpisodeName(docData);
+        } catch (e) {
+          console.warn(`Failed to fetch episode name for ${docData.id}:`, e);
+        }
         return {
           ...docData,
           watched_name: episodeName,
