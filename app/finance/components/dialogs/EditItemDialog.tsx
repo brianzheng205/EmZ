@@ -121,6 +121,18 @@ export default function EditItemDialog({
           border: "2px solid",
           borderColor: "secondary.main",
         },
+        "& .MuiOutlinedInput-root": {
+          borderRadius: 3,
+          "& fieldset": {
+            borderColor: "secondary.main",
+          },
+          "&:hover fieldset": {
+            borderColor: "primary.main",
+          },
+          "&.Mui-focused fieldset": {
+            borderColor: "primary.main",
+          },
+        },
       }}
     >
       <TextField
@@ -152,6 +164,7 @@ export default function EditItemDialog({
             type: event.target.value as FbBudgetItem["type"],
           }))
         }
+        MenuProps={{ PaperProps: { sx: { borderRadius: 3 } } }}
       >
         {Object.entries(ItemType).map(([key, value]) => (
           <MenuItem key={key} value={value}>
@@ -178,6 +191,7 @@ export default function EditItemDialog({
             frequency: event.target.value as Frequency,
           }))
         }
+        MenuProps={{ PaperProps: { sx: { borderRadius: 3 } } }}
       >
         {Object.values(Frequency).map((freq) => (
           <MenuItem key={freq} value={freq}>

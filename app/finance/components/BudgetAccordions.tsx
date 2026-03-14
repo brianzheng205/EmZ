@@ -26,14 +26,11 @@ import {
 import { convertToMonthlyAmount, convertToYearlyAmount } from "../utils";
 
 import {
-  EditableCurrencyCell,
-  EditableNameCell,
   FixedCurrencyCell,
   FixedNameCell,
   DisabledCell,
 } from "./BudgetCells";
 import {
-  EditableRepeatFreqCell,
   FixedRepeatFreqCell,
 } from "./BudgetCells/RepeatCell";
 import { ACCORDION_SUMMAR_HEADING_VARIANT, gridSizes } from "./constants";
@@ -65,8 +62,6 @@ function CategorySummary({ category }: CategorySummaryProps) {
 
 interface CategoryItemProps {
   item: BudgetItem;
-  allItemNames: string[];
-  onActiveBudgetItemChange: (newItem: Partial<FbBudgetItem>) => void;
   onActiveBudgetItemDelete: () => void;
   onEditItem: () => void;
   numMonths: number;
@@ -75,8 +70,6 @@ interface CategoryItemProps {
 
 function CategoryItem({
   item,
-  allItemNames,
-  onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
   onEditItem,
   numMonths,
@@ -85,76 +78,25 @@ function CategoryItem({
   const isItemCalculated = item.type === "Liquid Assets";
   const itemNeverRepeats = item.frequency === Frequency.ONE_TIME;
 
-  const onNameChange = (name: string) => onActiveBudgetItemChange({ name });
-
-  const onFrequencyChange = (newFrequency: Frequency) => {
-    if (newFrequency === Frequency.ONE_TIME && !item.isDefinedYearly) {
-      // If switching to One Time from a monthly input, calculate the yearly
-      // equivalent and upgrade the stored amount and basis flag to yearly.
-      const yearlyAmount = convertToYearlyAmount(item, numMonths);
-      onActiveBudgetItemChange({
-        frequency: newFrequency,
-        isDefinedYearly: true,
-        amount: yearlyAmount,
-      });
-    } else {
-      onActiveBudgetItemChange({ frequency: newFrequency });
-    }
-  };
-
-  const onAmountChange = (newAmount: number, isDefinedYearly: boolean) =>
-    onActiveBudgetItemChange({ amount: newAmount, isDefinedYearly });
-
   return (
     <Grid container spacing={2}>
       <Grid size={gridSizes.NAME}>
-        {isItemCalculated ? (
-          <FixedNameCell name={item.name} />
-        ) : (
-          <EditableNameCell
-            name={item.name}
-            allItemNames={allItemNames}
-            onItemNameChange={onNameChange}
-          />
-        )}
+        <FixedNameCell name={item.name} />
       </Grid>
       <Grid size={gridSizes.REPEAT_FREQ}>
-        {isItemCalculated ? (
-          <FixedRepeatFreqCell repeatFreq={item.frequency} />
-        ) : (
-          <EditableRepeatFreqCell
-            repeatFreq={item.frequency}
-            onItemRepeatFreqChange={onFrequencyChange}
-          />
-        )}
+        <FixedRepeatFreqCell repeatFreq={item.frequency} />
       </Grid>
       <Grid size={gridSizes.AMOUNT_MONTHLY}>
         {itemNeverRepeats ? (
           <DisabledCell />
-        ) : isItemCalculated ? (
+        ) : (
           <FixedCurrencyCell
             amount={convertToMonthlyAmount(item, viewType, numMonths)}
-          />
-        ) : (
-          <EditableCurrencyCell
-            displayAmount={convertToMonthlyAmount(item, viewType, numMonths)}
-            editAmount={convertToMonthlyAmount(item, viewType, numMonths)}
-            onItemAmountChange={(amount) => onAmountChange(amount, false)}
-            isHighlighted={!item.isDefinedYearly}
           />
         )}
       </Grid>
       <Grid size={gridSizes.AMOUNT_YEARLY}>
-        {isItemCalculated ? (
-          <FixedCurrencyCell amount={convertToYearlyAmount(item, numMonths)} />
-        ) : (
-          <EditableCurrencyCell
-            displayAmount={convertToYearlyAmount(item, numMonths)}
-            editAmount={convertToYearlyAmount(item, numMonths)}
-            onItemAmountChange={(amount) => onAmountChange(amount, true)}
-            isHighlighted={item.isDefinedYearly}
-          />
-        )}
+        <FixedCurrencyCell amount={convertToYearlyAmount(item, numMonths)} />
       </Grid>
       <Grid
         size={gridSizes.DELETE}
@@ -185,11 +127,6 @@ function CategoryItem({
 
 interface BudgetAccordionProps {
   category: CategoryWithItems | CategoryWithNoItems;
-  allItemNames: string[];
-  onActiveBudgetItemChange: (
-    oldItemName: string,
-    newItem: Partial<FbBudgetItem>,
-  ) => void;
   onActiveBudgetItemDelete: (name: string) => void;
   onEditItem: (item: BudgetItem) => void;
   numMonths: number;
@@ -198,8 +135,6 @@ interface BudgetAccordionProps {
 
 function CategoryAccordion({
   category,
-  allItemNames,
-  onActiveBudgetItemChange,
   onActiveBudgetItemDelete,
   onEditItem,
   numMonths,
@@ -227,10 +162,6 @@ function CategoryAccordion({
             <CategoryItem
               key={index}
               item={item}
-              allItemNames={allItemNames}
-              onActiveBudgetItemChange={(newItem) =>
-                onActiveBudgetItemChange(item.name, newItem)
-              }
               onActiveBudgetItemDelete={() =>
                 onActiveBudgetItemDelete(item.name)
               }
@@ -293,10 +224,6 @@ export default function BudgetAccordions({
         <CategoryAccordion
           key={index}
           category={categories[key]}
-          allItemNames={allItemNames}
-          onActiveBudgetItemChange={(oldItemName, newItem) =>
-            onItemChange(activeBudgets[0].id, oldItemName, newItem)
-          }
           onActiveBudgetItemDelete={(itemName) =>
             onItemDelete(activeBudgets[0].id, itemName)
           }
