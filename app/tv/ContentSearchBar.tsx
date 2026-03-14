@@ -11,7 +11,6 @@ import {
   Select,
   TextField,
 } from "@mui/material";
-import { GridRowsProp } from "@mui/x-data-grid";
 import { debounce } from "lodash";
 import { useMemo, useState } from "react";
 
@@ -28,8 +27,8 @@ import {
 } from "./utils";
 
 type SearchBarProps<T> = {
-  rows: GridRowsProp;
-  setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
+  rows: EmZContent[];
+  setRows: React.Dispatch<React.SetStateAction<EmZContent[]>>;
   fetchSearchResults: (query: string) => Promise<T>;
 };
 
@@ -105,8 +104,8 @@ export default function ContentSearchBar({
 
             addContentToFirebase(part as EmZContent)
               .then(() => {
-                setRows((prevRows: GridRowsProp) => {
-                  return [...prevRows, { ...part }];
+                setRows((prevRows: EmZContent[]) => {
+                  return [...prevRows, { ...part as EmZContent }];
                 });
               })
               .catch((error) => {
@@ -122,8 +121,8 @@ export default function ContentSearchBar({
     }
     addContentToFirebase(value as EmZContent)
       .then(() => {
-        setRows((prevRows: GridRowsProp) => {
-          return [...prevRows, { ...value }];
+        setRows((prevRows: EmZContent[]) => {
+          return [...prevRows, { ...value as EmZContent }];
         });
       })
       .catch((error) => {

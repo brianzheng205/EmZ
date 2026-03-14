@@ -1,7 +1,6 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { IconButton, Stack, Box } from "@mui/material";
-import { GridRowsProp } from "@mui/x-data-grid";
 import { Dispatch } from "react";
 
 import FilterButton from "./Filter";
@@ -20,13 +19,13 @@ export type TableToolbarProps = {
 };
 
 export type CustomToolbarProps = {
-  rows: GridRowsProp;
+  rows: EmZContent[];
   genres: Record<number, EmZGenre> | null;
   filters: Record<string, Filter<EmZContent>>;
   setFilters: Dispatch<
     React.SetStateAction<Record<string, Filter<EmZContent>>>
   >;
-  setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
+  setRows: React.Dispatch<React.SetStateAction<EmZContent[]>>;
   setRowsLoading: Dispatch<React.SetStateAction<boolean>>;
   onOpenSettings: () => void;
 };
@@ -162,9 +161,9 @@ export default function TableToolbar({
 
                 await addContentToFirebase(docData)
                   .then(() => {
-                    setRows((prevRows: GridRowsProp) => {
+                    setRows((prevRows: EmZContent[]) => {
                       return prevRows.map((row) =>
-                        row.id === docData.id ? { ...docData } : row
+                        row.id === docData.id ? { ...docData as EmZContent } : row
                       );
                     });
                   })
