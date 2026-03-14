@@ -18,6 +18,7 @@ export interface EmZContent extends Movie, TVShow {
   watched: number;
   episodes: number;
   ongoing: boolean;
+  watched_name?: string | null;
 }
 
 export interface TVShow extends Content {
@@ -96,6 +97,10 @@ export interface EmZGenre {
 export type WhoSelection = "Emily" | "Brian" | "Both";
 export const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
 
+export interface TMDBError extends Error {
+  status?: number;
+}
+
 export type Filter<T> = { name: string; filter: (items: T[]) => T[] };
 
 export const fetchContentSearchResults = async (query: string) => {
@@ -119,18 +124,14 @@ export const fetchWatchProvidersSearchResults = async (query: string) => {
 
 export const fetchGenres = async () => {
   const movieUrl = "https://api.themoviedb.org/3/genre/movie/list";
-
-  const movieGenres: TMDBGenre[] = await fetchDataFromTMDB(movieUrl).then(
-    (res) => res.genres
-  );
+  const movieData = await fetchDataFromTMDB(movieUrl);
+  const movieGenres: TMDBGenre[] = movieData?.genres || [];
 
   const tvUrl = "https://api.themoviedb.org/3/genre/tv/list";
+  const tvData = await fetchDataFromTMDB(tvUrl);
+  const tvGenres: TMDBGenre[] = tvData?.genres || [];
 
-  const tvGenres: TMDBGenre[] = await fetchDataFromTMDB(tvUrl).then(
-    (res) => res.genres
-  );
-
-  return [...movieGenres, ...tvGenres].reduce((prev, curr) => {
+  return [...movieGenres, ...tvGenres].reduce((prev: Record<number, EmZGenre>, curr) => {
     prev[curr.id] = {
       name: curr.name,
       color: `hsl(${(curr.id * 50) % 360}, 70%, 80%)`,
@@ -148,11 +149,24 @@ export const fetchDataFromTMDB = async (url: string) => {
     },
   };
 
-  const data = await fetch(url, options)
-    .then((res) => res.json())
-    .catch((err) => console.error(err));
+  const res = await fetch(url, options).catch((err) => {
+    console.error(err);
+    return null;
+  });
 
-  return data;
+  if (!res) return null;
+
+  if (!res.ok) {
+    if (res.status === 429) {
+      const err = new Error("Rate limit") as TMDBError;
+      err.status = 429;
+      throw err;
+    }
+    console.error(`TMDB error ${res.status}:`, await res.text());
+    return null;
+  }
+
+  return res.json();
 };
 
 export const applyFilters = (

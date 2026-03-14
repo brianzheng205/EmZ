@@ -1,10 +1,6 @@
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { IconButton } from "@mui/material";
-import {
-  GridToolbarContainer,
-  GridToolbarQuickFilter,
-  GridRowsProp,
-} from "@mui/x-data-grid";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { IconButton, Stack, Box } from "@mui/material";
 import { Dispatch } from "react";
 
 import FilterButton from "./Filter";
@@ -13,7 +9,7 @@ import {
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
 import NextShow from "./NextShow";
-import { EmZContent, fetchDataFromTMDB, Filter, TMDBGenre } from "./utils";
+import { EmZContent, fetchDataFromTMDB, Filter, TMDBGenre, TMDBError } from "./utils";
 import { EmZGenre } from "./utils";
 export type TableToolbarProps = {
   filters: Record<string, Filter<EmZContent>>;
@@ -23,14 +19,15 @@ export type TableToolbarProps = {
 };
 
 export type CustomToolbarProps = {
-  rows: GridRowsProp;
+  rows: EmZContent[];
   genres: Record<number, EmZGenre> | null;
   filters: Record<string, Filter<EmZContent>>;
   setFilters: Dispatch<
     React.SetStateAction<Record<string, Filter<EmZContent>>>
   >;
-  setRows: React.Dispatch<React.SetStateAction<GridRowsProp>>;
+  setRows: React.Dispatch<React.SetStateAction<EmZContent[]>>;
   setRowsLoading: Dispatch<React.SetStateAction<boolean>>;
+  onOpenSettings: () => void;
 };
 export default function TableToolbar({
   rows,
@@ -39,9 +36,10 @@ export default function TableToolbar({
   setFilters,
   setRows,
   setRowsLoading,
+  onOpenSettings,
 }: CustomToolbarProps) {
   return (
-    <GridToolbarContainer>
+    <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: "center", flexWrap: "wrap" }}>
       <NextShow rows={rows} genres={genres} />
 
       <FilterButton
@@ -65,6 +63,34 @@ export default function TableToolbar({
             ),
         }}
         buttonText="Filter Out Completed and Not Ongoing"
+      />
+      
+      <Box sx={{ flexGrow: 1 }} />
+      
+      <input 
+        type="search"
+        placeholder="Search table..."
+        style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #ccc', outline: 'none' }}
+        onChange={(e) => {
+          const val = e.target.value.toLowerCase();
+          setFilters((prev) => {
+             const newFilters = { ...prev };
+             if (val) {
+               newFilters['quickFilter'] = {
+                 name: 'quickFilter',
+                 filter: (items) => items.filter(item => {
+                   const nameMatch = item.name?.toLowerCase().includes(val) || item.title?.toLowerCase().includes(val);
+                   const genreMatch = item.genre_ids?.some(id => genres?.[id]?.name.toLowerCase().includes(val));
+                   const whoMatch = item.who?.toLowerCase().includes(val);
+                   return nameMatch || genreMatch || whoMatch;
+                 })
+               };
+             } else {
+               delete newFilters['quickFilter'];
+             }
+             return newFilters;
+          });
+        }}
       />
       <IconButton
         onClick={() => {
@@ -135,9 +161,9 @@ export default function TableToolbar({
 
                 await addContentToFirebase(docData)
                   .then(() => {
-                    setRows((prevRows: GridRowsProp) => {
+                    setRows((prevRows: EmZContent[]) => {
                       return prevRows.map((row) =>
-                        row.id === docData.id ? { ...docData } : row
+                        row.id === docData.id ? { ...docData as EmZContent } : row
                       );
                     });
                   })
@@ -147,7 +173,7 @@ export default function TableToolbar({
                 return;
               } catch (error) {
                 console.log("Example error", error);
-                if (error.status === 429 || error.code === 429) {
+                if ((error as TMDBError).status === 429) {
                   attempts++;
                   console.warn(
                     `Rate limit hit. Retrying in ${RATE_LIMIT_RETRY_DELAY}ms. Attempt ${attempts}/${MAX_ATTEMPTS}`
@@ -188,11 +214,13 @@ export default function TableToolbar({
               );
             });
 
-            await Promise.all(updateTasks).then(() => {
+            try {
+              await Promise.allSettled(updateTasks);
+            } finally {
               setRowsLoading(false);
               const endTime = performance.now();
               console.log(`Elapsed time: ${endTime - startTime} milliseconds`);
-            });
+            }
           };
 
           func();
@@ -200,7 +228,9 @@ export default function TableToolbar({
       >
         <RefreshIcon />
       </IconButton>
-      <GridToolbarQuickFilter />
-    </GridToolbarContainer>
+      <IconButton onClick={onOpenSettings} title="Manage Providers">
+        <SettingsIcon color="primary" />
+      </IconButton>
+    </Stack>
   );
 }
