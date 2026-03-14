@@ -46,20 +46,21 @@ export default function TVCard({
   const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
 
   const title = item.media_type === "movie" ? item.title : item.name;
-  const progress =
-    item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
+  const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
 
   const status =
     item.watched === 0
       ? "Not Started"
       : item.watched < item.episodes
-      ? "In Progress"
-      : "Completed";
+        ? "In Progress"
+        : "Completed";
 
   const nextAirDate = (() => {
     let date: Date | null = null;
     if (item.media_type === "tv" && item.next_episode_to_air) {
-      date = new Date((item.next_episode_to_air as NextEpisodeToAir).air_date + "T00:00:00");
+      date = new Date(
+        (item.next_episode_to_air as NextEpisodeToAir).air_date + "T00:00:00",
+      );
     } else if (item.media_type === "movie" && item.release_date) {
       date = new Date(item.release_date + "T00:00:00");
     }
@@ -79,17 +80,20 @@ export default function TVCard({
   const currentProviders = Object.keys(item.watch_providers || {})
     .filter((key) => key !== "link")
     .flatMap((buyType) => {
-      const providersObj = item.watch_providers as unknown as Record<string, Provider[]>;
+      const providersObj = item.watch_providers as unknown as Record<
+        string,
+        Provider[]
+      >;
       const providerList = providersObj ? providersObj[buyType] || [] : [];
       return providerList.filter(
         (provider: Provider) =>
           buyType === "free" ||
           buyType === "ads" ||
-          providers.some((p) => p.provider_id === provider.provider_id)
+          providers.some((p) => p.provider_id === provider.provider_id),
       );
     })
     .filter(
-      (v, i, a) => a.findIndex((t) => t.provider_id === v.provider_id) === i
+      (v, i, a) => a.findIndex((t) => t.provider_id === v.provider_id) === i,
     ); // unique
 
   return (
@@ -125,18 +129,18 @@ export default function TVCard({
             status === "Completed"
               ? "success"
               : status === "In Progress"
-              ? "info"
-              : "default"
+                ? "info"
+                : "default"
           }
-          sx={{ 
-            position: "absolute", 
-            top: 12, 
-            left: 12, 
+          sx={{
+            position: "absolute",
+            top: 12,
+            left: 12,
             fontWeight: "bold",
             ...(status === "Not Started" && {
               bgcolor: "rgba(255, 255, 255, 0.9)",
-              color: "rgba(0, 0, 0, 0.87)"
-            })
+              color: "rgba(0, 0, 0, 0.87)",
+            }),
           }}
         />
 
@@ -265,8 +269,8 @@ export default function TVCard({
                   item.who === "Emily"
                     ? "primary.main"
                     : item.who === "Brian"
-                    ? "secondary.main"
-                    : "default",
+                      ? "secondary.main"
+                      : "default",
                 color: item.who === "Both" ? "inherit" : "white",
                 cursor: "pointer",
                 fontWeight: "bold",
@@ -323,19 +327,39 @@ export default function TVCard({
           </Typography>
         )}
         {item.watched_name && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
+          <Box
             sx={{
-              display: "block",
-              fontStyle: "italic",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              mt: 0.5,
+              pt: 1,
+              borderTop: "1px solid",
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
             }}
           >
-            Ep: {item.watched_name}
-          </Typography>
+            <Typography
+              variant="caption"
+              fontWeight="bold"
+              color="text.secondary"
+              sx={{ whiteSpace: "nowrap" }}
+            >
+              Last watched:
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                fontStyle: "italic",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                flex: 1,
+              }}
+            >
+              {item.watched_name}
+            </Typography>
+          </Box>
         )}
       </CardContent>
     </Card>
