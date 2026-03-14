@@ -1,112 +1,68 @@
 import {
   DocumentReference,
   updateDoc,
-  deleteField,
   addDoc,
   collection,
   getDoc,
   deleteDoc,
   doc,
+  writeBatch,
+  arrayRemove,
+  arrayUnion,
 } from "firebase/firestore";
-import * as R from "ramda";
 
-import { fetchData, fetchDocuments } from "@/utils";
 import db from "@firebase";
 
-import { IdToBudget, Budget } from "./types";
+import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "./types";
 
-const pathToString = (path: string[]) => path.join(".");
+// BUDGETS
 
-export const fetchAllBudgets = async () => {
-  try {
-    const budgets = (await fetchDocuments("budgets")) as IdToBudget;
-    const emilyBudgets: IdToBudget = {};
-    const brianBudgets: IdToBudget = {};
+// TODO default to empty string to avoid undefined checks and only
+// check for empty and console error during fetching
+const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
 
-    R.forEachObjIndexed((budget, budgetId) => {
-      if (budget.user === "emily") {
-        emilyBudgets[budgetId] = budget;
-      } else if (budget.user === "brian") {
-        brianBudgets[budgetId] = budget;
-      }
-    }, budgets);
-
-    return {
-      emily: emilyBudgets,
-      brian: brianBudgets,
-    };
-  } catch (error) {
-    console.error("Error fetching all budgets:", error);
-    return null;
-  }
-};
-
-export const fetchActiveBudgets = async () => {
-  const [emilyBudget, brianBudget] = await Promise.all([
-    fetchData("users/emily"),
-    fetchData("users/brian"),
-  ]);
-
-  if (!emilyBudget || !brianBudget) {
-    console.error("Failed to fetch active budgets for Emily or Brian.");
-    return null;
+export const createBudget = async (newBudget: FbBudget) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
   }
 
-  return {
-    emilyBudget: emilyBudget.activeBudget,
-    brianBudget: brianBudget.activeBudget,
-  };
-};
-
-export const updateBudget = async (
-  docRef: DocumentReference,
-  oldPath: string[],
-  newPath: string[],
-  object: object
-) => {
-  const newPathStr = pathToString(newPath);
-  const oldPathStr = pathToString(oldPath);
-  const updates =
-    newPathStr === ""
-      ? object
-      : {
-          [newPathStr]: object,
-        };
-
-  if (oldPathStr !== newPathStr && oldPathStr !== "")
-    updates[oldPathStr] = deleteField();
-
   try {
-    return await updateDoc(docRef, updates);
-  } catch (error) {
-    console.error("Error updating budget:", error);
-    return null;
-  }
-};
-
-export const deleteBudgetItem = async (
-  docRef: DocumentReference,
-  path: string[]
-) => {
-  const pathStr = pathToString(path);
-  return await updateDoc(docRef, {
-    [pathStr]: deleteField(),
-  });
-};
-
-export const createBudget = async (name: string, budgetToCopy: Budget) => {
-  try {
-    const newBudgetRef = await addDoc(collection(db, "budgets"), {
-      ...R.clone(budgetToCopy),
-      name,
-    });
-
+    const newBudgetRef = await addDoc(
+      collection(db, financeCollectionName),
+      newBudget
+    );
     const newBudgetSnap = await getDoc(newBudgetRef);
-    const newBudget = newBudgetSnap.data() as Budget;
-
-    return { id: newBudgetRef.id, newBudget };
+    const newBudgetData = newBudgetSnap.data() as FbBudget;
+    return { id: newBudgetRef.id, newBudgetData };
   } catch (error) {
     console.error("Error creating budget:", error);
+    return null;
+  }
+};
+
+export const updateBudgetMetadata = async (
+  budgetId: string,
+  newMetadata: FbBudgetMetadata
+) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
+  try {
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    return await updateDoc(budgetDocRef, {
+      name: newMetadata.name,
+      numMonths: newMetadata.numMonths,
+      user: newMetadata.user,
+    });
+  } catch (error) {
+    console.error("Error updating budget metadata:", error);
     return null;
   }
 };
@@ -119,6 +75,90 @@ export const deleteBudget = async (docRef: DocumentReference) => {
     return null;
   }
 };
+
+// BUDGET ITEMS
+
+export const createBudgetItem = async (
+  budgetId: string,
+  newBudgetItem: FbBudgetItem
+) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
+  try {
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    await updateDoc(budgetDocRef, {
+      budgetItems: arrayUnion(newBudgetItem),
+    });
+  } catch (error) {
+    console.error("Error creating budget item:", error);
+  }
+};
+
+export const updateBudgetItem = async (
+  budgetId: string,
+  oldBudgetItem: FbBudgetItem,
+  newBudgetItem: FbBudgetItem
+) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
+  try {
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    const batch = writeBatch(db);
+
+    batch.update(budgetDocRef, {
+      budgetItems: arrayRemove(oldBudgetItem),
+    });
+
+    batch.update(budgetDocRef, {
+      budgetItems: arrayUnion(newBudgetItem),
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error(
+      `Error updating ${oldBudgetItem} with ${newBudgetItem} in budget ${budgetId} `,
+      error
+    );
+  }
+};
+
+export const deleteBudgetItem = async (
+  budgetId: string,
+  oldBudgetItem: FbBudgetItem
+) => {
+  const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
+
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+    );
+    return;
+  }
+
+  try {
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    await updateDoc(budgetDocRef, {
+      budgetItems: arrayRemove(oldBudgetItem),
+    });
+  } catch (error) {
+    console.error(
+      `Error deleting ${oldBudgetItem} in budget ${budgetId} `,
+      error
+    );
+  }
+};
+
+// ACTIVE BUDGETS
 
 export const updateActiveBudget = async (
   user: "emily" | "brian",

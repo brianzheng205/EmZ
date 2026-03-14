@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import * as R from "ramda";
 
-import { fetchDocuments, fetchData } from "@/utils";
+import { fetchDocumentsMap, fetchData } from "@/utils";
 import db from "@firebase";
 
 import {
@@ -69,7 +69,9 @@ const convertToPlannerDate = (date: FirestoreDate): PlannerDate => ({
 
 export const fetchAllDates = async (): Promise<IdToPlannerDate> => {
   try {
-    const dates = (await fetchDocuments("dates")) as FirestoreIdToPlannerDate;
+    const dates = (await fetchDocumentsMap(
+      "dates"
+    )) as FirestoreIdToPlannerDate;
     const datesConverted: IdToPlannerDate = R.mapObjIndexed(
       (d) => convertToPlannerDate(d),
       dates
@@ -185,7 +187,7 @@ const convertToFirestoreListItem = (
 
 export const fetchDateList = async (): Promise<ListRow[]> => {
   try {
-    const idToListItem = (await fetchDocuments(
+    const idToListItem = (await fetchDocumentsMap(
       "datesList"
     )) as FirestoreIdToListItem;
     const list: ListRow[] = [];

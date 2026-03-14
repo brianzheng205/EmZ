@@ -3,13 +3,13 @@ import {
   Autocomplete,
   Avatar,
   Box,
-  MenuItem,
-  Select,
   Typography,
-  TextField,
   Paper,
   Divider,
   IconButton,
+  MenuItem,
+  Select,
+  TextField,
 } from "@mui/material";
 import { GridRowsProp } from "@mui/x-data-grid";
 import { debounce } from "lodash";
@@ -105,7 +105,7 @@ export default function ContentSearchBar({
 
             addContentToFirebase(part as EmZContent)
               .then(() => {
-                setRows((prevRows: GridRowsProp[]) => {
+                setRows((prevRows: GridRowsProp) => {
                   return [...prevRows, { ...part }];
                 });
               })
@@ -122,7 +122,7 @@ export default function ContentSearchBar({
     }
     addContentToFirebase(value as EmZContent)
       .then(() => {
-        setRows((prevRows: GridRowsProp[]) => {
+        setRows((prevRows: GridRowsProp) => {
           return [...prevRows, { ...value }];
         });
       })

@@ -1,100 +1,80 @@
-export type Time = "month" | "year";
+// TODO: add support for "biweekly" for paychecks
+export enum ItemType {
+  EARNINGS = "Earnings",
+  DEDUCTIONS = "Deductions",
+  EXPENSES = "Expenses",
+  RETIREMENT = "Retirement",
+}
 
-export type BudgetItem = {
+export enum ItemAmountTimeSpan {
+  MONTHLY = "Monthly",
+  YEARLY = "Yearly",
+}
+
+export enum ItemRepeatFreq {
+  NEVER = "Never",
+  MONTHLY = "Monthly",
+}
+
+// BACKEND BUDGET
+
+export type FbBudgetItem = {
+  type: ItemType;
+  name: string;
   amount: number;
-  time: Time;
-  isRecurring?: boolean;
+  amountTimeSpan: ItemAmountTimeSpan; // if amount occurs every month or every year
+  repeatFreq: ItemRepeatFreq;
 };
 
-type CategoryItems = {
-  [name: string]: BudgetItem;
-};
-
-export type Metadata = {
+export type FbBudgetMetadata = {
   name: string;
   numMonths: number;
   user: string;
 };
 
-export type Budget = Metadata & {
-  categories: {
-    gross: CategoryItems;
-    deductions: CategoryItems;
-    expenses: CategoryItems;
-    savings: CategoryItems;
-  };
+export type FbBudget = FbBudgetMetadata & {
+  budgetItems: FbBudgetItem[];
 };
 
-export type BudgetWithId = Budget & {
-  id: string;
+export type FbBudgetWithId = FbBudget & { id: string };
+
+// FRONTEND BUDGET (TRANSFORMED FROM BACKEND)
+
+export type BudgetItem = Pick<
+  FbBudgetItem,
+  "name" | "amountTimeSpan" | "repeatFreq"
+> & {
+  type: FbBudgetItem["type"] | "Liquid Assets";
+  amountMonthly: number;
+  amountYearly: number;
 };
 
-export type CombinedBudgetItem = {
-  emily: BudgetItem;
-  brian: BudgetItem;
-};
+// FRONTEND CALCULATED BUDGET
 
-export type CombinedCategoryItems = {
-  [name: string]: CombinedBudgetItem;
-};
-
-export type CombinedMetadata = {
-  emilyMetadata: Metadata;
-  brianMetadata: Metadata;
-};
-
-export type CombinedBudget = CombinedMetadata & {
-  categories: {
-    gross: CombinedCategoryItems;
-    deductions: CombinedCategoryItems;
-    expenses: CombinedCategoryItems;
-    savings: CombinedCategoryItems;
-  };
-};
-
-export type IdToBudget = {
-  [id: string]: Budget;
-};
-
-export type Category = keyof CombinedBudget["categories"];
-
-export type BudgetItemRowWithoutDividers = {
-  id: string;
-  status?: string;
-  category?: string;
+export type CategoryWithNoItems = {
   name: string;
-  isRecurring: boolean;
-  monthlyEmAmount: number;
-  yearlyEmAmount: number;
-  monthlyZAmount: number;
-  yearlyZAmount: number;
-  yearlySalaryEm?: number;
-  yearlySalaryZ?: number;
+  sumMonthly: number;
+  sumYearly: number;
 };
 
-export type BudgetItemRow = Required<Pick<BudgetSumsRow, "category">> &
-  Omit<BudgetSumsRow, "category">;
-
-export type BudgetSumsRow = BudgetItemRowWithoutDividers & {
-  monthlyEmDivider: number;
-  yearlyEmDivider: number;
-  monthlyZDivider: number;
-  yearlyZDivider: number;
+export type CategoryWithItems = CategoryWithNoItems & {
+  items: BudgetItem[];
 };
 
-export type Dividers = {
-  monthlyGross: number;
-  yearlyGross: number;
-  monthlyTakeHome: number;
-  yearlyTakeHome: number;
+export type CalculatedCategories = {
+  earnings: CategoryWithItems;
+  deductions: CategoryWithItems;
+  taxes: CategoryWithNoItems;
+  takeHome: CategoryWithNoItems;
+  expenses: CategoryWithItems;
+  retirement: CategoryWithItems;
+  liquidAssets: CategoryWithItems;
 };
 
-export type TaxBracket = {
-  cap: number | "Infinity";
-  rate: number;
-};
-
-export type TaxBracketFinite = {
-  cap: number;
-  rate: number;
+export type CalculatedBudget = {
+  id: string;
+  name: string;
+  numMonths: number;
+  user: string;
+  categories: CalculatedCategories;
 };

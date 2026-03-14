@@ -13,8 +13,12 @@
     "paths": {
       "@shared/*": ["../shared/*"]
     },
-    "isolatedModules": true
+    "isolatedModules": true,
+    "plugins": [
+      { "transform": "typescript-transform-paths" },
+      { "transform": "typescript-transform-paths", "after": true }
+    ]
   },
   "compileOnSave": true,
-  "include": ["src", "../test", "../shared/**/*"]
+  "include": ["src", "../shared/**/*"]
 }

@@ -1,44 +1,23 @@
 import { FlatCompat } from "@eslint/eslintrc";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
+  baseDirectory: __dirname,
 });
 
 const eslintConfig = [
-  ...compat.config({
-    extends: ["next/core-web-vitals", "next/typescript", "prettier"],
+  ...compat.extends("next/core-web-vitals"),
+  ...compat.extends("next/typescript"),
+  // ...compat.extends("prettier"), 
+  {
     rules: {
-      "react/no-unescaped-entities": "off",
-      "import/order": [
-        "warn",
-        {
-          alphabetize: {
-            order: "asc",
-            caseInsensitive: true,
-          },
-          groups: [
-            "builtin",
-            "external",
-            "internal",
-            "parent",
-            ["sibling", "index"],
-          ],
-          pathGroups: [
-            {
-              pattern: "../../*",
-              group: "parent",
-              position: "after",
-            },
-            {
-              pattern: "../../../*",
-              group: "parent",
-              position: "after",
-            },
-          ],
-          "newlines-between": "always",
-        },
-      ],
-    },
-  }),
+       "react/no-unescaped-entities": "off",
+    }
+  }
 ];
+
 export default eslintConfig;

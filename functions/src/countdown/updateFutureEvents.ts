@@ -3,12 +3,9 @@ import { FbEvent } from "@shared/countdown/types";
 import { RepeatFrequency } from "@shared/types";
 import { getNextDate } from "@shared/utils";
 import { toDate } from "@shared/utils";
-import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-
-initializeApp();
 
 /**
  * Determine what action to take for an event based on its date, today's date,
@@ -21,7 +18,7 @@ initializeApp();
  * - If the event date is in the past and repeatFreq is not Never, return `{ action: "renew", newDate }`
  * @throws Error if repeatFreq is unsupported
  */
-export const getEventAction = (
+const getEventAction = (
   event: FbEvent,
   today: Date
 ):
@@ -47,7 +44,7 @@ export const getEventAction = (
   };
 };
 
-const updateFutureEvents = onSchedule(
+export const updateFutureEvents = onSchedule(
   {
     schedule: "0 0 * * *",
     timeZone: "America/New_York",

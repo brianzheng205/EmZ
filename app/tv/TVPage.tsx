@@ -9,9 +9,27 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  IconButton
+  IconButton,
+  Chip,
+  TextField,
+  Avatar,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from "@mui/material";
 import { useState, useEffect, useCallback } from "react";
+import { 
+  DataGrid, 
+  GridValidRowModel, 
+  GridCellModesModel, 
+  GridCellParams,
+  GridCellModes,
+  GridRowsProp
+} from "@mui/x-data-grid";
+import ArrowDropDown from "@mui/icons-material/ArrowDropDown";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { isEqual } from "lodash";
+import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
 
 import ContentSearchBar from "./ContentSearchBar";
@@ -22,7 +40,7 @@ import {
   fetchAllProvidersFromFirebase,
 } from "./firebaseUtils";
 import NetworkPage from "./NetworkPage";
-import TableToolbar from "./TableToolbar";
+import TableToolbar, { CustomToolbarProps } from "./TableToolbar";
 import TVCard from "./TVCard";
 import {
   EmZContent,
@@ -33,6 +51,10 @@ import {
   applyFiltersAndSorts,
   fetchDataFromTMDB,
   fetchContentSearchResults,
+  whoOptions,
+  NextEpisodeToAir,
+  Movie,
+  TVShow
 } from "./utils";
 
 export default function TVPage() {
@@ -44,6 +66,22 @@ export default function TVPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [rowsLoading, setRowsLoading] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [cellModesModel, setCellModesModel] = useState<GridCellModesModel>({});
+
+  const handleCellModesModelChange = useCallback((newModel: GridCellModesModel) => {
+    setCellModesModel(newModel);
+  }, []);
+
+  const handleCellClick = useCallback((params: GridCellParams, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setCellModesModel((prevModel) => ({
+      ...prevModel,
+      [params.id]: {
+        ...prevModel[params.id],
+        [params.field]: { mode: GridCellModes.Edit },
+      },
+    }));
+  }, []);
 
   const handleUpdateInfo = async (updatedItem: EmZContent) => {
     try {
@@ -97,33 +135,25 @@ export default function TVPage() {
     try {
       setRowsLoading(true);
       const data = await fetchAllContentFromFirebase();
-      if (!data) {
-        return;
+      if (!data) return;
+
+      const genreData = genres ? genres : await fetchGenres();
+
+      const rowsData = await Promise.all(
+        data.docs.map(async (doc) => {
+          const docData = doc.data() as EmZContent;
+          const episodeName = await getEpisodeName(docData);
+          return {
+            ...docData,
+            watched_name: episodeName,
+          };
+        })
+      );
+
+      if (!genres) {
+        setGenres(genreData as Record<number, EmZGenre>);
       }
-
-    const genreData = genres ? genres : await fetchGenres();
-
-    const showMenuItems = {};
-    const rowsData = await Promise.all(
-      data.docs.map(async (doc) => {
-        const docData = doc.data() as EmZContent;
-        showMenuItems[docData.id] = false;
-        let episodeName = null;
-        try {
-          episodeName = await getEpisodeName(docData);
-        } catch (e) {
-          console.warn(`Failed to fetch episode name for ${docData.id}:`, e);
-        }
-        return {
-          ...docData,
-          watched_name: episodeName,
-        };
-      })
-    );
-    if (!genres) {
-      setGenres(genreData as Record<number, EmZGenre>);
-    }
-    setRows(rowsData);
+      setRows(rowsData);
     } catch (err) {
       console.error("Error fetching data:", err);
     } finally {
@@ -171,58 +201,355 @@ export default function TVPage() {
           rows={rows}
           fetchSearchResults={fetchContentSearchResults}
         />
-        <Box sx={{ width: "100%" }}>
-          <TableToolbar
-             rows={rows}
-             genres={genres}
-             filters={filters}
-             setFilters={setFilters}
-             setRows={setRows}
-             setRowsLoading={setRowsLoading}
-             onOpenSettings={() => setIsSettingsOpen(true)}
-          />
-          <Box sx={{ flexGrow: 1, width: "100%", mt: 2 }}>
-            <Grid container spacing={3}>
-              {applyFiltersAndSorts(rows, filters).map((row) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={row.id}>
-                  <TVCard
-                    item={row}
-                    genres={genres}
-                    providers={providers}
-                    onUpdate={handleUpdateInfo}
-                    onDelete={handleDelete}
+        <Box sx={{ height: "80vh", width: "100%", justifyItems: "center" }}>
+          <DataGrid
+            slots={{ toolbar: TableToolbar }}
+            disableColumnResize
+            slotProps={{
+              toolbar: {
+                rows,
+                genres,
+                filters,
+                setFilters,
+                setRows,
+                setRowsLoading,
+                onOpenSettings: () => setIsSettingsOpen(true),
+              } as CustomToolbarProps,
+            }}
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 20, page: 0 },
+              },
+            }}
+            pageSizeOptions={[20, 50, 100]}
+            showToolbar
+            disableVirtualization
+            getRowHeight={() => "auto"}
+            cellModesModel={cellModesModel}
+            onCellModesModelChange={handleCellModesModelChange}
+            onCellClick={handleCellClick}
+            processRowUpdate={(
+              newRow: GridValidRowModel,
+              oldRow: GridValidRowModel
+            ) => {
+              if (!isEqual(newRow, oldRow)) {
+                addContentToFirebase(newRow as EmZContent);
+                fetchData();
+              }
+              return newRow;
+            }}
+            getRowId={(row) => row.id}
+            rows={applyFiltersAndSorts(rows, filters)}
+            columns={[
+              {
+                field: "name",
+                headerName: "Name",
+                cellClassName: "base-cell left-aligned-cell",
+                flex: 1,
+                valueGetter: (value, row) => {
+                  if (row.media_type === "movie") {
+                    return row.title;
+                  }
+                  return row.name;
+                },
+              },
+              {
+                field: "who",
+                headerName: "Who",
+                cellClassName: "base-cell center-aligned-cell editable-cell",
+                valueOptions: whoOptions,
+                type: "singleSelect",
+                editable: true,
+                width: 100,
+                renderCell: (params) => {
+                  return (
+                    <Chip
+                      label={params.row.who}
+                      onDelete={(event) => handleCellClick(params, event)}
+                      deleteIcon={<ArrowDropDown />}
+                      onClick={(event) => handleCellClick(params, event)}
+                      color={
+                        params.row.who === "Emily"
+                          ? "primary"
+                          : params.row.who === "Brian"
+                          ? "secondary"
+                          : "default"
+                      }
+                    />
+                  );
+                },
+              },
+              {
+                field: "media_type",
+                headerName: "Type",
+                cellClassName: "base-cell left-aligned-cell",
+                width: 50,
+              },
+              {
+                field: "genre",
+                headerName: "Genre",
+                flex: 1,
+                valueGetter: (value, row) => {
+                  return row.genre_ids?.map((id: number) => {
+                    return genres ? genres[id] : id;
+                  });
+                },
+                renderCell: (params) => (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {params.value?.map((g, index) => (
+                      <Chip
+                        key={index}
+                        label={g.name}
+                        sx={{ backgroundColor: g.color }}
+                      />
+                    ))}
+                  </Box>
+                ),
+                cellClassName: "base-cell left-aligned-cell vertical-padding",
+              },
+              {
+                field: "ongoing",
+                headerName: "Ongoing",
+                cellClassName: "base-cell center-aligned-cell",
+                type: "boolean",
+                width: 80,
+              },
+              {
+                field: "status",
+                headerName: "Status",
+                cellClassName: "base-cell center-aligned-cell",
+                width: 120,
+                sortComparator: (v1, v2) => {
+                  if (v1 === v2) {
+                    return 0;
+                  }
+                  if (v1 === "Not Started") {
+                    return 1;
+                  }
+                  if (v1 === "Completed" && v2 === "In Progress") {
+                    return 1;
+                  }
+
+                  return -1;
+                },
+
+                valueGetter: (value, row) => {
+                  return row.watched === 0
+                    ? "Not Started"
+                    : row.watched < row.episodes
+                    ? "In Progress"
+                    : "Completed";
+                },
+                renderCell: (params) => {
+                  return (
+                    <Chip
+                      label={params.value}
+                      color={
+                        params.value === "Not Started"
+                          ? "default"
+                          : params.value === "In Progress"
+                          ? "info"
+                          : "success"
+                      }
+                    />
+                  );
+                },
+              },
+              {
+                field: "watched_name",
+                headerName: "Watched Episode Name",
+                cellClassName: "base-cell left-aligned-cell",
+                flex: 1,
+              },
+              {
+                field: "watched",
+                headerName: "Watched",
+                cellClassName: "base-cell left-aligned-cell editable-cell",
+                editable: true,
+                type: "number",
+                width: 80,
+
+                renderEditCell: (params) => (
+                  <TextField
+                    type="number"
+                    variant="standard"
+                    slotProps={{
+                      input: {
+                        disableUnderline: true,
+                      },
+                    }}
+                    defaultValue={params.value}
+                    onBlur={(event) => {
+                      const value = Number(event.target.value);
+                      if (value >= 0 && value <= params.row.episodes) {
+                        params.api.setEditCellValue({
+                          id: params.id,
+                          field: params.field,
+                          value,
+                        });
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        const value = Number(
+                          (event.target as HTMLInputElement).value
+                        );
+                        if (value >= 0 && value <= params.row.episodes) {
+                          params.api.setEditCellValue({
+                            id: params.id,
+                            field: params.field,
+                            value,
+                          });
+                        }
+                      }
+                    }}
+                    sx={{
+                      "& input[type=number]::-webkit-inner-spin-button, & input[type=number]::-webkit-outer-spin-button":
+                        {
+                          WebkitAppearance: "auto",
+                        },
+                      "& input[type=number]": {
+                        MozAppearance: "text-field",
+                      },
+                    }}
                   />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-          {rowsLoading && <CircularProgress sx={{ display: "block", mx: "auto", my: 4 }} />}
+                ),
+              },
+              {
+                field: "episodes",
+                headerName: "Total",
+                cellClassName: "base-cell left-aligned-cell",
+                width: 60,
+              },
+              {
+                field: "progress",
+                headerName: "Progress",
+                cellClassName: "base-cell center-aligned-cell",
+                width: 80,
+                valueGetter: (value, row) => {
+                  return (row.watched * 100) / row.episodes;
+                },
+                renderCell: (params) => {
+                  return <CircularProgressWithLabel value={params.value} />;
+                },
+              },
+              {
+                field: "next_episode_to_air",
+                headerName: "Next Episode",
+                cellClassName: "base-cell left-aligned-cell",
+                width: 120,
+                valueGetter: (value, row) => {
+                  if (row.media_type === "tv") {
+                    if (value) {
+                      return new Date((value as NextEpisodeToAir).air_date);
+                    }
+                  } else if (row.media_type === "movie") {
+                    const release_date = new Date(row.release_date);
+                    if (release_date > new Date()) {
+                      return release_date;
+                    }
+                  }
+                  return null;
+                },
+                renderCell: (params) => {
+                  if (params.value) {
+                    return new Date(params.value).toLocaleDateString();
+                  }
+                  return null;
+                },
+              },
+              {
+                field: "watch_providers",
+                headerName: "Providers",
+                cellClassName: "base-cell center-aligned-cell vertical-padding",
+                flex: 1,
+                renderCell: (params) => {
+                  return (
+                    <Stack
+                      direction={"row"}
+                      sx={{
+                        flexWrap: "wrap",
+                        gap: 1,
+                        justifyContent: "center",
+                      }}
+                    >
+                      {params.value && Object.keys(params.value)
+                        .filter((key) => key !== "link")
+                        .map((buyType) =>
+                          params.value[buyType]
+                            ? params.value[buyType]
+                            .filter(
+                              (provider) =>
+                                buyType === "free" ||
+                                buyType === "ads" ||
+                                providers.some(
+                                  (p) => p.provider_id === provider.provider_id
+                                )
+                            )
+                            .map((provider, index) => (
+                              <Avatar
+                                variant="rounded"
+                                key={index}
+                                src={`https://image.tmdb.org/t/p/w500/${provider.logo_path}`}
+                              />
+                            ))
+                            : null
+                        )}
+                    </Stack>
+                  );
+                },
+              },
+              {
+                field: "actions",
+                headerName: "",
+                width: 50,
+                renderCell: (params) => (
+                  <IconButton
+                    aria-label="delete"
+                    onClick={() => handleDelete(params.row.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                ),
+                cellClassName: "base-cell center-aligned-cell",
+              },
+            ]}
+            sx={{
+              "& .base-cell": {
+                display: "flex",
+                alignItems: "center",
+              },
+              "& .left-aligned-cell": {
+                justifyContent: "left",
+              },
+              "& .center-aligned-cell": {
+                justifyContent: "center",
+              },
+              "& .vertical-padding": {
+                paddingY: 1,
+              },
+              "& .editable-cell": {
+                backgroundColor: "background.paper",
+              },
+              width: "95%",
+            }}
+          />
         </Box>
       </Stack>
-      
-      <Dialog 
-        open={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: "background.default",
-            borderRadius: 3,
-            p: 2
-          }
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" fontWeight="bold" color="primary">Manage Providers</Typography>
-          <IconButton onClick={() => setIsSettingsOpen(false)}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
+      <Accordion sx={{ width: "95%" }}>
+        <AccordionSummary expandIcon={<ArrowDropDown />}>
+          <Typography>Providers</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
           <NetworkPage providers={providers} setProviders={setProviders} />
-        </DialogContent>
-      </Dialog>
+        </AccordionDetails>
+      </Accordion>
     </Stack>
   );
 }
