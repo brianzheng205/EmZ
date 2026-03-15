@@ -3,8 +3,8 @@ import { Button, Stack } from "@mui/material";
 
 import useDialog from "@/hooks/useDialog";
 
-import AddItemDialog from "../dialogs/AddItemDialog";
-import EditBudgetDialog from "../dialogs/EditBudgetDialog";
+import AddItemDialog from "./dialogs/AddItemDialog";
+import EditBudgetDialog from "./dialogs/EditBudgetDialog";
 import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "../types";
 
 interface BudgetToolBarProps {

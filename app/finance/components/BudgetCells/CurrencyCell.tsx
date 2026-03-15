@@ -13,7 +13,12 @@ export function FixedCurrencyCell({
   amount,
   isSummary = false,
 }: FixedCurrencyCellProps) {
-  const displayValue = `$${Math.round(amount)}`;
+  const displayValue = amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 
   return (
     <FixedCell
@@ -27,7 +32,7 @@ export function FixedCurrencyCell({
 type EditableCurrencyCellProps = {
   displayAmount: number;
   editAmount: number;
-  onItemAmountChange: (amount: number, hasAmountChanged: boolean) => void;
+  onItemAmountChange: (amount: number) => void;
   isHighlighted?: boolean;
 };
 
@@ -37,46 +42,53 @@ export function EditableCurrencyCell({
   onItemAmountChange,
   isHighlighted = false,
 }: EditableCurrencyCellProps) {
-  const roundedDisplayAmount = Math.round(displayAmount);
-  const initialEditAmount = Math.round(editAmount);
+  const roundedDisplayAmount = Math.round(displayAmount).toLocaleString(
+    "en-US",
+    {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    },
+  );
 
-  const [newAmount, setNewAmount] = useState(initialEditAmount);
+  // Rounded amount for editing to ensure user only sees integers.
+  const [newAmount, setNewAmount] = useState(Math.round(editAmount));
   const [editMode, setEditMode] = useState(false);
+
+  // Whether the edit value is passed in as a prop, meaning the user hasn't
+  // typed anything new and we should submit the exact, unrounded calculated
+  // value to avoid precision loss from rounding errors.
+  const [isCalculatedValue, setIsCalculatedValue] = useState(true);
 
   useEffect(() => {
     setNewAmount(Math.round(editAmount));
+    setIsCalculatedValue(true);
   }, [editAmount]);
 
   const error = newAmount < 0;
   const errorMessage = newAmount < 0 ? "Amount cannot be negative" : "";
 
-  const handleAmountChange = (val: number | undefined) =>
+  const handleAmountChange = (val: number | undefined) => {
     setNewAmount(val ?? 0);
 
-  const handleSubmit = () => {
-    if (!error) {
-      setEditMode(false);
-      onItemAmountChange(
-        Math.round(newAmount),
-        Math.round(newAmount) !== Math.round(editAmount)
-      );
+    if (val !== Math.round(editAmount)) {
+      setIsCalculatedValue(false);
     }
   };
 
-  const handleBlur = () => {
-    // If we have an error, we can't save. Revert to original.
-    // If valid, save.
-    // Note: If clicking stepper buttons, focus might be tricky, but useNumberInput usually handles this.
-    setEditMode(false);
+  const handleSubmit = () => {
+    if (error) return;
 
-    if (error) {
-      setNewAmount(Math.round(editAmount));
-    } else {
-      onItemAmountChange(
-        Math.round(newAmount),
-        Math.round(newAmount) !== Math.round(editAmount)
-      );
-    }
+    setEditMode(false);
+    onItemAmountChange(
+      isCalculatedValue ? editAmount : Number(newAmount.toFixed(2)),
+    );
+  };
+
+  const handleBlur = () => {
+    setEditMode(false);
+    handleSubmit();
   };
 
   const toggleEdit = () => setEditMode(true);
@@ -116,7 +128,7 @@ export function EditableCurrencyCell({
           },
         }}
       >
-        {`$${roundedDisplayAmount}`}
+        {roundedDisplayAmount}
       </Typography>
     </Box>
   );

@@ -1,4 +1,4 @@
-import { FbBudget } from "../types";
+import { FbBudget } from "../../types";
 
 import BudgetDialog from "./BudgetDialog";
 

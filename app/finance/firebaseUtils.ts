@@ -24,7 +24,7 @@ const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
 export const createBudget = async (newBudget: FbBudget) => {
   if (!financeCollectionName) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
     );
     return;
   }
@@ -32,7 +32,7 @@ export const createBudget = async (newBudget: FbBudget) => {
   try {
     const newBudgetRef = await addDoc(
       collection(db, financeCollectionName),
-      newBudget
+      newBudget,
     );
     const newBudgetSnap = await getDoc(newBudgetRef);
     const newBudgetData = newBudgetSnap.data() as FbBudget;
@@ -45,11 +45,11 @@ export const createBudget = async (newBudget: FbBudget) => {
 
 export const updateBudgetMetadata = async (
   budgetId: string,
-  newMetadata: FbBudgetMetadata
+  newMetadata: FbBudgetMetadata,
 ) => {
   if (!financeCollectionName) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
     );
     return;
   }
@@ -80,11 +80,11 @@ export const deleteBudget = async (docRef: DocumentReference) => {
 
 export const createBudgetItem = async (
   budgetId: string,
-  newBudgetItem: FbBudgetItem
+  newBudgetItem: FbBudgetItem,
 ) => {
   if (!financeCollectionName) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
     );
     return;
   }
@@ -102,11 +102,11 @@ export const createBudgetItem = async (
 export const updateBudgetItem = async (
   budgetId: string,
   oldBudgetItem: FbBudgetItem,
-  newBudgetItem: FbBudgetItem
+  newBudgetItem: FbBudgetItem,
 ) => {
   if (!financeCollectionName) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
     );
     return;
   }
@@ -127,20 +127,20 @@ export const updateBudgetItem = async (
   } catch (error) {
     console.error(
       `Error updating ${oldBudgetItem} with ${newBudgetItem} in budget ${budgetId} `,
-      error
+      error,
     );
   }
 };
 
 export const deleteBudgetItem = async (
   budgetId: string,
-  oldBudgetItem: FbBudgetItem
+  oldBudgetItem: FbBudgetItem,
 ) => {
   const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
 
   if (!financeCollectionName) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
     );
     return;
   }
@@ -153,7 +153,7 @@ export const deleteBudgetItem = async (
   } catch (error) {
     console.error(
       `Error deleting ${oldBudgetItem} in budget ${budgetId} `,
-      error
+      error,
     );
   }
 };
@@ -162,7 +162,7 @@ export const deleteBudgetItem = async (
 
 export const updateActiveBudget = async (
   user: "emily" | "brian",
-  docRef: DocumentReference
+  docRef: DocumentReference,
 ) => {
   try {
     return await updateDoc(doc(db, `users/${user}`), {
