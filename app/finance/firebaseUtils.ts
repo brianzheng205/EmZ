@@ -23,8 +23,8 @@ export const getFinanceCollectionName = (env: NodeJS.ProcessEnv) => {
     env.VERCEL_GIT_PULL_REQUEST_TARGET === "main";
 
   return isProductionOrMainPR
-    ? env.NEXT_PUBLIC_FINANCE_COLLECTION_PROD || "budgets"
-    : env.NEXT_PUBLIC_FINANCE_COLLECTION_DEV || "budgets-dev";
+    ? env.NEXT_PUBLIC_FINANCE_COLLECTION_PROD
+    : env.NEXT_PUBLIC_FINANCE_COLLECTION_DEV;
 };
 
 export const FINANCE_COLLECTION_NAME = getFinanceCollectionName(process.env);

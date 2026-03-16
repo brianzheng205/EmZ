@@ -48,6 +48,11 @@ export default function FinancePage() {
 
   const fetchBudgetsData = async () => {
     const fetchAllBudgets = async () => {
+      if (!FINANCE_COLLECTION_NAME) {
+        console.error("Finance collection name could not be determined.");
+        return;
+      }
+
       try {
         const budgetsData = (await fetchDocuments(
           FINANCE_COLLECTION_NAME,
