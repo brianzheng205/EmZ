@@ -17,23 +17,21 @@ import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "./types";
 
 // BUDGETS
 
-export const getFinanceCollectionName = (env: NodeJS.ProcessEnv) => {
+export const getFinanceCollectionName = () => {
   const isProductionOrMainPR =
-    env.VERCEL_ENV === "production" ||
-    env.VERCEL_GIT_PULL_REQUEST_TARGET === "main";
+    process.env.VERCEL_ENV === "production" ||
+    process.env.VERCEL_GIT_PULL_REQUEST_TARGET === "main";
 
   return isProductionOrMainPR
-    ? env.NEXT_PUBLIC_FINANCE_COLLECTION_PROD
-    : env.NEXT_PUBLIC_FINANCE_COLLECTION_DEV;
+    ? process.env.NEXT_PUBLIC_FINANCE_COLLECTION_PROD
+    : process.env.NEXT_PUBLIC_FINANCE_COLLECTION_DEV;
 };
 
-export const FINANCE_COLLECTION_NAME = getFinanceCollectionName(process.env);
+export const FINANCE_COLLECTION_NAME = getFinanceCollectionName();
 
 export const createBudget = async (newBudget: FbBudget) => {
   if (!FINANCE_COLLECTION_NAME) {
-    console.error(
-      "Finance collection name could not be determined.",
-    );
+    console.error("Finance collection name could not be determined.");
     return;
   }
 
@@ -56,9 +54,7 @@ export const updateBudgetMetadata = async (
   newMetadata: FbBudgetMetadata,
 ) => {
   if (!FINANCE_COLLECTION_NAME) {
-    console.error(
-      "Finance collection name could not be determined.",
-    );
+    console.error("Finance collection name could not be determined.");
     return;
   }
 
@@ -91,9 +87,7 @@ export const createBudgetItem = async (
   newBudgetItem: FbBudgetItem,
 ) => {
   if (!FINANCE_COLLECTION_NAME) {
-    console.error(
-      "Finance collection name could not be determined.",
-    );
+    console.error("Finance collection name could not be determined.");
     return;
   }
 
@@ -113,9 +107,7 @@ export const updateBudgetItem = async (
   newBudgetItem: FbBudgetItem,
 ) => {
   if (!FINANCE_COLLECTION_NAME) {
-    console.error(
-      "Finance collection name could not be determined.",
-    );
+    console.error("Finance collection name could not be determined.");
     return;
   }
 
@@ -145,9 +137,7 @@ export const deleteBudgetItem = async (
   oldBudgetItem: FbBudgetItem,
 ) => {
   if (!FINANCE_COLLECTION_NAME) {
-    console.error(
-      "Finance collection name could not be determined.",
-    );
+    console.error("Finance collection name could not be determined.");
     return;
   }
 
