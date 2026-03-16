@@ -17,21 +17,29 @@ import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "./types";
 
 // BUDGETS
 
-// TODO default to empty string to avoid undefined checks and only
-// check for empty and console error during fetching
-const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
+export const getFinanceCollectionName = (env: NodeJS.ProcessEnv) => {
+  const isProductionOrMainPR =
+    env.VERCEL_ENV === "production" ||
+    env.VERCEL_GIT_PULL_REQUEST_TARGET === "main";
+
+  return isProductionOrMainPR
+    ? env.NEXT_PUBLIC_FINANCE_COLLECTION_PROD || "budgets"
+    : env.NEXT_PUBLIC_FINANCE_COLLECTION_DEV || "budgets-dev";
+};
+
+export const FINANCE_COLLECTION_NAME = getFinanceCollectionName(process.env);
 
 export const createBudget = async (newBudget: FbBudget) => {
-  if (!financeCollectionName) {
+  if (!FINANCE_COLLECTION_NAME) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+      "Finance collection name could not be determined.",
     );
     return;
   }
 
   try {
     const newBudgetRef = await addDoc(
-      collection(db, financeCollectionName),
+      collection(db, FINANCE_COLLECTION_NAME),
       newBudget,
     );
     const newBudgetSnap = await getDoc(newBudgetRef);
@@ -47,15 +55,15 @@ export const updateBudgetMetadata = async (
   budgetId: string,
   newMetadata: FbBudgetMetadata,
 ) => {
-  if (!financeCollectionName) {
+  if (!FINANCE_COLLECTION_NAME) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+      "Finance collection name could not be determined.",
     );
     return;
   }
 
   try {
-    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    const budgetDocRef = doc(db, FINANCE_COLLECTION_NAME, budgetId);
     return await updateDoc(budgetDocRef, {
       name: newMetadata.name,
       numMonths: newMetadata.numMonths,
@@ -82,15 +90,15 @@ export const createBudgetItem = async (
   budgetId: string,
   newBudgetItem: FbBudgetItem,
 ) => {
-  if (!financeCollectionName) {
+  if (!FINANCE_COLLECTION_NAME) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+      "Finance collection name could not be determined.",
     );
     return;
   }
 
   try {
-    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    const budgetDocRef = doc(db, FINANCE_COLLECTION_NAME, budgetId);
     await updateDoc(budgetDocRef, {
       budgetItems: arrayUnion(newBudgetItem),
     });
@@ -104,15 +112,15 @@ export const updateBudgetItem = async (
   oldBudgetItem: FbBudgetItem,
   newBudgetItem: FbBudgetItem,
 ) => {
-  if (!financeCollectionName) {
+  if (!FINANCE_COLLECTION_NAME) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+      "Finance collection name could not be determined.",
     );
     return;
   }
 
   try {
-    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    const budgetDocRef = doc(db, FINANCE_COLLECTION_NAME, budgetId);
     const batch = writeBatch(db);
 
     batch.update(budgetDocRef, {
@@ -136,17 +144,15 @@ export const deleteBudgetItem = async (
   budgetId: string,
   oldBudgetItem: FbBudgetItem,
 ) => {
-  const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
-
-  if (!financeCollectionName) {
+  if (!FINANCE_COLLECTION_NAME) {
     console.error(
-      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+      "Finance collection name could not be determined.",
     );
     return;
   }
 
   try {
-    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    const budgetDocRef = doc(db, FINANCE_COLLECTION_NAME, budgetId);
     await updateDoc(budgetDocRef, {
       budgetItems: arrayRemove(oldBudgetItem),
     });

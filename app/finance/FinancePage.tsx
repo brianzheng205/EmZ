@@ -15,6 +15,7 @@ import {
   updateBudgetMetadata,
   updateBudgetItem,
   createBudgetItem,
+  FINANCE_COLLECTION_NAME,
 } from "./firebaseUtils";
 import {
   CalculatedBudget,
@@ -47,18 +48,9 @@ export default function FinancePage() {
 
   const fetchBudgetsData = async () => {
     const fetchAllBudgets = async () => {
-      const financeCollectionName = process.env.NEXT_PUBLIC_FINANCE_COLLECTION;
-
-      if (!financeCollectionName) {
-        console.error(
-          "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
-        );
-        return;
-      }
-
       try {
         const budgetsData = (await fetchDocuments(
-          financeCollectionName,
+          FINANCE_COLLECTION_NAME,
         )) as FbBudgetWithId[];
         setBudgets(budgetsData);
       } catch (error) {
