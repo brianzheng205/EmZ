@@ -39,6 +39,7 @@ export const mapTvData = (
     original_name: tmdbData.original_name,
     name: tmdbData.name,
     next_episode_to_air: tmdbData.next_episode_to_air ?? null,
+    last_episode_to_air: tmdbData.last_episode_to_air ?? null,
     seasons: tmdbData.seasons ?? [],
     watch_providers:
       (tmdbData["watch/providers"]?.results?.US as WatchProviderResult) ?? [],
@@ -84,6 +85,8 @@ export const mapMovieData = (
       vote_average: tmdbData.vote_average,
       vote_count: tmdbData.vote_count,
       episodes: 1,
+      next_episode_to_air: null,
+      last_episode_to_air: null,
       ongoing: false,
       original_title: tmdbData.original_title,
       release_date: tmdbData.release_date,

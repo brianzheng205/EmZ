@@ -62,6 +62,7 @@ export interface TVShow extends Content {
   first_air_date: string;
   name: string;
   next_episode_to_air: NextEpisodeToAir;
+  last_episode_to_air: NextEpisodeToAir;
   seasons: Season[];
   watch_providers: WatchProviderResult;
 }

@@ -20,7 +20,10 @@ describe("mapTvData", () => {
     original_name: "Game of Thrones",
     name: "Game of Thrones",
     next_episode_to_air: null,
-    seasons: [{ id: 1, season_number: 1, episode_count: 10, name: "Season 1", air_date: "2011-04-17", overview: "", poster_path: "/season.jpg", vote_average: 8 }],
+    last_episode_to_air: { season_number: 1, episode_number: 10 },
+    seasons: [
+      { id: 1, season_number: 1, episode_count: 10, name: "Season 1", air_date: "2011-04-17", overview: "", poster_path: "/season.jpg", vote_average: 8 }
+    ],
     "watch/providers": { results: { US: { flatrate: [{ provider_id: 1, provider_name: "HBO", logo_path: "/hbo.jpg", display_priority: 1 }], link: "https://www.themoviedb.org/tv/1399/watch" } } },
     number_of_episodes: 73,
     in_production: false,
@@ -40,6 +43,7 @@ describe("mapTvData", () => {
     expect(result.original_name).toBe("Game of Thrones");
     expect(result.name).toBe("Game of Thrones");
     expect(result.next_episode_to_air).toBeNull();
+    expect(result.last_episode_to_air).toEqual({ season_number: 1, episode_number: 10 });
     expect(result.seasons).toHaveLength(1);
     expect(result.episodes).toBe(73);
     expect(result.ongoing).toBe(false);

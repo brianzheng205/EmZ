@@ -47,13 +47,31 @@ export default function TVCard({
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
+  const episodesAired = (() => {
+    if (item.media_type === "movie") return 1;
+    const lastEp = item.last_episode_to_air;
+    if (!lastEp) return item.episodes;
+    const previousSeasonsCount = (item.seasons || [])
+      .filter((s) => s.season_number > 0 && s.season_number < lastEp.season_number)
+      .reduce((sum, s) => sum + s.episode_count, 0);
+    return previousSeasonsCount + lastEp.episode_number;
+  })();
+
+  const isCompleted = item.episodes > 0 && item.watched >= item.episodes;
+  const isCaughtUp =
+    !isCompleted &&
+    item.ongoing &&
+    episodesAired > 0 &&
+    item.watched >= episodesAired;
 
   const status =
     item.watched === 0
       ? "Not Started"
-      : item.watched < item.episodes
-        ? "In Progress"
-        : "Completed";
+      : isCompleted
+        ? "Completed"
+        : isCaughtUp
+          ? "Caught Up"
+          : "In Progress";
 
   const nextAirDate = (() => {
     let date: Date | null = null;
@@ -128,9 +146,11 @@ export default function TVCard({
           color={
             status === "Completed"
               ? "success"
-              : status === "In Progress"
-                ? "info"
-                : "default"
+              : status === "Caught Up"
+                ? "secondary" 
+                : status === "In Progress"
+                  ? "info"
+                  : "default"
           }
           sx={{
             position: "absolute",
@@ -140,6 +160,9 @@ export default function TVCard({
             ...(status === "Not Started" && {
               bgcolor: "rgba(255, 255, 255, 0.9)",
               color: "rgba(0, 0, 0, 0.87)",
+            }),
+            ...(status === "Caught Up" && {
+              boxShadow: "0 0 8px rgba(156, 39, 176, 0.4)", // Subtle glow for caught up
             }),
           }}
         />
