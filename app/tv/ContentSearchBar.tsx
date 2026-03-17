@@ -26,6 +26,13 @@ import {
   WhoSelection,
 } from "./utils";
 
+import {
+  mapTvData,
+  mapMovieData,
+  findNewCollectionMovies,
+  CollectionRef,
+} from "@shared/tv/functions";
+
 type SearchBarProps<T> = {
   rows: EmZContent[];
   setRows: React.Dispatch<React.SetStateAction<EmZContent[]>>;
@@ -70,64 +77,62 @@ export default function ContentSearchBar({
   };
 
   const addContent = async (value: Content, who: WhoSelection) => {
-    value["who"] = who;
-    value["watched"] = 0;
+    const isTv = value.media_type === "tv";
+    const id = value.id;
+    const url = isTv
+      ? `https://api.themoviedb.org/3/tv/${id}?append_to_response=watch%2Fproviders&language=en-US`
+      : `https://api.themoviedb.org/3/movie/${id}?append_to_response=watch%2Fproviders&language=en-US`;
 
-    if (value.media_type === "tv") {
-      const tvData = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/tv/${value.id}?append_to_response=watch%2Fproviders&language=en-US`,
-      );
+    try {
+      const tmdbData = await fetchDataFromTMDB(url);
+      if (!tmdbData) return;
 
-      value["episodes"] = tvData.number_of_episodes;
-      value["ongoing"] = tvData.in_production;
-      value["next_episode_to_air"] = tvData.next_episode_to_air;
-      value["seasons"] = tvData.seasons;
-      value["watch_providers"] = tvData["watch/providers"].results?.US || [];
-    } else {
-      const movieData = await fetchDataFromTMDB(
-        `https://api.themoviedb.org/3/movie/${value.id}?append_to_response=watch%2Fproviders&language=en-US`,
-      );
+      const baseDoc = { ...value, who, watched: 0 };
+      let finalDoc: EmZContent;
+      let collectionRef: CollectionRef | null = null;
 
-      if (movieData.belongs_to_collection) {
-        const collection = await fetchDataFromTMDB(
-          `https://api.themoviedb.org/3/collection/${movieData.belongs_to_collection.id}?append_to_response=watch%2Fproviders&language=en-US`,
+      if (isTv) {
+        finalDoc = mapTvData(baseDoc as any, tmdbData) as unknown as EmZContent;
+      } else {
+        const result = mapMovieData(baseDoc as any, tmdbData);
+        finalDoc = result.data as unknown as EmZContent;
+        collectionRef = result.collection;
+      }
+
+      // Add the primary content
+      await addContentToFirebase(finalDoc);
+      setRows((prev) => [...prev, finalDoc]);
+
+      // If it's a movie in a collection, discover and add other parts
+      if (collectionRef) {
+        const collectionData = await fetchDataFromTMDB(
+          `https://api.themoviedb.org/3/collection/${collectionRef.id}?language=en-US`,
         );
 
-        for (const part of collection.parts) {
-          if (part.id !== value.id) {
-            part["who"] = who;
-            part["watched"] = 0;
-            part["episodes"] = 1;
-            part["ongoing"] = false;
-            part["watch_providers"] =
-              collection["watch/providers"]?.results?.US || [];
+        if (collectionData?.parts) {
+          const rowIds = new Set(rows.map((r) => r.id));
+          const newIds = findNewCollectionMovies(rowIds, collectionData.parts);
 
-            addContentToFirebase(part as EmZContent)
-              .then(() => {
-                setRows((prevRows: EmZContent[]) => {
-                  return [...prevRows, { ...part as EmZContent }];
-                });
-              })
-              .catch((error) => {
-                console.error("Error adding content from collection:", error);
-              });
+          // For the Search Bar, we'll just add the other movies in the collection.
+          // Note: We don't batch here since search bar adds are usually small.
+          for (const movieId of newIds) {
+            const movieData = await fetchDataFromTMDB(
+              `https://api.themoviedb.org/3/movie/${movieId}?append_to_response=watch%2Fproviders&language=en-US`,
+            );
+            if (!movieData) continue;
+
+            const partBase = { id: movieId, who, watched: 0, media_type: "movie" };
+            const { data: partData } = mapMovieData(partBase as any, movieData);
+            const partDoc = partData as unknown as EmZContent;
+
+            await addContentToFirebase(partDoc);
+            setRows((prev) => [...prev, partDoc]);
           }
         }
       }
-
-      value["episodes"] = 1;
-      value["ongoing"] = false;
-      value["watch_providers"] = movieData["watch/providers"].results?.US || [];
+    } catch (error) {
+      console.error("Error adding content:", error);
     }
-    addContentToFirebase(value as EmZContent)
-      .then(() => {
-        setRows((prevRows: EmZContent[]) => {
-          return [...prevRows, { ...value as EmZContent }];
-        });
-      })
-      .catch((error) => {
-        console.error("Error adding content:", error);
-      });
   };
   return (
     <Paper
@@ -188,45 +193,48 @@ export default function ContentSearchBar({
             }}
           />
         )}
-        renderOption={(props, option) => (
-          <Box
-            component="li"
-            {...props}
-            key={`${option.media_type}-${option.id}`}
-            sx={{
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              p: "8px !important",
-            }}
-          >
-            <Avatar
-              alt={
-                option.media_type === "tv"
-                  ? (option as TVShow).name
-                  : (option as Movie).title
-              }
-              key={option.id}
-              src={`https://image.tmdb.org/t/p/w154/${option.poster_path}`}
-              variant="rounded"
-              sx={{ height: 120, width: 80 }}
-            />
-            <Box>
-              <Typography variant="body1" fontWeight="medium">
-                {option.media_type === "tv"
-                  ? (option as TVShow).name
-                  : (option as Movie).title}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ textTransform: "uppercase" }}
-              >
-                {option.media_type}
-              </Typography>
+        renderOption={(props, option) => {
+          const mediaKey = `${option.media_type}-${option.id}`;
+          return (
+            <Box
+              component="li"
+              {...props}
+              key={mediaKey}
+              sx={{
+                display: "flex",
+                gap: 2,
+                alignItems: "center",
+                p: "8px !important",
+              }}
+            >
+              <Avatar
+                key={`${mediaKey}-avatar`}
+                alt={
+                  option.media_type === "tv"
+                    ? (option as TVShow).name
+                    : (option as Movie).title
+                }
+                src={`https://image.tmdb.org/t/p/w154/${option.poster_path}`}
+                variant="rounded"
+                sx={{ height: 120, width: 80 }}
+              />
+              <Box key={`${mediaKey}-info`}>
+                <Typography variant="body1" fontWeight="medium">
+                  {option.media_type === "tv"
+                    ? (option as TVShow).name
+                    : (option as Movie).title}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textTransform: "uppercase" }}
+                >
+                  {option.media_type}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-        )}
+          );
+        }}
       />
 
       <Divider orientation="vertical" flexItem />

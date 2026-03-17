@@ -5,3 +5,4 @@ initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
 export { default as updateFutureEvents } from "./countdown/updateFutureEvents";
+export { default as fetchContentUpdatesFromTMDB } from "./tv/fetchContentUpdatesFromTMDB";
