@@ -6,14 +6,16 @@ export enum ItemType {
   RETIREMENT = "Retirement",
 }
 
-export enum ItemAmountTimeSpan {
+export enum Frequency {
+  ONE_TIME = "One Time",
+  BIWEEKLY = "Biweekly",
   MONTHLY = "Monthly",
-  YEARLY = "Yearly",
 }
 
-export enum ItemRepeatFreq {
-  NEVER = "Never",
-  MONTHLY = "Monthly",
+export enum ViewType {
+  MONTHLY_AVERAGE = "Monthly Average",
+  TWO_PAYCHECK = "Two Paycheck Month",
+  THREE_PAYCHECK = "Three Paycheck Month",
 }
 
 // BACKEND BUDGET
@@ -22,8 +24,8 @@ export type FbBudgetItem = {
   type: ItemType;
   name: string;
   amount: number;
-  amountTimeSpan: ItemAmountTimeSpan; // if amount occurs every month or every year
-  repeatFreq: ItemRepeatFreq;
+  frequency: Frequency;
+  isDefinedYearly: boolean;
 };
 
 export type FbBudgetMetadata = {
@@ -42,11 +44,9 @@ export type FbBudgetWithId = FbBudget & { id: string };
 
 export type BudgetItem = Pick<
   FbBudgetItem,
-  "name" | "amountTimeSpan" | "repeatFreq"
+  "name" | "frequency" | "isDefinedYearly" | "amount"
 > & {
   type: FbBudgetItem["type"] | "Liquid Assets";
-  amountMonthly: number;
-  amountYearly: number;
 };
 
 // FRONTEND CALCULATED BUDGET

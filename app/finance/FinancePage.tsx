@@ -1,6 +1,6 @@
 "use client";
 
-import { Typography } from "@mui/material";
+import { Typography, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
@@ -8,8 +8,8 @@ import { useEffect, useMemo, useState } from "react";
 import LoadingContainer from "@/components/LoadingContainer";
 import { fetchData, fetchDocuments } from "@/utils";
 
-import { BudgetHeaders, BudgetAccordions } from "./BudgetItems";
-import BudgetToolBar from "./BudgetItems/BudgetToolBar";
+import { BudgetHeaders, BudgetAccordions, ViewToggle } from "./components";
+import BudgetToolBar from "./components/BudgetToolBar";
 import {
   deleteBudgetItem,
   updateBudgetMetadata,
@@ -22,23 +22,27 @@ import {
   FbBudgetItem,
   FbBudgetMetadata,
   FbBudget,
+  ViewType,
 } from "./types";
-import { getCalculatedCategories } from "./utils";
+import { calculateCategories } from "./utils";
 
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [budgets, setBudgets] = useState<FbBudgetWithId[]>([]);
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
+  const [viewType, setViewType] = useState<ViewType>(ViewType.MONTHLY_AVERAGE);
 
   const activeBudgets: CalculatedBudget[] = useMemo(
     () =>
       R.pipe(
         R.filter((budget: FbBudgetWithId) =>
-          activeBudgetIds.includes(budget.id)
+          activeBudgetIds.includes(budget.id),
         ),
-        R.map(getCalculatedCategories)
+        R.map((budget: FbBudgetWithId) =>
+          calculateCategories(budget, viewType),
+        ),
       )(budgets),
-    [activeBudgetIds, budgets]
+    [activeBudgetIds, budgets, viewType],
   );
 
   const fetchBudgetsData = async () => {
@@ -47,14 +51,14 @@ export default function FinancePage() {
 
       if (!financeCollectionName) {
         console.error(
-          "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set."
+          "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
         );
         return;
       }
 
       try {
         const budgetsData = (await fetchDocuments(
-          financeCollectionName
+          financeCollectionName,
         )) as FbBudgetWithId[];
         setBudgets(budgetsData);
       } catch (error) {
@@ -97,7 +101,7 @@ export default function FinancePage() {
             ...budget,
             ...newMetadata,
           }
-        : budget
+        : budget,
     );
     setBudgets(newBudgets);
 
@@ -113,7 +117,7 @@ export default function FinancePage() {
             ...budget,
             budgetItems: [...budget.budgetItems, item],
           }
-        : budget
+        : budget,
     );
     setBudgets(newBudgets);
 
@@ -123,7 +127,7 @@ export default function FinancePage() {
   const handleChangeItem = (
     budgetId: string,
     oldItemName: string,
-    newItem: Partial<FbBudgetItem>
+    newItem: Partial<FbBudgetItem>,
   ) => {
     const targetBudget = budgets.find((budget) => budget.id === budgetId);
 
@@ -133,7 +137,7 @@ export default function FinancePage() {
     }
 
     const oldFbItem = targetBudget.budgetItems.find(
-      (budgetItem) => budgetItem.name === oldItemName
+      (budgetItem) => budgetItem.name === oldItemName,
     );
 
     if (!oldFbItem) {
@@ -148,10 +152,10 @@ export default function FinancePage() {
             budgetItems: budget.budgetItems.map((budgetItem) =>
               budgetItem.name === oldItemName
                 ? { ...budgetItem, ...newItem }
-                : budgetItem
+                : budgetItem,
             ),
           }
-        : budget
+        : budget,
     );
     setBudgets(newBudgets);
 
@@ -171,7 +175,7 @@ export default function FinancePage() {
     }
 
     const targetItem = targetBudet.budgetItems.find(
-      (budgetItem) => budgetItem.name === itemName
+      (budgetItem) => budgetItem.name === itemName,
     );
 
     if (!targetItem) {
@@ -184,10 +188,10 @@ export default function FinancePage() {
         ? {
             ...budget,
             budgetItems: budget.budgetItems.filter(
-              (budgetItem) => budgetItem.name !== itemName
+              (budgetItem) => budgetItem.name !== itemName,
             ),
           }
-        : budget
+        : budget,
     );
     setBudgets(newBudgets);
 
@@ -198,22 +202,34 @@ export default function FinancePage() {
     <LoadingContainer loading={loading}>
       {activeBudgets.length > 0 ? (
         <Stack sx={{ gap: 2, marginBottom: 4 }}>
-          <Typography variant="h1">{activeBudgets[0].name}</Typography>
-          <BudgetToolBar
-            budget={
-              budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
-              ({} as FbBudget)
-            }
-            onEditMetadata={handleBudgetMetadataChange}
-            onAddItem={handleAddItem}
-            onRefresh={fetchBudgetsData}
-          />
+          <Typography variant="h1" sx={{ textAlign: "center" }}>
+            {activeBudgets[0].name}
+          </Typography>
+          <Stack
+            sx={{
+              gap: 2,
+            }}
+          >
+            <Stack sx={{ alignItems: "center" }}>
+              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
+            </Stack>
+            <BudgetToolBar
+              budget={
+                budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
+                ({} as FbBudget)
+              }
+              onEditMetadata={handleBudgetMetadataChange}
+              onAddItem={handleAddItem}
+              onRefresh={fetchBudgetsData}
+            />
+          </Stack>
 
           <BudgetHeaders />
           <BudgetAccordions
             activeBudgets={activeBudgets}
             onItemChange={handleChangeItem}
             onItemDelete={handleDeleteItem}
+            viewType={viewType}
           />
         </Stack>
       ) : (

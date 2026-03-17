@@ -2,8 +2,9 @@ import {
   CalculatedBudget,
   CalculatedCategories,
   FbBudgetWithId,
-  ItemAmountTimeSpan,
-  ItemRepeatFreq,
+  Frequency,
+  ViewType,
+  BudgetItem,
 } from "./types";
 
 const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement real tax estimates
@@ -11,14 +12,18 @@ const TEMP_TAX_RATE = 0.34; // flat tax rate for simplicity. TODO: implement rea
 const TEMP_RSU_TAX_RATE = 0.34; // flat tax rate for post-vesting RSU income
 const TEMP_RSU_TAKE_HOME_RATE = 1 - TEMP_RSU_TAX_RATE;
 
+const NUM_MONTHS_IN_YEAR = 12;
+const NUM_PAYCHECKS_IN_YEAR = 26;
+
 /**
  * Converts `amount` into `amountMonthly` and `amountYearly` based on `amountTimeSpan`
  * and calculates calculated budget items such as sums of categories, taxes, and take home.
  *
  * @param budgetItems - a budget's items
  */
-export const getCalculatedCategories = (
-  budget: FbBudgetWithId
+export const calculateCategories = (
+  budget: FbBudgetWithId,
+  viewType: ViewType,
 ): CalculatedBudget => {
   const budgetItems = budget.budgetItems;
 
@@ -38,19 +43,6 @@ export const getCalculatedCategories = (
   };
 
   budgetItems.forEach((item) => {
-    const amountMonthly =
-      item.repeatFreq === "Never"
-        ? 0
-        : item.amountTimeSpan === "Monthly"
-        ? item.amount
-        : item.amount / 12;
-    const amountYearly =
-      item.repeatFreq === "Never"
-        ? item.amount
-        : item.amountTimeSpan === "Yearly"
-        ? item.amount * (budget.numMonths / 12)
-        : item.amount * budget.numMonths;
-
     // TODO: change backend field name from "type" to "category"
     // TODO: change backend `type` field to be lowercase for easier handling
     const category =
@@ -58,35 +50,43 @@ export const getCalculatedCategories = (
         item.type === "Earnings"
           ? "earnings"
           : item.type === "Deductions"
-          ? "deductions"
-          : item.type === "Expenses"
-          ? "expenses"
-          : "retirement"
+            ? "deductions"
+            : item.type === "Expenses"
+              ? "expenses"
+              : "retirement"
       ];
-    category.sumMonthly += amountMonthly;
-    category.sumYearly += amountYearly;
-    category.items.push({
-      type: item.type,
-      name: item.name,
-      amountMonthly,
-      amountYearly,
-      amountTimeSpan: item.amountTimeSpan,
-      repeatFreq: item.repeatFreq,
-    });
+    category.sumMonthly += convertToMonthlyAmount(
+      item,
+      viewType,
+      budget.numMonths,
+    );
+    category.sumYearly += convertToYearlyAmount(item, budget.numMonths);
+    category.items.push(item);
   });
 
-  const RSU = categories.earnings.items.find((i) => i.name === "RSU") || {
-    amountMonthly: 0,
-    amountYearly: 0,
-  };
+  const RSU =
+    categories.earnings.items.find((i) => i.name === "RSU") ||
+    ({
+      name: "RSU",
+      amount: 0,
+      frequency: Frequency.ONE_TIME,
+      isDefinedYearly: true,
+    } as BudgetItem);
+
+  const rsuAmountMonthly = convertToMonthlyAmount(
+    RSU,
+    viewType,
+    budget.numMonths,
+  );
+  const rsuAmountYearly = convertToYearlyAmount(RSU, budget.numMonths);
 
   // earnings
   const totalEarningsMonthly = categories.earnings.sumMonthly;
   const totalEarningsYearly = categories.earnings.sumYearly;
 
   // taxable RSU
-  const taxableRSUMonthly = RSU.amountMonthly;
-  const taxableRSUYearly = RSU.amountYearly;
+  const taxableRSUMonthly = rsuAmountMonthly;
+  const taxableRSUYearly = rsuAmountYearly;
 
   // taxable income without RSU = (earnings - RSU) - deductions
   const taxableIncomeNoRSUMonthly =
@@ -124,8 +124,8 @@ export const getCalculatedCategories = (
 
   // split liqiuid assets = post-tax RSU + remaining
 
-  const postTaxRSUMonthly = RSU.amountMonthly * TEMP_RSU_TAKE_HOME_RATE;
-  const postTaxRSUYearly = RSU.amountYearly * TEMP_RSU_TAKE_HOME_RATE;
+  const postTaxRSUMonthly = rsuAmountMonthly * TEMP_RSU_TAKE_HOME_RATE;
+  const postTaxRSUYearly = rsuAmountYearly * TEMP_RSU_TAKE_HOME_RATE;
   const remainingMonthly =
     categories.liquidAssets.sumMonthly - postTaxRSUMonthly;
   const remainingYearly = categories.liquidAssets.sumYearly - postTaxRSUYearly;
@@ -133,18 +133,16 @@ export const getCalculatedCategories = (
   categories.liquidAssets.items.push({
     type: "Liquid Assets",
     name: "Post-Tax RSU",
-    amountMonthly: postTaxRSUMonthly,
-    amountYearly: postTaxRSUYearly,
-    amountTimeSpan: ItemAmountTimeSpan.MONTHLY,
-    repeatFreq: ItemRepeatFreq.MONTHLY,
+    amount: postTaxRSUYearly,
+    isDefinedYearly: true,
+    frequency: Frequency.MONTHLY,
   });
   categories.liquidAssets.items.push({
     type: "Liquid Assets",
     name: "Remaining",
-    amountMonthly: remainingMonthly,
-    amountYearly: remainingYearly,
-    amountTimeSpan: ItemAmountTimeSpan.MONTHLY,
-    repeatFreq: ItemRepeatFreq.MONTHLY,
+    amount: remainingYearly,
+    isDefinedYearly: true,
+    frequency: Frequency.MONTHLY,
   });
 
   return {
@@ -154,4 +152,72 @@ export const getCalculatedCategories = (
     user: budget.user,
     categories,
   };
+};
+
+/**
+ * Converts a budget item's amount to its yearly equivalent
+ */
+export const convertToYearlyAmount = (
+  item: BudgetItem,
+  numMonths: number = NUM_MONTHS_IN_YEAR,
+): number => {
+  if (item.frequency === Frequency.ONE_TIME) {
+    return item.amount;
+  }
+
+  if (item.isDefinedYearly) {
+    return item.amount;
+  } else if (item.frequency === Frequency.MONTHLY) {
+    return item.amount * numMonths;
+  } else if (item.frequency === Frequency.BIWEEKLY) {
+    return item.amount * NUM_PAYCHECKS_IN_YEAR;
+  }
+
+  throw new Error("Unsupported yearly conversion");
+};
+
+/**
+ * Converts a budget item's amount to its monthly equivalent based on the
+ * item's frequency and the budget view type
+ *
+ * `viewType` is used to determine how to convert the item's amount to the
+ * monthly equivalent if the item is defined on a yearly basis and has a
+ * biweekly frequency
+ */
+export const convertToMonthlyAmount = (
+  item: BudgetItem,
+  viewType: ViewType,
+  numMonths: number = NUM_MONTHS_IN_YEAR,
+): number => {
+  if (item.frequency === Frequency.ONE_TIME) {
+    return 0;
+  } else if (item.isDefinedYearly) {
+    switch (item.frequency) {
+      case Frequency.MONTHLY:
+        return item.amount / NUM_MONTHS_IN_YEAR;
+      case Frequency.BIWEEKLY:
+        switch (viewType) {
+          case ViewType.MONTHLY_AVERAGE:
+            return item.amount / NUM_MONTHS_IN_YEAR;
+          case ViewType.TWO_PAYCHECK:
+            return item.amount * (2 / NUM_PAYCHECKS_IN_YEAR);
+          case ViewType.THREE_PAYCHECK:
+            return item.amount * (3 / NUM_PAYCHECKS_IN_YEAR);
+        }
+    }
+  } else {
+    switch (item.frequency) {
+      case Frequency.MONTHLY:
+        return item.amount;
+      case Frequency.BIWEEKLY:
+        switch (viewType) {
+          case ViewType.MONTHLY_AVERAGE:
+            return item.amount * (NUM_PAYCHECKS_IN_YEAR / NUM_MONTHS_IN_YEAR);
+          case ViewType.TWO_PAYCHECK:
+            return item.amount * 2;
+          case ViewType.THREE_PAYCHECK:
+            return item.amount * 3;
+        }
+    }
+  }
 };

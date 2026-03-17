@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import DialogWrapper from "@/components/DialogWrapper";
 import SelectWrapper from "@/components/SelectWrapper";
 
-import { FbBudget } from "../types";
+import { FbBudget } from "../../types";
 
 interface BudgetDialogProps {
   open: boolean;

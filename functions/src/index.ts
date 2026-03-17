@@ -6,3 +6,4 @@ setGlobalOptions({ maxInstances: 10 });
 
 export { default as updateFutureEvents } from "./countdown/updateFutureEvents";
 export { default as fetchContentUpdatesFromTMDB } from "./tv/fetchContentUpdatesFromTMDB";
+export { default as copyCollection } from "./admin/copyCollection";
