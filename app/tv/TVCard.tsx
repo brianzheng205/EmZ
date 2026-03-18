@@ -266,7 +266,10 @@ export default function TVCard({
               <IconButton
                 size="small"
                 onClick={() => handleWatchedChange(item.watched + 1)}
-                disabled={item.watched >= item.episodes}
+                disabled={
+                  status === ContentStatus.Completed ||
+                  status === ContentStatus.CaughtUp
+                }
               >
                 <AddIcon fontSize="small" />
               </IconButton>
