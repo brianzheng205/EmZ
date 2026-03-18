@@ -11,8 +11,13 @@ export class ContentStatus {
     static readonly Completed = new ContentStatus('Completed', 3);
 
     static calculate(content: EmZContent): ContentStatus {
+      if (content.override_as_complete) {
+        return ContentStatus.Completed;
+      }
+
       const totalEpisodes = content.episodes;
       const ongoing = content.ongoing;
+
       if (content.watched >= totalEpisodes && !ongoing) {
         return ContentStatus.Completed;
       }
@@ -128,6 +133,7 @@ export interface EmZContent extends Movie, TVShow {
   watched: number;
   episodes: number;
   ongoing: boolean;
+  override_as_complete: boolean;
   watched_name?: string | null;
 }
 

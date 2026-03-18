@@ -1,4 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
 import {
@@ -143,6 +145,43 @@ export default function TVCard({
             }),
           }}
         />
+
+        {/* Complete Toggle Button */}
+        <IconButton
+          size="small"
+          onClick={() =>
+            onUpdate({
+              ...item,
+              override_as_complete: !item.override_as_complete,
+            })
+          }
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 44,
+            bgcolor: item.override_as_complete
+              ? "success.main"
+              : "rgba(255,255,255,0.7)",
+            color: item.override_as_complete ? "white" : "success.main",
+            "&:hover": {
+              bgcolor: item.override_as_complete ? "success.dark" : "white",
+            },
+            boxShadow: item.override_as_complete
+              ? "0 0 8px rgba(76, 175, 80, 0.5)"
+              : "none",
+          }}
+          title={
+            item.override_as_complete
+              ? "Mark as Incomplete"
+              : "Mark as Complete"
+          }
+        >
+          {item.override_as_complete ? (
+            <CheckCircleIcon fontSize="small" />
+          ) : (
+            <CheckCircleOutlineIcon fontSize="small" />
+          )}
+        </IconButton>
 
         {/* Delete Button */}
         <IconButton
