@@ -1,4 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
 import {
@@ -26,6 +28,7 @@ import {
   whoOptions,
   NextEpisodeToAir,
   Provider,
+  ContentStatus,
 } from "./utils";
 
 interface TVCardProps {
@@ -47,13 +50,10 @@ export default function TVCard({
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
-
-  const status =
-    item.watched === 0
-      ? "Not Started"
-      : item.watched < item.episodes
-        ? "In Progress"
-        : "Completed";
+  const status = ContentStatus.calculate(item);
+  const airedCount = ContentStatus.getAiredCount(item);
+  const airedProgress =
+    item.episodes > 0 ? (airedCount * 100) / item.episodes : 0;
 
   const nextAirDate = (() => {
     let date: Date | null = null;
@@ -123,26 +123,68 @@ export default function TVCard({
 
         {/* Status Chip */}
         <Chip
-          label={status}
+          label={status.name}
           size="small"
           color={
-            status === "Completed"
+            status === ContentStatus.COMPLETED
               ? "success"
-              : status === "In Progress"
-                ? "info"
-                : "default"
+              : status === ContentStatus.CAUGHT_UP
+                ? "secondary"
+                : status === ContentStatus.IN_PROGRESS
+                  ? "info"
+                  : "default"
           }
           sx={{
             position: "absolute",
             top: 12,
             left: 12,
             fontWeight: "bold",
-            ...(status === "Not Started" && {
+            ...(status === ContentStatus.NOT_STARTED && {
               bgcolor: "rgba(255, 255, 255, 0.9)",
               color: "rgba(0, 0, 0, 0.87)",
             }),
+            ...(status === ContentStatus.CAUGHT_UP && {
+              boxShadow: "0 0 8px rgba(156, 39, 176, 0.4)", // Subtle glow for caught up
+            }),
           }}
         />
+
+        {/* Complete Toggle Button */}
+        <IconButton
+          size="small"
+          onClick={() =>
+            onUpdate({
+              ...item,
+              override_as_complete: !item.override_as_complete,
+            })
+          }
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 44,
+            bgcolor: item.override_as_complete
+              ? "success.main"
+              : "rgba(255,255,255,0.7)",
+            color: item.override_as_complete ? "white" : "success.main",
+            "&:hover": {
+              bgcolor: item.override_as_complete ? "success.dark" : "white",
+            },
+            boxShadow: item.override_as_complete
+              ? "0 0 8px rgba(76, 175, 80, 0.5)"
+              : "none",
+          }}
+          title={
+            item.override_as_complete
+              ? "Mark as Incomplete"
+              : "Mark as Complete"
+          }
+        >
+          {item.override_as_complete ? (
+            <CheckCircleIcon fontSize="small" />
+          ) : (
+            <CheckCircleOutlineIcon fontSize="small" />
+          )}
+        </IconButton>
 
         {/* Delete Button */}
         <IconButton
@@ -227,25 +269,50 @@ export default function TVCard({
               <IconButton
                 size="small"
                 onClick={() => handleWatchedChange(item.watched + 1)}
-                disabled={item.watched >= item.episodes}
+                disabled={
+                  status === ContentStatus.COMPLETED ||
+                  status === ContentStatus.CAUGHT_UP
+                }
               >
                 <AddIcon fontSize="small" />
               </IconButton>
             </Box>
           </Box>
 
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{
-              height: 6,
-              borderRadius: 3,
-              bgcolor: "background.default",
-              "& .MuiLinearProgress-bar": {
-                bgcolor: "primary.main",
-              },
-            }}
-          />
+          <Box sx={{ position: "relative", mt: 1 }}>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                bgcolor: "background.default",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: "primary.main",
+                },
+              }}
+            />
+            {item.media_type === "tv" &&
+              airedProgress > 0 &&
+              airedProgress < 100 && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: `${airedProgress}%`,
+                    top: -2,
+                    bottom: -2,
+                    width: 2,
+                    bgcolor: "secondary.main",
+                    zIndex: 1,
+                    borderRadius: 1,
+                    opacity: 0.8,
+                    boxShadow: "0 0 4px rgba(0,0,0,0.2)",
+                    pointerEvents: "none", // Prevent marker from blocking clicks
+                  }}
+                  title={`Aired episodes: ${airedCount}`}
+                />
+              )}
+          </Box>
         </Box>
 
         <Box

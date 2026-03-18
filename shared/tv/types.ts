@@ -1,4 +1,58 @@
+
+
+export class ContentStatus {
+  private constructor(
+    public readonly name: string,
+    public readonly order: number,) {}
+
+    static readonly IN_PROGRESS = new ContentStatus('In Progress', 0);
+    static readonly CAUGHT_UP = new ContentStatus('Caught Up', 1);
+    static readonly NOT_STARTED = new ContentStatus('Not Started', 2);
+    static readonly COMPLETED = new ContentStatus('Completed', 3);
+
+    static calculate(content: EmZContent): ContentStatus {
+      if (content.override_as_complete) {
+        return ContentStatus.COMPLETED;
+      }
+
+      const totalEpisodes = content.episodes;
+      const ongoing = content.ongoing;
+
+      if (content.watched >= totalEpisodes && !ongoing) {
+        return ContentStatus.COMPLETED;
+      }
+
+      if (content.watched === 0) {
+        return ContentStatus.NOT_STARTED;
+      }
+
+      const airedCount = ContentStatus.getAiredCount(content);
+
+      if (content.watched >= airedCount) {
+        return ContentStatus.CAUGHT_UP;
+      }
+
+      return ContentStatus.IN_PROGRESS;
+    }
+
+    static getAiredCount(content: EmZContent): number {
+      if (content.media_type === "movie") return 1;
+      if (!content.last_episode_to_air) return 0;
+
+      const last = content.last_episode_to_air;
+      const previousSeasonsCount = (content.seasons || [])
+        .filter((s) => s.season_number > 0 && s.season_number < last.season_number)
+        .reduce((acc, s) => acc + s.episode_count, 0);
+      return previousSeasonsCount + last.episode_number;
+    }
+
+    static compare(a: ContentStatus, b: ContentStatus): number {
+      return a.order - b.order;
+    }
+}
+
 export type WhoSelection = "Emily" | "Brian" | "Both";
+
 
 export interface Content {
   adult: boolean;
@@ -62,6 +116,7 @@ export interface TVShow extends Content {
   first_air_date: string;
   name: string;
   next_episode_to_air: NextEpisodeToAir;
+  last_episode_to_air: NextEpisodeToAir;
   seasons: Season[];
   watch_providers: WatchProviderResult;
 }
@@ -79,6 +134,7 @@ export interface EmZContent extends Movie, TVShow {
   watched: number;
   episodes: number;
   ongoing: boolean;
+  override_as_complete: boolean;
   watched_name?: string | null;
 }
 

@@ -1,5 +1,5 @@
 "use client";
-import CloseIcon from '@mui/icons-material/Close';
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Box,
   Stack,
@@ -15,7 +15,7 @@ import {
   Avatar,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
 } from "@mui/material";
 import { useState, useEffect, useCallback } from "react";
 import ArrowDropDown from "@mui/icons-material/ArrowDropDown";
@@ -45,7 +45,7 @@ export default function TVPage() {
   const [rows, setRows] = useState<EmZContent[]>([]);
   const [genres, setGenres] = useState<Record<number, EmZGenre> | null>(null);
   const [filters, setFilters] = useState<Record<string, Filter<EmZContent>>>(
-    {}
+    {},
   );
   const [providers, setProviders] = useState<Provider[]>([]);
   const [rowsLoading, setRowsLoading] = useState<boolean>(false);
@@ -53,7 +53,7 @@ export default function TVPage() {
 
   const handleUpdateInfo = async (updatedItem: EmZContent) => {
     try {
-      const oldItem = rows.find(r => r.id === updatedItem.id);
+      const oldItem = rows.find((r) => r.id === updatedItem.id);
       if (!oldItem) return;
 
       const isWatchedChanged = oldItem.watched !== updatedItem.watched;
@@ -67,7 +67,7 @@ export default function TVPage() {
       await addContentToFirebase(itemToSave);
 
       setRows((prevRows) =>
-        prevRows.map((row) => (row.id === itemToSave.id ? itemToSave : row))
+        prevRows.map((row) => (row.id === itemToSave.id ? itemToSave : row)),
       );
     } catch {
       console.log("Failed to update, reverting changes");
@@ -114,8 +114,9 @@ export default function TVPage() {
           return {
             ...docData,
             watched_name: episodeName,
+            override_as_complete: docData.override_as_complete || false,
           };
-        })
+        }),
       );
 
       if (!genres) {
@@ -168,7 +169,7 @@ export default function TVPage() {
           rows={rows}
           fetchSearchResults={fetchContentSearchResults}
         />
-        
+
         <Box sx={{ width: "100%" }}>
           <TableToolbar
             rows={rows}
@@ -208,11 +209,21 @@ export default function TVPage() {
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 3, bgcolor: "background.default" }
+          sx: { borderRadius: 3, bgcolor: "background.default" },
         }}
       >
-        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" fontWeight="bold">Manage Watch Providers</Typography>
+        <DialogTitle
+          sx={{
+            m: 0,
+            p: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold">
+            Manage Watch Providers
+          </Typography>
           <IconButton
             aria-label="close"
             onClick={() => setIsSettingsOpen(false)}
