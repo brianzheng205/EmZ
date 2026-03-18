@@ -1,19 +1,33 @@
 import { GridRowsProp } from "@mui/x-data-grid";
-import { 
-  EmZContent, 
-  Movie, 
-  TVShow, 
-  NextEpisodeToAir, 
-  Season, 
-  Provider, 
-  TMDBSearchMultiResponse, 
-  TMDBGenre, 
-  EmZGenre, 
+import {
+  EmZContent,
+  Movie,
+  TVShow,
+  NextEpisodeToAir,
+  Season,
+  Provider,
+  TMDBSearchMultiResponse,
+  TMDBGenre,
+  EmZGenre,
   WhoSelection,
-  TMDBError
+  TMDBError,
+  ContentStatus,
 } from "@shared/tv/types";
 
-export type { EmZContent, Movie, TVShow, NextEpisodeToAir, Season, Provider, TMDBSearchMultiResponse, TMDBGenre, EmZGenre, WhoSelection, TMDBError };
+export type {
+  EmZContent,
+  Movie,
+  TVShow,
+  NextEpisodeToAir,
+  Season,
+  Provider,
+  TMDBSearchMultiResponse,
+  TMDBGenre,
+  EmZGenre,
+  WhoSelection,
+  TMDBError,
+};
+export { ContentStatus };
 export type { Content } from "@shared/tv/types";
 
 export const whoOptions: WhoSelection[] = ["Emily", "Brian", "Both"];
@@ -22,7 +36,7 @@ export type Filter<T> = { name: string; filter: (items: T[]) => T[] };
 
 export const fetchContentSearchResults = async (query: string) => {
   const url = `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(
-    query
+    query,
   )}&include_adult=false&language=en-US&page=1`;
 
   const data: TMDBSearchMultiResponse = await fetchDataFromTMDB(url);
@@ -48,13 +62,16 @@ export const fetchGenres = async () => {
   const tvData = await fetchDataFromTMDB(tvUrl);
   const tvGenres: TMDBGenre[] = tvData?.genres || [];
 
-  return [...movieGenres, ...tvGenres].reduce((prev: Record<number, EmZGenre>, curr) => {
-    prev[curr.id] = {
-      name: curr.name,
-      color: `hsl(${(curr.id * 50) % 360}, 70%, 80%)`,
-    };
-    return prev;
-  }, {});
+  return [...movieGenres, ...tvGenres].reduce(
+    (prev: Record<number, EmZGenre>, curr) => {
+      prev[curr.id] = {
+        name: curr.name,
+        color: `hsl(${(curr.id * 50) % 360}, 70%, 80%)`,
+      };
+      return prev;
+    },
+    {},
+  );
 };
 
 export const fetchDataFromTMDB = async (url: string) => {
@@ -88,7 +105,7 @@ export const fetchDataFromTMDB = async (url: string) => {
 
 export const applyFilters = (
   rows: GridRowsProp,
-  filters: Record<string, Filter<EmZContent>>
+  filters: Record<string, Filter<EmZContent>>,
 ) => {
   let filteredRows: GridRowsProp = rows;
   for (const filter of Object.values(filters)) {
@@ -99,7 +116,7 @@ export const applyFilters = (
 
 export const applyFiltersAndSorts = (
   rows: GridRowsProp,
-  filters: Record<string, Filter<EmZContent>>
+  filters: Record<string, Filter<EmZContent>>,
 ) => {
   const filteredRows = applyFilters(rows, filters);
   const sortedRows = Array.from(filteredRows as EmZContent[]).sort((a, b) => {
@@ -128,31 +145,10 @@ export const applyFiltersAndSorts = (
 };
 
 export const compareStatus = (a: EmZContent, b: EmZContent) => {
-  const statusA =
-    a.watched === 0
-      ? "Not Started"
-      : a.watched < a.episodes
-      ? "In Progress"
-      : "Completed";
-  const statusB =
-    b.watched === 0
-      ? "Not Started"
-      : b.watched < b.episodes
-      ? "In Progress"
-      : "Completed";
-  if (statusA === statusB) {
-    return 0;
-  }
-
-  if (statusA === "Completed") {
-    return 1;
-  }
-
-  if (statusA === "Not Started" && statusB === "In Progress") {
-    return 1;
-  }
-
-  return -1;
+  return ContentStatus.compare(
+    ContentStatus.calculate(a),
+    ContentStatus.calculate(b),
+  );
 };
 
 export const compareOngoing = (a: EmZContent, b: EmZContent) => {

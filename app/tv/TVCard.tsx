@@ -26,6 +26,7 @@ import {
   whoOptions,
   NextEpisodeToAir,
   Provider,
+  ContentStatus,
 } from "./utils";
 
 interface TVCardProps {
@@ -47,31 +48,7 @@ export default function TVCard({
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
-  const episodesAired = (() => {
-    if (item.media_type === "movie") return 1;
-    const lastEp = item.last_episode_to_air;
-    if (!lastEp) return item.episodes;
-    const previousSeasonsCount = (item.seasons || [])
-      .filter((s) => s.season_number > 0 && s.season_number < lastEp.season_number)
-      .reduce((sum, s) => sum + s.episode_count, 0);
-    return previousSeasonsCount + lastEp.episode_number;
-  })();
-
-  const isCompleted = item.episodes > 0 && item.watched >= item.episodes;
-  const isCaughtUp =
-    !isCompleted &&
-    item.ongoing &&
-    episodesAired > 0 &&
-    item.watched >= episodesAired;
-
-  const status =
-    item.watched === 0
-      ? "Not Started"
-      : isCompleted
-        ? "Completed"
-        : isCaughtUp
-          ? "Caught Up"
-          : "In Progress";
+  const status = ContentStatus.calculate(item);
 
   const nextAirDate = (() => {
     let date: Date | null = null;
@@ -141,14 +118,14 @@ export default function TVCard({
 
         {/* Status Chip */}
         <Chip
-          label={status}
+          label={status.name}
           size="small"
           color={
-            status === "Completed"
+            status === ContentStatus.Completed
               ? "success"
-              : status === "Caught Up"
-                ? "secondary" 
-                : status === "In Progress"
+              : status === ContentStatus.CaughtUp
+                ? "secondary"
+                : status === ContentStatus.InProgress
                   ? "info"
                   : "default"
           }
@@ -157,11 +134,11 @@ export default function TVCard({
             top: 12,
             left: 12,
             fontWeight: "bold",
-            ...(status === "Not Started" && {
+            ...(status === ContentStatus.NotStarted && {
               bgcolor: "rgba(255, 255, 255, 0.9)",
               color: "rgba(0, 0, 0, 0.87)",
             }),
-            ...(status === "Caught Up" && {
+            ...(status === ContentStatus.CaughtUp && {
               boxShadow: "0 0 8px rgba(156, 39, 176, 0.4)", // Subtle glow for caught up
             }),
           }}

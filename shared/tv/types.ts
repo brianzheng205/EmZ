@@ -1,4 +1,52 @@
+
+
+export class ContentStatus {
+  private constructor(
+    public readonly name: string,
+    public readonly order: number,) {}
+
+    static readonly InProgress = new ContentStatus('In Progress', 0);
+    static readonly CaughtUp = new ContentStatus('Caught Up', 1);
+    static readonly NotStarted = new ContentStatus('Not Started', 2);
+    static readonly Completed = new ContentStatus('Completed', 3);
+
+    static calculate(content: EmZContent): ContentStatus {
+      const totalEpisodes = content.episodes;
+      const ongoing = content.ongoing;
+      if (content.watched >= totalEpisodes && !ongoing) {
+        return ContentStatus.Completed;
+      }
+
+      const airedCount = this.getAiredCount(content);
+      if (content.watched >= airedCount) {
+        return ContentStatus.CaughtUp;
+      }
+
+      if (content.watched === 0) {
+        return ContentStatus.NotStarted;
+      }
+
+      return ContentStatus.InProgress;
+    }
+
+    private static getAiredCount(content: EmZContent): number {
+      if (content.media_type === "movie") return 1;
+      if (!content.last_episode_to_air) return 0;
+
+      const last = content.last_episode_to_air;
+      const previousSeasonsCount = (content.seasons || [])
+        .filter((s) => s.season_number > 0 && s.season_number < last.season_number)
+        .reduce((acc, s) => acc + s.episode_count, 0);
+      return previousSeasonsCount + last.episode_number;
+    }
+
+    static compare(a: ContentStatus, b: ContentStatus): number {
+      return a.order - b.order;
+    }
+}
+
 export type WhoSelection = "Emily" | "Brian" | "Both";
+
 
 export interface Content {
   adult: boolean;
