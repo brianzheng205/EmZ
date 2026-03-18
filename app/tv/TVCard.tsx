@@ -51,6 +51,9 @@ export default function TVCard({
   const title = item.media_type === "movie" ? item.title : item.name;
   const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
   const status = ContentStatus.calculate(item);
+  const airedCount = ContentStatus.getAiredCount(item);
+  const airedProgress =
+    item.episodes > 0 ? (airedCount * 100) / item.episodes : 0;
 
   const nextAirDate = (() => {
     let date: Date | null = null;
@@ -123,11 +126,11 @@ export default function TVCard({
           label={status.name}
           size="small"
           color={
-            status === ContentStatus.Completed
+            status === ContentStatus.COMPLETED
               ? "success"
-              : status === ContentStatus.CaughtUp
+              : status === ContentStatus.CAUGHT_UP
                 ? "secondary"
-                : status === ContentStatus.InProgress
+                : status === ContentStatus.IN_PROGRESS
                   ? "info"
                   : "default"
           }
@@ -136,11 +139,11 @@ export default function TVCard({
             top: 12,
             left: 12,
             fontWeight: "bold",
-            ...(status === ContentStatus.NotStarted && {
+            ...(status === ContentStatus.NOT_STARTED && {
               bgcolor: "rgba(255, 255, 255, 0.9)",
               color: "rgba(0, 0, 0, 0.87)",
             }),
-            ...(status === ContentStatus.CaughtUp && {
+            ...(status === ContentStatus.CAUGHT_UP && {
               boxShadow: "0 0 8px rgba(156, 39, 176, 0.4)", // Subtle glow for caught up
             }),
           }}
@@ -267,8 +270,8 @@ export default function TVCard({
                 size="small"
                 onClick={() => handleWatchedChange(item.watched + 1)}
                 disabled={
-                  status === ContentStatus.Completed ||
-                  status === ContentStatus.CaughtUp
+                  status === ContentStatus.COMPLETED ||
+                  status === ContentStatus.CAUGHT_UP
                 }
               >
                 <AddIcon fontSize="small" />
@@ -276,18 +279,40 @@ export default function TVCard({
             </Box>
           </Box>
 
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{
-              height: 6,
-              borderRadius: 3,
-              bgcolor: "background.default",
-              "& .MuiLinearProgress-bar": {
-                bgcolor: "primary.main",
-              },
-            }}
-          />
+          <Box sx={{ position: "relative", mt: 1 }}>
+            <LinearProgress
+              variant="determinate"
+              value={progress}
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                bgcolor: "background.default",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: "primary.main",
+                },
+              }}
+            />
+            {item.media_type === "tv" &&
+              airedProgress > 0 &&
+              airedProgress < 100 && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: `${airedProgress}%`,
+                    top: -2,
+                    bottom: -2,
+                    width: 2,
+                    bgcolor: "secondary.main",
+                    zIndex: 1,
+                    borderRadius: 1,
+                    opacity: 0.8,
+                    boxShadow: "0 0 4px rgba(0,0,0,0.2)",
+                    pointerEvents: "none", // Prevent marker from blocking clicks
+                  }}
+                  title={`Aired episodes: ${airedCount}`}
+                />
+              )}
+          </Box>
         </Box>
 
         <Box

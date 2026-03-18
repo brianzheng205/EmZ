@@ -5,36 +5,37 @@ export class ContentStatus {
     public readonly name: string,
     public readonly order: number,) {}
 
-    static readonly InProgress = new ContentStatus('In Progress', 0);
-    static readonly CaughtUp = new ContentStatus('Caught Up', 1);
-    static readonly NotStarted = new ContentStatus('Not Started', 2);
-    static readonly Completed = new ContentStatus('Completed', 3);
+    static readonly IN_PROGRESS = new ContentStatus('In Progress', 0);
+    static readonly CAUGHT_UP = new ContentStatus('Caught Up', 1);
+    static readonly NOT_STARTED = new ContentStatus('Not Started', 2);
+    static readonly COMPLETED = new ContentStatus('Completed', 3);
 
     static calculate(content: EmZContent): ContentStatus {
       if (content.override_as_complete) {
-        return ContentStatus.Completed;
+        return ContentStatus.COMPLETED;
       }
 
       const totalEpisodes = content.episodes;
       const ongoing = content.ongoing;
 
       if (content.watched >= totalEpisodes && !ongoing) {
-        return ContentStatus.Completed;
-      }
-
-      const airedCount = this.getAiredCount(content);
-      if (content.watched >= airedCount) {
-        return ContentStatus.CaughtUp;
+        return ContentStatus.COMPLETED;
       }
 
       if (content.watched === 0) {
-        return ContentStatus.NotStarted;
+        return ContentStatus.NOT_STARTED;
       }
 
-      return ContentStatus.InProgress;
+      const airedCount = ContentStatus.getAiredCount(content);
+
+      if (content.watched >= airedCount) {
+        return ContentStatus.CAUGHT_UP;
+      }
+
+      return ContentStatus.IN_PROGRESS;
     }
 
-    private static getAiredCount(content: EmZContent): number {
+    static getAiredCount(content: EmZContent): number {
       if (content.media_type === "movie") return 1;
       if (!content.last_episode_to_air) return 0;
 
