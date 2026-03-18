@@ -119,28 +119,14 @@ export const applyFiltersAndSorts = (
   filters: Record<string, Filter<EmZContent>>,
 ) => {
   const filteredRows = applyFilters(rows, filters);
-  const sortedRows = Array.from(filteredRows as EmZContent[]).sort((a, b) => {
-    const status = compareStatus(a, b);
-    if (status === 0) {
-      const ongoing = compareOngoing(a, b);
-      if (ongoing === 0) {
-        const releaseDate = compareReleaseDate(a, b);
-        if (releaseDate === 0) {
-          const progress = compareProgress(a, b);
-          if (progress === 0) {
-            return compareName(a, b);
-          }
-          return progress;
-        } else {
-          return releaseDate;
-        }
-      } else {
-        return ongoing;
-      }
-    } else {
-      return status;
-    }
-  });
+  const sortedRows = Array.from(filteredRows as EmZContent[]).sort(
+    (a, b) =>
+      compareStatus(a, b) ||
+      compareOngoing(a, b) ||
+      compareReleaseDate(a, b) ||
+      compareProgress(a, b) ||
+      compareName(a, b),
+  );
   return sortedRows;
 };
 
@@ -155,68 +141,33 @@ export const compareOngoing = (a: EmZContent, b: EmZContent) => {
   if (a.ongoing === b.ongoing) {
     return 0;
   }
-  if (a.ongoing) {
-    return -1;
-  }
-  return 1;
+  return a.ongoing ? -1 : 1;
 };
 
 export const compareReleaseDate = (a: EmZContent, b: EmZContent) => {
-  const dateA =
-    a.media_type === "tv"
-      ? a.next_episode_to_air
-        ? new Date(a.next_episode_to_air.air_date)
-        : null
-      : new Date(a.release_date);
-  const dateB =
-    b.media_type === "tv"
-      ? b.next_episode_to_air
-        ? new Date(b.next_episode_to_air.air_date)
-        : null
-      : new Date(b.release_date);
+  const getTime = (item: EmZContent) => {
+    const date =
+      item.media_type === "tv"
+        ? item.next_episode_to_air?.air_date
+        : item.release_date;
+    return date ? new Date(date).getTime() : Infinity;
+  };
 
-  if (dateA === null && dateB === null) {
-    return 0;
-  }
-  if (dateA === null) {
-    return 1;
-  }
-  if (dateB === null) {
-    return -1;
-  }
-
-  if (dateA < dateB) {
-    return -1;
-  }
-  if (dateA > dateB) {
-    return 1;
-  }
-  return 0;
+  return getTime(a) - getTime(b);
 };
 
 export const compareProgress = (a: EmZContent, b: EmZContent) => {
   const progressA = (a.watched * 1.0) / a.episodes;
   const progressB = (b.watched * 1.0) / b.episodes;
-  if (progressA === progressB) {
-    return 0;
-  }
-  if (progressA < progressB) {
-    return -1;
-  }
-  return 1;
+
+  return progressA - progressB;
 };
 
 export const compareName = (a: EmZContent, b: EmZContent) => {
   const nameA = a.media_type === "tv" ? a.name : a.title;
   const nameB = b.media_type === "tv" ? b.name : b.title;
 
-  if (nameA < nameB) {
-    return -1;
-  }
-  if (nameA > nameB) {
-    return 1;
-  }
-  return 0;
+  return nameA.localeCompare(nameB);
 };
 // export function filterToInterface<T>(obj: any, keys: (keyof T)[]): T {
 //   const result: Partial<T> = {};
