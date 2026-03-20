@@ -270,7 +270,7 @@ export default function TVCard({
                 size="small"
                 onClick={() => handleWatchedChange(item.watched + 1)}
                 disabled={
-                  status === ContentStatus.COMPLETED ||
+                  item.watched >= item.episodes ||
                   status === ContentStatus.CAUGHT_UP
                 }
               >
@@ -391,6 +391,9 @@ export default function TVCard({
             sx={{ display: "block", mt: 0.5 }}
           >
             Next: {nextAirDate.toLocaleDateString()}
+            {nextAirDate.toDateString() === new Date().toDateString()
+              ? " (TODAY)"
+              : ""}
           </Typography>
         )}
         {item.watched_name && (

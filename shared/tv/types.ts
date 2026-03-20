@@ -22,14 +22,13 @@ export class ContentStatus {
         return ContentStatus.COMPLETED;
       }
 
-      if (content.watched === 0) {
-        return ContentStatus.NOT_STARTED;
-      }
-
       const airedCount = ContentStatus.getAiredCount(content);
-
       if (content.watched >= airedCount) {
         return ContentStatus.CAUGHT_UP;
+      }
+
+      if (content.watched === 0) {
+        return ContentStatus.NOT_STARTED;
       }
 
       return ContentStatus.IN_PROGRESS;
@@ -39,7 +38,7 @@ export class ContentStatus {
       if (content.media_type === "movie") return 1;
       if (!content.last_episode_to_air) return 0;
 
-      const last = content.last_episode_to_air;
+      const last = content.next_episode_to_air != null && new Date(content.next_episode_to_air.air_date) <= new Date() ? content.next_episode_to_air : content.last_episode_to_air;
       const previousSeasonsCount = (content.seasons || [])
         .filter((s) => s.season_number > 0 && s.season_number < last.season_number)
         .reduce((acc, s) => acc + s.episode_count, 0);
