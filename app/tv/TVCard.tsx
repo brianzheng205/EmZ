@@ -391,6 +391,9 @@ export default function TVCard({
             sx={{ display: "block", mt: 0.5 }}
           >
             Next: {nextAirDate.toLocaleDateString()}
+            {nextAirDate.toDateString() === new Date().toDateString()
+              ? " (TODAY)"
+              : ""}
           </Typography>
         )}
         {item.watched_name && (
