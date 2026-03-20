@@ -1,0 +1,27 @@
+name: Sync Staging with Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-Forward Staging
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
+          # Switch to staging and merge main
+          git checkout staging
+          git merge --ff-only main
+
+          # Push the updated staging branch
+          git push origin staging
