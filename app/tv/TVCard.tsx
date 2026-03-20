@@ -270,7 +270,7 @@ export default function TVCard({
                 size="small"
                 onClick={() => handleWatchedChange(item.watched + 1)}
                 disabled={
-                  item.watched >= item.episodes ||
+                  status === ContentStatus.COMPLETED ||
                   status === ContentStatus.CAUGHT_UP
                 }
               >
