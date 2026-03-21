@@ -1,0 +1,17 @@
+name: Branch Protection Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify that PR is from Staging
+        if: github.head_ref != 'staging'
+        run: |
+          echo "STOP: You are trying to merge '${{ github.head_ref }}' into 'main'."
+          echo "Standard Workflow: Feature -> staging -> main."
+          exit 1
