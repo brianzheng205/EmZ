@@ -324,6 +324,31 @@ export default function TVCard({
                   title={`Aired episodes: ${airedCount}`}
                 />
               )}
+
+            {item.media_type === "tv" && airedCount > item.watched && (
+              <Tooltip
+                title={`${airedCount - item.watched} episode${airedCount - item.watched === 1 ? "" : "s"} to catch up`}
+                placement="top"
+                arrow
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: `${progress}%`,
+                    width: `${airedProgress - progress}%`,
+                    top: -4,
+                    bottom: -4,
+                    zIndex: 2,
+                    cursor: "help",
+                    "&:hover": {
+                      bgcolor: "secondary.main",
+                      opacity: 0.3,
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Tooltip>
+            )}
           </Box>
         </Box>
 
