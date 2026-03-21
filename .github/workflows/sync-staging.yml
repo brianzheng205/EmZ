@@ -23,7 +23,12 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
 
-          git checkout staging
-          git merge --ff-only main
+          # Fetch the latest state of both
+          git fetch origin main staging
 
-          git push origin staging
+          # Force staging to point exactly where main is
+          git checkout staging
+          git reset --hard origin/main
+
+          # Force push to overwrite the 'diverged' history on GitHub
+          git push origin staging --force
