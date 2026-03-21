@@ -94,7 +94,27 @@ export default function TVCard({
     })
     .filter(
       (v, i, a) => a.findIndex((t) => t.provider_id === v.provider_id) === i,
-    ); // unique
+    )
+    .sort((a, b) => {
+      const getProviderOrder = (p: Provider) => {
+        if (providers.some((userP) => userP.provider_id === p.provider_id))
+          return 1;
+        if (
+          item.watch_providers?.free?.some(
+            (f) => f.provider_id === p.provider_id,
+          )
+        )
+          return 2;
+        if (
+          item.watch_providers?.ads?.some(
+            (x) => x.provider_id === p.provider_id,
+          )
+        )
+          return 3;
+        return 4;
+      };
+      return getProviderOrder(a) - getProviderOrder(b);
+    });
 
   return (
     <Card
