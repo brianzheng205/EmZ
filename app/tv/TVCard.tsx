@@ -50,8 +50,8 @@ export default function TVCard({
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
-  const status = ContentStatus.calculate(item);
   const airedCount = ContentStatus.getAiredCount(item);
+  const status = ContentStatus.calculate(item, airedCount);
   const airedProgress =
     item.episodes > 0 ? (airedCount * 100) / item.episodes : 0;
 
@@ -94,7 +94,19 @@ export default function TVCard({
     })
     .filter(
       (v, i, a) => a.findIndex((t) => t.provider_id === v.provider_id) === i,
-    ); // unique
+    )
+    .sort((a, b) => {
+      const getProviderOrder = ({ provider_id }: Provider) => {
+        const matchesId = (p: Provider) => p.provider_id === provider_id;
+
+        if (providers.some(matchesId)) return 1;
+        if (item.watch_providers?.free?.some(matchesId)) return 2;
+        if (item.watch_providers?.ads?.some(matchesId)) return 3;
+
+        return 4;
+      };
+      return getProviderOrder(a) - getProviderOrder(b);
+    });
 
   return (
     <Card
@@ -256,7 +268,7 @@ export default function TVCard({
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Watched: {item.watched} / {item.episodes}
+              Watched: {item.watched} / {Math.max(item.episodes, airedCount)}
             </Typography>
             <Box>
               <IconButton
@@ -312,6 +324,31 @@ export default function TVCard({
                   title={`Aired episodes: ${airedCount}`}
                 />
               )}
+
+            {item.media_type === "tv" && airedCount > item.watched && (
+              <Tooltip
+                title={`${airedCount - item.watched} episode${airedCount - item.watched === 1 ? "" : "s"} to catch up`}
+                placement="top"
+                arrow
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: `${progress}%`,
+                    width: `${airedProgress - progress}%`,
+                    top: -4,
+                    bottom: -4,
+                    zIndex: 2,
+                    cursor: "help",
+                    "&:hover": {
+                      bgcolor: "secondary.main",
+                      opacity: 0.3,
+                      borderRadius: 1,
+                    },
+                  }}
+                />
+              </Tooltip>
+            )}
           </Box>
         </Box>
 
@@ -365,8 +402,16 @@ export default function TVCard({
 
           {/* Providers */}
           {currentProviders.length > 0 && (
-            <Stack direction="row" spacing={0.5}>
-              {currentProviders.slice(0, 3).map((provider: Provider, idx) => (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 0.5,
+                justifyContent: "flex-end",
+                maxWidth: "60%",
+              }}
+            >
+              {currentProviders.map((provider: Provider, idx) => (
                 <Tooltip key={idx} title={provider.provider_name}>
                   <Avatar
                     variant="rounded"
@@ -375,12 +420,7 @@ export default function TVCard({
                   />
                 </Tooltip>
               ))}
-              {currentProviders.length > 3 && (
-                <Typography variant="caption" color="text.secondary">
-                  +{currentProviders.length - 3}
-                </Typography>
-              )}
-            </Stack>
+            </Box>
           )}
         </Box>
 
