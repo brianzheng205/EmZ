@@ -49,11 +49,11 @@ export default function TVCard({
   const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
 
   const title = item.media_type === "movie" ? item.title : item.name;
-  const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
   const airedCount = ContentStatus.getAiredCount(item);
   const status = ContentStatus.calculate(item, airedCount);
-  const airedProgress =
-    item.episodes > 0 ? (airedCount * 100) / item.episodes : 0;
+  const numEpisodes = Math.max(item.episodes, airedCount);
+  const progress = numEpisodes > 0 ? (item.watched * 100) / numEpisodes : 0;
+  const airedProgress = numEpisodes > 0 ? (airedCount * 100) / numEpisodes : 0;
 
   const nextAirDate = (() => {
     let date: Date | null = null;
@@ -238,7 +238,11 @@ export default function TVCard({
             {title}
           </Typography>
           <Box sx={{ ml: 1 }}>
-            <CircularProgressWithLabel value={progress} size={40} />
+            <CircularProgressWithLabel
+              value={progress}
+              size={40}
+              status={status}
+            />
           </Box>
         </Box>
 
@@ -268,7 +272,7 @@ export default function TVCard({
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Watched: {item.watched} / {Math.max(item.episodes, airedCount)}
+              Watched: {item.watched} / {numEpisodes}
             </Typography>
             <Box>
               <IconButton
