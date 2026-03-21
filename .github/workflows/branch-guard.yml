@@ -1,0 +1,36 @@
+name: Branch Protection Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pre-merge-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Check 1: Force the Staging -> Main pipeline
+      - name: Verify Source Branch
+        if: github.head_ref != 'staging'
+        run: |
+          echo "ERROR: Direct merges to main are forbidden."
+          echo "You must merge into 'staging' first for Prod-Data testing."
+          exit 1
+
+      # Check 2: Prevent the "Diverged" error
+      - name: Verify Staging is Up to Date with Main
+        run: |
+          git fetch origin main staging
+          # Count commits in main that aren't in staging
+          BEHIND_COUNT=$(git rev-list --count origin/staging..origin/main)
+
+          if [ "$BEHIND_COUNT" -gt 0 ]; then
+            echo "ERROR: 'staging' is behind 'main' by $BEHIND_COUNT commits."
+            echo "Please merge 'main' into 'staging' locally or via the UI first."
+            exit 1
+          fi
