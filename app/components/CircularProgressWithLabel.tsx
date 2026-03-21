@@ -27,7 +27,7 @@ export default function CircularProgressWithLabel(
           variant="caption"
           component="div"
           sx={{ color: "text.secondary" }}
-        >{`${Math.round(props.value) === 100 && props.status !== ContentStatus.COMPLETED ? Math.floor(props.value) : Math.round(props.value)}%`}</Typography>
+        >{`${Math.round(props.value) === 100 && props.status !== ContentStatus.COMPLETED ? Math.floor(props.value) : Math.round(props.value) === 0 && props.status !== ContentStatus.NOT_STARTED ? Math.ceil(props.value) : Math.round(props.value)}%`}</Typography>
       </Box>
     </Box>
   );
