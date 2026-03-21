@@ -50,8 +50,8 @@ export default function TVCard({
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const progress = item.episodes > 0 ? (item.watched * 100) / item.episodes : 0;
-  const status = ContentStatus.calculate(item);
   const airedCount = ContentStatus.getAiredCount(item);
+  const status = ContentStatus.calculate(item, airedCount);
   const airedProgress =
     item.episodes > 0 ? (airedCount * 100) / item.episodes : 0;
 
@@ -268,7 +268,7 @@ export default function TVCard({
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Watched: {item.watched} / {item.episodes}
+              Watched: {item.watched} / {Math.max(item.episodes, airedCount)}
             </Typography>
             <Box>
               <IconButton
