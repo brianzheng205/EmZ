@@ -377,8 +377,16 @@ export default function TVCard({
 
           {/* Providers */}
           {currentProviders.length > 0 && (
-            <Stack direction="row" spacing={0.5}>
-              {currentProviders.slice(0, 3).map((provider: Provider, idx) => (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 0.5,
+                justifyContent: "flex-end",
+                maxWidth: "60%",
+              }}
+            >
+              {currentProviders.map((provider: Provider, idx) => (
                 <Tooltip key={idx} title={provider.provider_name}>
                   <Avatar
                     variant="rounded"
@@ -387,25 +395,7 @@ export default function TVCard({
                   />
                 </Tooltip>
               ))}
-              {currentProviders.length > 3 && (
-                <Tooltip
-                  title={currentProviders
-                    .slice(3)
-                    .map((p) => p.provider_name)
-                    .join(", ")}
-                  arrow
-                  placement="top"
-                >
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ cursor: "help" }}
-                  >
-                    +{currentProviders.length - 3}
-                  </Typography>
-                </Tooltip>
-              )}
-            </Stack>
+            </Box>
           )}
         </Box>
 
