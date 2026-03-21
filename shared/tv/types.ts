@@ -10,7 +10,7 @@ export class ContentStatus {
     static readonly NOT_STARTED = new ContentStatus('Not Started', 2);
     static readonly COMPLETED = new ContentStatus('Completed', 3);
 
-    static calculate(content: EmZContent): ContentStatus {
+    static calculate(content: EmZContent, precalculatedAiredCount?: number): ContentStatus {
       if (content.override_as_complete) {
         return ContentStatus.COMPLETED;
       }
@@ -22,7 +22,7 @@ export class ContentStatus {
         return ContentStatus.COMPLETED;
       }
 
-      const airedCount = ContentStatus.getAiredCount(content);
+      const airedCount = precalculatedAiredCount ?? ContentStatus.getAiredCount(content);
       if (content.watched >= airedCount) {
         return ContentStatus.CAUGHT_UP;
       }
