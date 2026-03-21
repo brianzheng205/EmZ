@@ -376,9 +376,22 @@ export default function TVCard({
                 </Tooltip>
               ))}
               {currentProviders.length > 3 && (
-                <Typography variant="caption" color="text.secondary">
-                  +{currentProviders.length - 3}
-                </Typography>
+                <Tooltip
+                  title={currentProviders
+                    .slice(3)
+                    .map((p) => p.provider_name)
+                    .join(", ")}
+                  arrow
+                  placement="top"
+                >
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ cursor: "help" }}
+                  >
+                    +{currentProviders.length - 3}
+                  </Typography>
+                </Tooltip>
               )}
             </Stack>
           )}
