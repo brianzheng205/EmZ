@@ -72,7 +72,7 @@ export default function TVCard({
   })();
 
   const handleWatchedChange = (newWatched: number) => {
-    if (newWatched >= 0 && newWatched <= item.episodes) {
+    if (newWatched >= 0 && newWatched <= numEpisodes) {
       onUpdate({ ...item, watched: newWatched });
     }
   };
