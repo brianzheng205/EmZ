@@ -1,6 +1,6 @@
 "use client";
 
-import { Typography, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { Typography, Select, MenuItem, SelectChangeEvent } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
@@ -15,6 +15,7 @@ import {
   updateBudgetMetadata,
   updateBudgetItem,
   createBudgetItem,
+  updateSharedActiveBudgets,
 } from "./firebaseUtils";
 import {
   CalculatedBudget,
@@ -91,6 +92,12 @@ export default function FinancePage() {
   useEffect(() => {
     fetchBudgetsData();
   }, []);
+
+  const handleBudgetChange = (event: SelectChangeEvent<string>) => {
+    const newBudgetId = event.target.value;
+    setActiveBudgetIds([newBudgetId]);
+    updateSharedActiveBudgets([newBudgetId]);
+  };
 
   const handleBudgetMetadataChange = (newMetadata: FbBudgetMetadata) => {
     const activeBudgetId = activeBudgetIds[0];
@@ -200,41 +207,68 @@ export default function FinancePage() {
 
   return (
     <LoadingContainer loading={loading}>
-      {activeBudgets.length > 0 ? (
-        <Stack sx={{ gap: 2, marginBottom: 4 }}>
-          <Typography variant="h1" sx={{ textAlign: "center" }}>
-            {activeBudgets[0].name}
-          </Typography>
-          <Stack
-            sx={{
-              gap: 2,
-            }}
-          >
-            <Stack sx={{ alignItems: "center" }}>
-              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
-            </Stack>
-            <BudgetToolBar
-              budget={
-                budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
-                ({} as FbBudget)
-              }
-              onEditMetadata={handleBudgetMetadataChange}
-              onAddItem={handleAddItem}
-              onRefresh={fetchBudgetsData}
-            />
-          </Stack>
+      <Stack sx={{ gap: 2, marginTop: 4, marginBottom: 4 }}>
+        <Select
+          value={activeBudgetIds[0] || ""}
+          onChange={handleBudgetChange}
+          variant="standard"
+          disableUnderline
+          displayEmpty
+          sx={{
+            typography: "h3",
+            fontWeight: "bold",
+            margin: "0 auto",
+            "& .MuiSelect-select": {
+              padding: 0,
+              paddingRight: "32px !important",
+            },
+          }}
+        >
+          <MenuItem disabled value="">
+            <em>Select a budget...</em>
+          </MenuItem>
+          {budgets.map((b) => (
+            <MenuItem key={b.id} value={b.id}>
+              {b.name}
+            </MenuItem>
+          ))}
+        </Select>
 
-          <BudgetHeaders />
-          <BudgetAccordions
-            activeBudgets={activeBudgets}
-            onItemChange={handleChangeItem}
-            onItemDelete={handleDeleteItem}
-            viewType={viewType}
-          />
-        </Stack>
-      ) : (
-        <Typography>No active budgets.</Typography>
-      )}
+        {activeBudgets.length > 0 ? (
+          <>
+            <Stack
+              sx={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
+              <BudgetToolBar
+                budget={
+                  budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
+                  ({} as FbBudget)
+                }
+                onEditMetadata={handleBudgetMetadataChange}
+                onAddItem={handleAddItem}
+                onRefresh={fetchBudgetsData}
+              />
+            </Stack>
+
+            <BudgetHeaders />
+            <BudgetAccordions
+              activeBudgets={activeBudgets}
+              onItemChange={handleChangeItem}
+              onItemDelete={handleDeleteItem}
+              viewType={viewType}
+            />
+          </>
+        ) : (
+          <Typography textAlign="center">No active budgets.</Typography>
+        )}
+      </Stack>
     </LoadingContainer>
   );
 }

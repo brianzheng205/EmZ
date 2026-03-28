@@ -173,3 +173,16 @@ export const updateActiveBudget = async (
     return null;
   }
 };
+
+export const updateSharedActiveBudgets = async (
+  activeBudgetIds: string[],
+) => {
+  try {
+    return await updateDoc(doc(db, "users/shared"), {
+      activeBudgets: activeBudgetIds,
+    });
+  } catch (error) {
+    console.error("Error updating shared active budgets:", error);
+    return null;
+  }
+};

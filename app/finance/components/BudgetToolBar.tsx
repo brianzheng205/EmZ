@@ -42,7 +42,19 @@ export default function BudgetToolBar({
   };
 
   return (
-    <Stack sx={{ flexDirection: "row", justifyContent: "flex-end", gap: 1 }}>
+    <Stack
+      sx={{
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        gap: 1,
+        "& .MuiButton-root": {
+          height: "42px",
+          "&:hover": {
+            backgroundColor: "primary.dark",
+          },
+        },
+      }}
+    >
       <Button startIcon={<Edit />} onClick={openEditDialog}>
         Edit
       </Button>
