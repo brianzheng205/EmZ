@@ -17,8 +17,10 @@ import {
   MenuItem,
   Avatar,
   Tooltip,
+  Select,
+  FormControl,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
@@ -29,6 +31,8 @@ import {
   NextEpisodeToAir,
   Provider,
   ContentStatus,
+  fetchDataFromTMDB,
+  Season,
 } from "./utils";
 
 interface TVCardProps {
@@ -47,6 +51,7 @@ export default function TVCard({
   onDelete,
 }: TVCardProps) {
   const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
+  const [seasonEpisodes, setSeasonEpisodes] = useState<any[]>([]);
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const airedCount = ContentStatus.getAiredCount(item);
@@ -71,8 +76,61 @@ export default function TVCard({
     return null;
   })();
 
+  const nonSpecialSeasons = (item.seasons || [])
+    .filter((s) => s.season_number > 0)
+    .sort((a, b) => a.season_number - b.season_number);
+
+  const { currentSeason, currentEpisode } = (() => {
+    if (item.watched === 0) {
+      return { currentSeason: null, currentEpisode: null };
+    }
+
+    let watchedRemaining = item.watched;
+    let currS: Season | null = null;
+    let currE = 0;
+
+    for (const season of nonSpecialSeasons) {
+      if (watchedRemaining <= season.episode_count) {
+        currS = season;
+        currE = watchedRemaining;
+        break;
+      }
+      watchedRemaining -= season.episode_count;
+    }
+
+    if (!currS && nonSpecialSeasons.length > 0) {
+      currS = nonSpecialSeasons[nonSpecialSeasons.length - 1];
+      currE = currS.episode_count;
+    }
+
+    return { currentSeason: currS, currentEpisode: currE };
+  })();
+
+  const watchedEpisodesBeforeCurrentSeason = currentSeason
+    ? nonSpecialSeasons
+        .filter((s) => s.season_number < currentSeason.season_number)
+        .reduce((acc, s) => acc + s.episode_count, 0)
+    : 0;
+
+  useEffect(() => {
+    let isMounted = true;
+    if (item.media_type === "tv" && currentSeason) {
+      const fetchEpisodes = async () => {
+        const url = `https://api.themoviedb.org/3/tv/${item.id}/season/${currentSeason.season_number}?language=en-US`;
+        const result = await fetchDataFromTMDB(url);
+        if (isMounted && result && result.episodes) {
+          setSeasonEpisodes(result.episodes);
+        }
+      };
+      fetchEpisodes();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [item.media_type, item.id, currentSeason?.season_number]);
+
   const handleWatchedChange = (newWatched: number) => {
-    if (newWatched >= 0 && newWatched <= item.episodes) {
+    if (newWatched >= 0 && newWatched <= numEpisodes) {
       onUpdate({ ...item, watched: newWatched });
     }
   };
@@ -271,28 +329,234 @@ export default function TVCard({
               justifyContent: "space-between",
             }}
           >
-            <Typography variant="body2" color="text.secondary">
-              Watched: {item.watched} / {numEpisodes}
-            </Typography>
-            <Box>
-              <IconButton
-                size="small"
-                onClick={() => handleWatchedChange(item.watched - 1)}
-                disabled={item.watched <= 0}
+            {item.media_type === "tv" && nonSpecialSeasons.length > 0 ? (
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
               >
-                <RemoveIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => handleWatchedChange(item.watched + 1)}
-                disabled={
-                  status === ContentStatus.COMPLETED ||
-                  status === ContentStatus.CAUGHT_UP
-                }
-              >
-                <AddIcon fontSize="small" />
-              </IconButton>
-            </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontWeight: 500 }}
+                >
+                  Watched: {item.watched} / {numEpisodes}
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <FormControl size="small" sx={{ flex: 1 }}>
+                    <Select
+                      value={currentSeason ? currentSeason.season_number : ""}
+                      displayEmpty
+                      onChange={(e) => {
+                        const newSeasonNum = Number(e.target.value);
+                        let currWatched = 0;
+                        for (const season of nonSpecialSeasons) {
+                          if (season.season_number < newSeasonNum) {
+                            currWatched += season.episode_count;
+                          }
+                        }
+                        const newSeasonData = nonSpecialSeasons.find(
+                          (s) => s.season_number === newSeasonNum,
+                        );
+                        const epOffset =
+                          newSeasonData && newSeasonData.episode_count > 0
+                            ? 1
+                            : 0;
+                        handleWatchedChange(currWatched + epOffset);
+                      }}
+                      renderValue={(selected: any) => {
+                        if (selected === "" || selected == null) {
+                          return (
+                            <Typography
+                              noWrap
+                              variant="body2"
+                              color="text.secondary"
+                            >
+                              Season
+                            </Typography>
+                          );
+                        }
+                        return (
+                          <Typography noWrap variant="body2">
+                            Season {selected}
+                          </Typography>
+                        );
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        bgcolor: "rgba(255, 255, 255, 0.4)",
+                        backdropFilter: "blur(4px)",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "transparent",
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "primary.main",
+                        },
+                      }}
+                    >
+                      <MenuItem
+                        value=""
+                        sx={{ fontStyle: "italic", color: "text.secondary" }}
+                      >
+                        Not Started
+                      </MenuItem>
+                      {(() => {
+                        let runningCount = 0;
+                        return nonSpecialSeasons.map((s) => {
+                          const firstEpAbsolute = runningCount + 1;
+                          const hasAired = firstEpAbsolute <= airedCount;
+                          runningCount += s.episode_count;
+
+                          return (
+                            <MenuItem
+                              key={s.season_number}
+                              value={s.season_number}
+                              sx={{
+                                color: hasAired ? "inherit" : "text.disabled",
+                                fontStyle: hasAired ? "normal" : "italic",
+                              }}
+                            >
+                              Season {s.season_number}
+                            </MenuItem>
+                          );
+                        });
+                      })()}
+                    </Select>
+                  </FormControl>
+                  <FormControl size="small" sx={{ flex: 1 }}>
+                    <Select
+                      value={currentEpisode !== null ? currentEpisode : ""}
+                      displayEmpty
+                      onChange={(e) => {
+                        const newEps = Number(e.target.value);
+                        if (currentEpisode !== null) {
+                          handleWatchedChange(
+                            watchedEpisodesBeforeCurrentSeason + newEps,
+                          );
+                        }
+                      }}
+                      disabled={!currentSeason}
+                      renderValue={(selected: any) => {
+                        if (selected === "" || selected == null) {
+                          return (
+                            <Typography
+                              noWrap
+                              variant="body2"
+                              color="text.disabled"
+                            >
+                              Episode
+                            </Typography>
+                          );
+                        }
+                        const epData = seasonEpisodes.find(
+                          (ep) => ep.episode_number === selected,
+                        );
+                        const epName =
+                          epData && epData.name ? ` - ${epData.name}` : "";
+                        return (
+                          <Typography
+                            noWrap
+                            variant="body2"
+                            sx={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            Ep {selected}
+                            {epName}
+                          </Typography>
+                        );
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        bgcolor: "rgba(255, 255, 255, 0.4)",
+                        backdropFilter: "blur(4px)",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "transparent",
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "primary.main",
+                        },
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxWidth: 300,
+                          },
+                        },
+                      }}
+                    >
+                      {currentSeason && [
+                        <MenuItem
+                          key="none"
+                          value={0}
+                          sx={{ fontStyle: "italic", color: "text.secondary" }}
+                        >
+                          None
+                        </MenuItem>,
+                        ...Array.from({
+                          length: currentSeason.episode_count,
+                        }).map((_, i) => {
+                          const episodeNum = i + 1;
+                          const absoluteEpNum =
+                            watchedEpisodesBeforeCurrentSeason + episodeNum;
+                          const hasAired = absoluteEpNum <= airedCount;
+                          const epData = seasonEpisodes.find(
+                            (ep) => ep.episode_number === episodeNum,
+                          );
+                          const epName =
+                            epData && epData.name ? ` - ${epData.name}` : "";
+                          return (
+                            <MenuItem
+                              key={episodeNum}
+                              value={episodeNum}
+                              sx={{
+                                whiteSpace: "normal",
+                                wordBreak: "break-word",
+                                color: hasAired ? "inherit" : "text.disabled",
+                                fontStyle: hasAired ? "normal" : "italic",
+                              }}
+                            >
+                              Ep {episodeNum}
+                              {epName}
+                            </MenuItem>
+                          );
+                        }),
+                      ]}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+            ) : (
+              // Simple UI for movies or things with no seasons
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  Watched: {item.watched} / {numEpisodes}
+                </Typography>
+                <Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleWatchedChange(item.watched - 1)}
+                    disabled={item.watched <= 0}
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleWatchedChange(item.watched + 1)}
+                    disabled={
+                      status === ContentStatus.COMPLETED ||
+                      status === ContentStatus.CAUGHT_UP
+                    }
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </>
+            )}
           </Box>
 
           <Box sx={{ position: "relative", mt: 1 }}>
