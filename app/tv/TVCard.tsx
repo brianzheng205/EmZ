@@ -36,7 +36,7 @@ import {
 } from "./utils";
 
 interface TVCardProps {
-  item: EmZContent & { watched_name?: string | null };
+  item: EmZContent;
   genres: Record<number, EmZGenre> | null;
   providers: Provider[];
   onUpdate: (updatedItem: EmZContent) => Promise<void>;
@@ -456,18 +456,22 @@ export default function TVCard({
                         );
                         const epName =
                           epData && epData.name ? ` - ${epData.name}` : "";
+                        const fullText = `Ep ${selected}${epName}`;
                         return (
-                          <Typography
-                            noWrap
-                            variant="body2"
-                            sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            Ep {selected}
-                            {epName}
-                          </Typography>
+                          <Tooltip title={fullText} placement="top" arrow>
+                            <Box sx={{ width: "100%", overflow: "hidden" }}>
+                              <Typography
+                                noWrap
+                                variant="body2"
+                                sx={{
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {fullText}
+                              </Typography>
+                            </Box>
+                          </Tooltip>
                         );
                       }}
                       sx={{
@@ -704,41 +708,7 @@ export default function TVCard({
               : ""}
           </Typography>
         )}
-        {item.watched_name && (
-          <Box
-            sx={{
-              mt: 0.5,
-              pt: 1,
-              borderTop: "1px solid",
-              borderColor: "divider",
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-            }}
-          >
-            <Typography
-              variant="caption"
-              fontWeight="bold"
-              color="text.secondary"
-              sx={{ whiteSpace: "nowrap" }}
-            >
-              Last watched:
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                fontStyle: "italic",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                flex: 1,
-              }}
-            >
-              {item.watched_name}
-            </Typography>
-          </Box>
-        )}
+
       </CardContent>
     </Card>
   );
