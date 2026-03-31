@@ -414,6 +414,7 @@ export default function TVCard({
                             <MenuItem
                               key={s.season_number}
                               value={s.season_number}
+                              disabled={!hasAired}
                               sx={{
                                 color: hasAired ? "inherit" : "text.disabled",
                                 fontStyle: hasAired ? "normal" : "italic",
@@ -517,6 +518,7 @@ export default function TVCard({
                             <MenuItem
                               key={episodeNum}
                               value={episodeNum}
+                              disabled={!hasAired}
                               sx={{
                                 whiteSpace: "normal",
                                 wordBreak: "break-word",
