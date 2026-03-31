@@ -56,13 +56,7 @@ export default function TVPage() {
       const oldItem = rows.find((r) => r.id === updatedItem.id);
       if (!oldItem) return;
 
-      const isWatchedChanged = oldItem.watched !== updatedItem.watched;
-
       const itemToSave = { ...updatedItem };
-      if (isWatchedChanged && itemToSave.media_type === "tv") {
-        const episodeName = await getEpisodeName(itemToSave);
-        itemToSave.watched_name = episodeName;
-      }
 
       await addContentToFirebase(itemToSave);
 
@@ -74,30 +68,6 @@ export default function TVPage() {
     }
   };
 
-  const getEpisodeName = async (docData: EmZContent) => {
-    if (!docData.seasons || docData.watched === 0) {
-      return null;
-    }
-
-    let seasonNum = 0;
-    let episodeIndex = 0;
-    let currentCount = 0;
-
-    for (const season of docData.seasons) {
-      if (season.season_number > 0) {
-        if (docData.watched <= currentCount + season.episode_count) {
-          episodeIndex = Math.max(docData.watched - currentCount, 1);
-          seasonNum = season.season_number;
-          const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
-          const data = await fetchDataFromTMDB(url);
-          return data?.name || null;
-        } else {
-          currentCount += season.episode_count;
-        }
-      }
-    }
-    return null;
-  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -107,17 +77,13 @@ export default function TVPage() {
 
       const genreData = genres ? genres : await fetchGenres();
 
-      const rowsData = await Promise.all(
-        data.docs.map(async (doc) => {
-          const docData = doc.data() as EmZContent;
-          const episodeName = await getEpisodeName(docData);
-          return {
-            ...docData,
-            watched_name: episodeName,
-            override_as_complete: docData.override_as_complete || false,
-          };
-        }),
-      );
+      const rowsData = data.docs.map((doc) => {
+        const docData = doc.data() as EmZContent;
+        return {
+          ...docData,
+          override_as_complete: docData.override_as_complete || false,
+        };
+      });
 
       if (!genres) {
         setGenres(genreData as Record<number, EmZGenre>);
