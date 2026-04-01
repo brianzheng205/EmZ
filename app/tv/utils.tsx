@@ -155,13 +155,6 @@ export const compareReleaseDate = (a: EmZContent, b: EmZContent) => {
   return getTime(a) - getTime(b);
 };
 
-export const compareProgress = (a: EmZContent, b: EmZContent) => {
-  const progressA = (a.watched * 1.0) / a.episodes;
-  const progressB = (b.watched * 1.0) / b.episodes;
-
-  return progressA - progressB;
-};
-
 export const compareName = (a: EmZContent, b: EmZContent) => {
   const nameA = a.media_type === "tv" ? a.name : a.title;
   const nameB = b.media_type === "tv" ? b.name : b.title;
