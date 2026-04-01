@@ -124,7 +124,6 @@ export const applyFiltersAndSorts = (
       compareStatus(a, b) ||
       compareOngoing(a, b) ||
       compareReleaseDate(a, b) ||
-      compareProgress(a, b) ||
       compareName(a, b),
   );
   return sortedRows;
