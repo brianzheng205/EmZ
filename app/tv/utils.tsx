@@ -124,7 +124,6 @@ export const applyFiltersAndSorts = (
       compareStatus(a, b) ||
       compareOngoing(a, b) ||
       compareReleaseDate(a, b) ||
-      compareProgress(a, b) ||
       compareName(a, b),
   );
   return sortedRows;
@@ -154,13 +153,6 @@ export const compareReleaseDate = (a: EmZContent, b: EmZContent) => {
   };
 
   return getTime(a) - getTime(b);
-};
-
-export const compareProgress = (a: EmZContent, b: EmZContent) => {
-  const progressA = (a.watched * 1.0) / a.episodes;
-  const progressB = (b.watched * 1.0) / b.episodes;
-
-  return progressA - progressB;
 };
 
 export const compareName = (a: EmZContent, b: EmZContent) => {
