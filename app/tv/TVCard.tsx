@@ -338,13 +338,34 @@ export default function TVCard({
                   gap: 1,
                 }}
               >
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ fontWeight: 500 }}
-                >
-                  Watched: {item.watched} / {numEpisodes}
-                </Typography>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Watched: {item.watched} / {numEpisodes}
+                  </Typography>
+                  <Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleWatchedChange(item.watched - 1)}
+                      disabled={item.watched <= 0}
+                    >
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleWatchedChange(item.watched + 1)}
+                      disabled={
+                        status === ContentStatus.COMPLETED ||
+                        status === ContentStatus.CAUGHT_UP
+                      }
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <FormControl size="small" sx={{ flex: 1 }}>
                     <Select
