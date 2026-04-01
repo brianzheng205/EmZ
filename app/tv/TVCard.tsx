@@ -719,18 +719,27 @@ export default function TVCard({
           )}
         </Box>
 
-        {nextAirDate && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: "block", mt: 0.5 }}
-          >
-            Next: {nextAirDate.toLocaleDateString()}
-            {nextAirDate.toDateString() === new Date().toDateString()
-              ? " (TODAY)"
-              : ""}
-          </Typography>
-        )}
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            display: "block",
+            mt: 0.5,
+            visibility: nextAirDate ? "visible" : "hidden",
+            minHeight: "20px",
+          }}
+        >
+          {nextAirDate ? (
+            <>
+              Next: {nextAirDate.toLocaleDateString()}
+              {nextAirDate.toDateString() === new Date().toDateString()
+                ? " (TODAY)"
+                : ""}
+            </>
+          ) : (
+            "\\u00A0"
+          )}
+        </Typography>
 
       </CardContent>
     </Card>
