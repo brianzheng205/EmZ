@@ -53,9 +53,6 @@ export default function ProviderSearchBar({
 
   const addProvider = async (value: Provider) => {
     addProviderToFirebase(value)
-      .then(() => {
-        setRows((prevRows) => [...prevRows, value]);
-      })
       .catch((error) => {
         console.error("Error adding provider:", error);
       });
