@@ -24,8 +24,8 @@ import ContentSearchBar from "./ContentSearchBar";
 import {
   addContentToFirebase,
   deleteContentFromFirebase,
-  fetchAllContentFromFirebase,
-  fetchAllProvidersFromFirebase,
+  subscribeToAllContentFromFirebase,
+  subscribeToAllProvidersFromFirebase,
 } from "./firebaseUtils";
 import NetworkPage from "./NetworkPage";
 import TableToolbar, { CustomToolbarProps } from "./TableToolbar";
@@ -59,67 +59,48 @@ export default function TVPage() {
       const itemToSave = { ...updatedItem };
 
       await addContentToFirebase(itemToSave);
-
-      setRows((prevRows) =>
-        prevRows.map((row) => (row.id === itemToSave.id ? itemToSave : row)),
-      );
     } catch {
       console.log("Failed to update, reverting changes");
     }
   };
 
 
-  const fetchData = useCallback(async () => {
-    try {
-      setRowsLoading(true);
-      const data = await fetchAllContentFromFirebase();
-      if (!data) return;
+  useEffect(() => {
+    if (!genres) {
+      fetchGenres().then((genreData) => {
+        setGenres(genreData as Record<number, EmZGenre>);
+      });
+    }
+  }, [genres]);
 
-      const genreData = genres ? genres : await fetchGenres();
+  useEffect(() => {
+    setRowsLoading(true);
 
-      const rowsData = data.docs.map((doc) => {
+    const unsubscribeContent = subscribeToAllContentFromFirebase((snapshot) => {
+      const rowsData = snapshot.docs.map((doc) => {
         const docData = doc.data() as EmZContent;
         return {
           ...docData,
           override_as_complete: docData.override_as_complete || false,
         };
       });
-
-      if (!genres) {
-        setGenres(genreData as Record<number, EmZGenre>);
-      }
       setRows(rowsData);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    } finally {
       setRowsLoading(false);
-    }
-  }, [genres]);
-
-  const fetchProviders = useCallback(async () => {
-    const data = await fetchAllProvidersFromFirebase();
-    if (!data) {
-      return;
-    }
-
-    const rowsData = data.docs.map((doc) => {
-      const docData = doc.data() as Provider;
-      return docData;
     });
 
-    setProviders(rowsData);
-  }, []);
+    const unsubscribeProviders = subscribeToAllProvidersFromFirebase((snapshot) => {
+      const providersData = snapshot.docs.map((doc) => doc.data() as Provider);
+      setProviders(providersData);
+    });
 
-  useEffect(() => {
-    fetchData();
-    fetchProviders();
-  }, [fetchData, fetchProviders]);
+    return () => {
+      unsubscribeContent();
+      unsubscribeProviders();
+    };
+  }, []);
 
   const handleDelete = (id: number) => {
     deleteContentFromFirebase(id)
-      .then(() => {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
-      })
       .catch((error) => {
         console.error("Error deleting content:", error);
       });

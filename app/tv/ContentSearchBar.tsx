@@ -101,7 +101,6 @@ export default function ContentSearchBar({
 
       // Add the primary content
       await addContentToFirebase(finalDoc);
-      setRows((prev) => [...prev, finalDoc]);
 
       // If it's a movie in a collection, discover and add other parts
       if (collectionRef) {
@@ -126,7 +125,6 @@ export default function ContentSearchBar({
             const partDoc = partData as unknown as EmZContent;
 
             await addContentToFirebase(partDoc);
-            setRows((prev) => [...prev, partDoc]);
           }
         }
       }
