@@ -67,9 +67,17 @@ export const updateBudgetMetadata = async (
   }
 };
 
-export const deleteBudget = async (docRef: DocumentReference) => {
+export const deleteBudget = async (budgetId: string) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+    );
+    return;
+  }
+
   try {
-    return await deleteDoc(docRef);
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    return await deleteDoc(budgetDocRef);
   } catch (error) {
     console.error("Error deleting budget:", error);
     return null;
@@ -170,6 +178,19 @@ export const updateActiveBudget = async (
     });
   } catch (error) {
     console.error("Error updating active budget:", error);
+    return null;
+  }
+};
+
+export const updateSharedActiveBudgets = async (
+  activeBudgetIds: string[],
+) => {
+  try {
+    return await updateDoc(doc(db, "users/shared"), {
+      activeBudgets: activeBudgetIds,
+    });
+  } catch (error) {
+    console.error("Error updating shared active budgets:", error);
     return null;
   }
 };

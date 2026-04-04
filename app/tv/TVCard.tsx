@@ -338,7 +338,13 @@ export default function TVCard({
                   gap: 1,
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Typography
                     variant="body2"
                     color="text.secondary"
@@ -740,7 +746,6 @@ export default function TVCard({
             "\\u00A0"
           )}
         </Typography>
-
       </CardContent>
     </Card>
   );

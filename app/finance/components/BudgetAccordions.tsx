@@ -13,6 +13,8 @@ import {
 import * as R from "ramda";
 import { useState } from "react";
 
+import { NECESSARY_BUDGET_ITEM_NAMES } from "../constants";
+
 import {
   CategoryWithItems,
   CalculatedBudget,
@@ -102,6 +104,7 @@ function CategoryItem({
         size={gridSizes.DELETE}
         sx={{ display: "flex", justifyContent: "center" }}
       >
+
         {!isItemCalculated && (
           <>
             <IconButton
@@ -111,13 +114,15 @@ function CategoryItem({
             >
               <EditIcon fontSize="small" color="primary" />
             </IconButton>
-            <IconButton
-              aria-label="delete"
-              onClick={onActiveBudgetItemDelete}
-              sx={{ padding: 0 }}
-            >
-              <DeleteIcon fontSize="small" color="primary" />
-            </IconButton>
+            {!NECESSARY_BUDGET_ITEM_NAMES.includes(item.name) && (
+              <IconButton
+                aria-label="delete"
+                onClick={onActiveBudgetItemDelete}
+                sx={{ padding: 0 }}
+              >
+                <DeleteIcon fontSize="small" color="primary" />
+              </IconButton>
+            )}
           </>
         )}
       </Grid>

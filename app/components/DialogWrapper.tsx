@@ -14,6 +14,7 @@ interface DialogWrapperProps {
   onSubmit: () => void;
   title: string;
   submitText?: string;
+  submitColor?: "primary" | "secondary" | "error" | "info" | "success" | "warning";
   disabled: boolean;
   children: React.ReactNode;
   sx?: SxProps<Theme>;
@@ -26,6 +27,7 @@ export default function DialogWrapper({
   onSubmit,
   title,
   submitText,
+  submitColor = "primary",
   disabled,
   children,
   sx,
@@ -66,11 +68,28 @@ export default function DialogWrapper({
         {children}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose} color="error">
+      <DialogActions sx={{ padding: 2, gap: 1, "& > :not(:first-of-type)": { ml: "0 !important" } }}>
+        <Button 
+          onClick={onClose} 
+          variant="contained" 
+          sx={{ 
+            borderRadius: 2,
+            bgcolor: "grey.300",
+            color: "text.primary",
+            "&:hover": {
+              bgcolor: "grey.400",
+            },
+          }}
+        >
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={disabled}>
+        <Button 
+          onClick={handleSubmit} 
+          disabled={disabled} 
+          color={submitColor}
+          variant="contained"
+          sx={{ borderRadius: 2 }}
+        >
           {submitText || "Submit"}
         </Button>
       </DialogActions>
