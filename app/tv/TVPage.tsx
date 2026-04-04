@@ -24,8 +24,8 @@ import ContentSearchBar from "./ContentSearchBar";
 import {
   addContentToFirebase,
   deleteContentFromFirebase,
-  fetchAllContentFromFirebase,
-  fetchAllProvidersFromFirebase,
+  subscribeToAllContentFromFirebase,
+  subscribeToAllProvidersFromFirebase,
 } from "./firebaseUtils";
 import NetworkPage from "./NetworkPage";
 import TableToolbar, { CustomToolbarProps } from "./TableToolbar";
@@ -56,104 +56,51 @@ export default function TVPage() {
       const oldItem = rows.find((r) => r.id === updatedItem.id);
       if (!oldItem) return;
 
-      const isWatchedChanged = oldItem.watched !== updatedItem.watched;
-
       const itemToSave = { ...updatedItem };
-      if (isWatchedChanged && itemToSave.media_type === "tv") {
-        const episodeName = await getEpisodeName(itemToSave);
-        itemToSave.watched_name = episodeName;
-      }
 
       await addContentToFirebase(itemToSave);
-
-      setRows((prevRows) =>
-        prevRows.map((row) => (row.id === itemToSave.id ? itemToSave : row)),
-      );
     } catch {
       console.log("Failed to update, reverting changes");
     }
   };
 
-  const getEpisodeName = async (docData: EmZContent) => {
-    if (!docData.seasons || docData.watched === 0) {
-      return null;
-    }
 
-    let seasonNum = 0;
-    let episodeIndex = 0;
-    let currentCount = 0;
-
-    for (const season of docData.seasons) {
-      if (season.season_number > 0) {
-        if (docData.watched <= currentCount + season.episode_count) {
-          episodeIndex = Math.max(docData.watched - currentCount, 1);
-          seasonNum = season.season_number;
-          const url = `https://api.themoviedb.org/3/tv/${docData.id}/season/${seasonNum}/episode/${episodeIndex}`;
-          const data = await fetchDataFromTMDB(url);
-          return data?.name || null;
-        } else {
-          currentCount += season.episode_count;
-        }
-      }
-    }
-    return null;
-  };
-
-  const fetchData = useCallback(async () => {
-    try {
-      setRowsLoading(true);
-      const data = await fetchAllContentFromFirebase();
-      if (!data) return;
-
-      const genreData = genres ? genres : await fetchGenres();
-
-      const rowsData = await Promise.all(
-        data.docs.map(async (doc) => {
-          const docData = doc.data() as EmZContent;
-          const episodeName = await getEpisodeName(docData);
-          return {
-            ...docData,
-            watched_name: episodeName,
-            override_as_complete: docData.override_as_complete || false,
-          };
-        }),
-      );
-
-      if (!genres) {
+  useEffect(() => {
+    if (!genres) {
+      fetchGenres().then((genreData) => {
         setGenres(genreData as Record<number, EmZGenre>);
-      }
-      setRows(rowsData);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    } finally {
-      setRowsLoading(false);
+      });
     }
   }, [genres]);
 
-  const fetchProviders = useCallback(async () => {
-    const data = await fetchAllProvidersFromFirebase();
-    if (!data) {
-      return;
-    }
+  useEffect(() => {
+    setRowsLoading(true);
 
-    const rowsData = data.docs.map((doc) => {
-      const docData = doc.data() as Provider;
-      return docData;
+    const unsubscribeContent = subscribeToAllContentFromFirebase((snapshot) => {
+      const rowsData = snapshot.docs.map((doc) => {
+        const docData = doc.data() as EmZContent;
+        return {
+          ...docData,
+          override_as_complete: docData.override_as_complete || false,
+        };
+      });
+      setRows(rowsData);
+      setRowsLoading(false);
     });
 
-    setProviders(rowsData);
-  }, []);
+    const unsubscribeProviders = subscribeToAllProvidersFromFirebase((snapshot) => {
+      const providersData = snapshot.docs.map((doc) => doc.data() as Provider);
+      setProviders(providersData);
+    });
 
-  useEffect(() => {
-    fetchData();
-    fetchProviders();
-  }, [fetchData, fetchProviders]);
+    return () => {
+      unsubscribeContent();
+      unsubscribeProviders();
+    };
+  }, []);
 
   const handleDelete = (id: number) => {
     deleteContentFromFirebase(id)
-      .then(() => {
-        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
-      })
       .catch((error) => {
         console.error("Error deleting content:", error);
       });

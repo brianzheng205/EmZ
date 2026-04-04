@@ -26,11 +26,6 @@ export default function NetworkPage({
 }: NetworkPageProps) {
   const handleDelete = (id: number) => {
     deleteProviderFromFirebase(id)
-      .then(() => {
-        setProviders((prevProviders) =>
-          prevProviders.filter((provider) => provider.provider_id !== id),
-        );
-      })
       .catch((error) => {
         console.error("Error deleting provider:", error);
       });

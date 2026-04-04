@@ -4,6 +4,8 @@ import {
   getDocs,
   collection,
   deleteDoc,
+  onSnapshot,
+  QuerySnapshot,
 } from "firebase/firestore";
 
 import db from "@firebase";
@@ -56,6 +58,16 @@ export async function fetchAllContentFromFirebase() {
   return await getDocs(collection(db, dbPath));
 }
 
+export function subscribeToAllContentFromFirebase(
+  callback: (snapshot: QuerySnapshot) => void,
+) {
+  const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV collection is not defined");
+  }
+  return onSnapshot(collection(db, dbPath), callback);
+}
+
 export async function deleteContentFromFirebase(id: number) {
   const dbPath = process.env.NEXT_PUBLIC_TV_COLLECTION;
   if (!dbPath) {
@@ -70,6 +82,16 @@ export async function fetchAllProvidersFromFirebase() {
     throw new Error("Firebase TV Providers collection is not defined");
   }
   return await getDocs(collection(db, dbPath));
+}
+
+export function subscribeToAllProvidersFromFirebase(
+  callback: (snapshot: QuerySnapshot) => void,
+) {
+  const dbPath = process.env.NEXT_PUBLIC_TV_PROVIDERS_COLLECTION;
+  if (!dbPath) {
+    throw new Error("Firebase TV Providers collection is not defined");
+  }
+  return onSnapshot(collection(db, dbPath), callback);
 }
 
 export async function addProviderToFirebase(provider: Provider) {
