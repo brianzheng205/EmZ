@@ -277,6 +277,8 @@ export default function FinancePage() {
 
         <AddBudgetDialog
           open={isAddBudgetDialogOpen}
+          budgets={budgets}
+          activeBudgetId={activeBudgetIds[0] || null}
           onClose={closeAddBudgetDialog}
           onSubmit={handleAddBudget}
         />

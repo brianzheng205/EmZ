@@ -6,6 +6,7 @@ import SelectWrapper from "@/components/SelectWrapper";
 import { NumberInputField } from "mui-treasury/components/number-input";
 
 import { BudgetItem, FbBudgetItem, Frequency, ItemType } from "../../types";
+import { NECESSARY_BUDGET_ITEM_NAMES } from "../../constants";
 
 const NUM_MONTHS_IN_YEAR = 12;
 const NUM_PAYCHECKS_IN_YEAR = 26;
@@ -89,6 +90,8 @@ export default function EditItemDialog({
 
   if (!item) return null;
 
+  const isNecessaryItem = NECESSARY_BUDGET_ITEM_NAMES.includes(item.name);
+
   const isNameEmpty = (editItem.name || "").trim() === "";
   const isNameTaken =
     editItem.name !== item.name &&
@@ -144,13 +147,16 @@ export default function EditItemDialog({
             name: event.target.value,
           }))
         }
+        disabled={isNecessaryItem}
         error={isNameEmpty || isNameTaken}
         helperText={
           isNameEmpty
             ? "Please provide a name"
             : isNameTaken
               ? "Name already exists"
-              : ""
+              : isNecessaryItem
+                ? "This item's name cannot be changed."
+                : ""
         }
       />
 

@@ -13,6 +13,7 @@ interface BudgetDialogProps {
   budget: FbBudget;
   onClose: () => void;
   onSubmit: (budget: FbBudget) => void;
+  children?: React.ReactNode;
 }
 
 export default function BudgetDialog({
@@ -22,6 +23,7 @@ export default function BudgetDialog({
   budget,
   onClose,
   onSubmit,
+  children,
 }: BudgetDialogProps) {
   const [newBudget, setNewBudget] = useState(budget);
 
@@ -97,6 +99,7 @@ export default function BudgetDialog({
         <MenuItem value="Em">Em</MenuItem>
         <MenuItem value="Z">Z</MenuItem>
       </SelectWrapper>
+      {children}
     </DialogWrapper>
   );
 }
