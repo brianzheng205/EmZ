@@ -1,14 +1,17 @@
 "use client";
 
-import { Typography, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+import { Add } from "@mui/icons-material";
+import { Typography, Select, MenuItem, SelectChangeEvent, IconButton } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
 import LoadingContainer from "@/components/LoadingContainer";
+import useDialog from "@/hooks/useDialog";
 import { fetchData, fetchDocuments } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions, ViewToggle } from "./components";
+import AddBudgetDialog from "./components/dialogs/AddBudgetDialog";
 import BudgetToolBar from "./components/BudgetToolBar";
 import {
   deleteBudgetItem,
@@ -16,6 +19,8 @@ import {
   updateBudgetItem,
   createBudgetItem,
   updateSharedActiveBudgets,
+  createBudget,
+  deleteBudget,
 } from "./firebaseUtils";
 import {
   CalculatedBudget,
@@ -32,6 +37,12 @@ export default function FinancePage() {
   const [budgets, setBudgets] = useState<FbBudgetWithId[]>([]);
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
   const [viewType, setViewType] = useState<ViewType>(ViewType.MONTHLY_AVERAGE);
+
+  const {
+    isDialogOpen: isAddBudgetDialogOpen,
+    openDialog: openAddBudgetDialog,
+    closeDialog: closeAddBudgetDialog,
+  } = useDialog();
 
   const activeBudgets: CalculatedBudget[] = useMemo(
     () =>
@@ -97,6 +108,32 @@ export default function FinancePage() {
     const newBudgetId = event.target.value;
     setActiveBudgetIds([newBudgetId]);
     updateSharedActiveBudgets([newBudgetId]);
+  };
+
+  const handleAddBudget = async (newBudget: FbBudget) => {
+    const result = await createBudget(newBudget);
+    if (result) {
+      setBudgets([...budgets, { ...newBudget, id: result.id }]);
+      setActiveBudgetIds([result.id]);
+      updateSharedActiveBudgets([result.id]);
+    }
+    closeAddBudgetDialog();
+  };
+
+  const handleDeleteBudget = async () => {
+    const activeBudgetId = activeBudgetIds[0];
+    if (activeBudgetId) {
+      await deleteBudget(activeBudgetId);
+      const newBudgets = budgets.filter((b) => b.id !== activeBudgetId);
+      setBudgets(newBudgets);
+      if (newBudgets.length > 0) {
+        setActiveBudgetIds([newBudgets[0].id]);
+        updateSharedActiveBudgets([newBudgets[0].id]);
+      } else {
+        setActiveBudgetIds([]);
+        updateSharedActiveBudgets([]);
+      }
+    }
   };
 
   const handleBudgetMetadataChange = (newMetadata: FbBudgetMetadata) => {
@@ -208,31 +245,41 @@ export default function FinancePage() {
   return (
     <LoadingContainer loading={loading}>
       <Stack sx={{ gap: 2, marginTop: 4, marginBottom: 4 }}>
-        <Select
-          value={activeBudgetIds[0] || ""}
-          onChange={handleBudgetChange}
-          variant="standard"
-          disableUnderline
-          displayEmpty
-          sx={{
-            typography: "h3",
-            fontWeight: "bold",
-            margin: "0 auto",
-            "& .MuiSelect-select": {
-              padding: 0,
-              paddingRight: "32px !important",
-            },
-          }}
-        >
-          <MenuItem disabled value="">
-            <em>Select a budget...</em>
-          </MenuItem>
-          {budgets.map((b) => (
-            <MenuItem key={b.id} value={b.id}>
-              {b.name}
+        <Stack direction="row" alignItems="baseline" justifyContent="center">
+          <Select
+            value={activeBudgetIds[0] || ""}
+            onChange={handleBudgetChange}
+            variant="standard"
+            disableUnderline
+            displayEmpty
+            sx={{
+              typography: "h3",
+              fontWeight: "bold",
+              "& .MuiSelect-select": {
+                padding: 0,
+                paddingRight: "32px !important",
+              },
+            }}
+          >
+            <MenuItem disabled value="">
+              <em>Select a budget...</em>
             </MenuItem>
-          ))}
-        </Select>
+            {budgets.map((b) => (
+              <MenuItem key={b.id} value={b.id}>
+                {b.name}
+              </MenuItem>
+            ))}
+          </Select>
+          <IconButton onClick={openAddBudgetDialog} color="primary" sx={{ ml: 1 }}>
+            <Add fontSize="large" />
+          </IconButton>
+        </Stack>
+
+        <AddBudgetDialog
+          open={isAddBudgetDialogOpen}
+          onClose={closeAddBudgetDialog}
+          onSubmit={handleAddBudget}
+        />
 
         {activeBudgets.length > 0 ? (
           <>
@@ -254,6 +301,7 @@ export default function FinancePage() {
                 onEditMetadata={handleBudgetMetadataChange}
                 onAddItem={handleAddItem}
                 onRefresh={fetchBudgetsData}
+                onDeleteBudget={handleDeleteBudget}
               />
             </Stack>
 

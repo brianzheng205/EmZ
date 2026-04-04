@@ -67,9 +67,17 @@ export const updateBudgetMetadata = async (
   }
 };
 
-export const deleteBudget = async (docRef: DocumentReference) => {
+export const deleteBudget = async (budgetId: string) => {
+  if (!financeCollectionName) {
+    console.error(
+      "NEXT_PUBLIC_FINANCE_COLLECTION environment variable is not set.",
+    );
+    return;
+  }
+
   try {
-    return await deleteDoc(docRef);
+    const budgetDocRef = doc(db, financeCollectionName, budgetId);
+    return await deleteDoc(budgetDocRef);
   } catch (error) {
     console.error("Error deleting budget:", error);
     return null;

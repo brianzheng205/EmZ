@@ -27,7 +27,8 @@ export default function BudgetDialog({
 
   // TODO disable if metadata is the same as current or if metadata is invalid
   const isNameEmpty = newBudget.name.trim() === "";
-  const disabled = isNameEmpty;
+  const isUserEmpty = !newBudget.user || newBudget.user.trim() === "";
+  const disabled = isNameEmpty || isUserEmpty;
 
   useEffect(() => {
     if (open) {
@@ -86,15 +87,15 @@ export default function BudgetDialog({
         ))}
       </SelectWrapper>
       <SelectWrapper
-        id="budget-owner-select"
-        label="Owner"
+        id="budget-user-select"
+        label="User"
         value={newBudget.user}
         onChange={(e) =>
           setNewBudget((prev) => ({ ...prev, user: e.target.value as string }))
         }
       >
-        <MenuItem value="emily">emily</MenuItem>
-        <MenuItem value="brian">brian</MenuItem>
+        <MenuItem value="Em">Em</MenuItem>
+        <MenuItem value="Z">Z</MenuItem>
       </SelectWrapper>
     </DialogWrapper>
   );
