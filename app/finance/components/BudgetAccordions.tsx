@@ -106,24 +106,27 @@ function CategoryItem({
       >
 
         {!isItemCalculated && (
-          <>
+          <Grid container justifyContent="center" sx={{ gap: 0.5 }}>
             <IconButton
               aria-label="edit"
               onClick={onEditItem}
-              sx={{ padding: 0, mr: 0.5 }}
+              sx={{ padding: 0 }}
             >
               <EditIcon fontSize="small" color="primary" />
             </IconButton>
-            {!NECESSARY_BUDGET_ITEM_NAMES.includes(item.name) && (
-              <IconButton
-                aria-label="delete"
-                onClick={onActiveBudgetItemDelete}
-                sx={{ padding: 0 }}
-              >
-                <DeleteIcon fontSize="small" color="primary" />
-              </IconButton>
-            )}
-          </>
+            <IconButton
+              aria-label="delete"
+              onClick={onActiveBudgetItemDelete}
+              sx={{
+                padding: 0,
+                visibility: NECESSARY_BUDGET_ITEM_NAMES.includes(item.name)
+                  ? "hidden"
+                  : "visible",
+              }}
+            >
+              <DeleteIcon fontSize="small" color="primary" />
+            </IconButton>
+          </Grid>
         )}
       </Grid>
     </Grid>
