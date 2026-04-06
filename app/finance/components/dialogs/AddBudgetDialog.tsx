@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MenuItem } from "@mui/material";
 import SelectWrapper from "@/components/SelectWrapper";
 
@@ -21,13 +21,13 @@ export default function AddBudgetDialog({
   onClose,
   onSubmit,
 }: AddBudgetDialogProps) {
-  const [copyFromId, setCopyFromId] = useState<string>(activeBudgetId || "none");
+  const [copyFromId, setCopyFromId] = useState<string>("none");
 
-  // Keep copyFromId in sync if activeBudgetId changes and it was just opened
-  // Note: For simplicity, it might be better to let it reset or stay depending on user intent.
-  // Actually, setting it as initial state is fine above if the component remounts or we can use effect.
-  // We'll trust standard unmounts, but since dialog stays mounted, we use a simple effect:
-  // (We could, but let's just use state that updates occasionally).
+  useEffect(() => {
+    if (open) {
+      setCopyFromId(activeBudgetId || "none");
+    }
+  }, [open, activeBudgetId]);
 
   const handleSubmit = async (budget: FbBudget) => {
     let budgetItemsToCopy = [...NECESSARY_BUDGET_ITEMS];
