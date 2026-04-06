@@ -15,7 +15,7 @@ export default function SelectWrapper({
   const labelId = `${id}-label`;
 
   return (
-    <FormControl fullWidth>
+    <FormControl fullWidth required={props.required}>
       <InputLabel id={labelId}>{label}</InputLabel>
       <Select labelId={labelId} id={id} label={label} {...props}>
         {children}

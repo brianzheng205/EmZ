@@ -60,6 +60,7 @@ export const updateBudgetMetadata = async (
       name: newMetadata.name,
       numMonths: newMetadata.numMonths,
       user: newMetadata.user,
+      year: newMetadata.year,
     });
   } catch (error) {
     console.error("Error updating budget metadata:", error);

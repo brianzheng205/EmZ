@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import DialogWrapper from "@/components/DialogWrapper";
 import SelectWrapper from "@/components/SelectWrapper";
 
-import { FbBudget } from "../../types";
+import { FbBudget, FbBudgetWithId } from "../../types";
 
 interface BudgetDialogProps {
   open: boolean;
   title: string;
   submitText: string;
   budget: FbBudget;
-  existingBudgets: FbBudget[];
+  existingBudgets: FbBudgetWithId[];
+  ignoredBudgetId?: string;
   onClose: () => void;
   onSubmit: (budget: FbBudget) => void;
   children?: React.ReactNode;
@@ -23,6 +24,7 @@ export default function BudgetDialog({
   submitText,
   budget,
   existingBudgets,
+  ignoredBudgetId,
   onClose,
   onSubmit,
   children,
@@ -32,12 +34,13 @@ export default function BudgetDialog({
   const isNameEmpty = newBudget.name.trim() === "";
   const isUserEmpty = !newBudget.user || newBudget.user.trim() === "";
   const isYearInvalid = !newBudget.year || isNaN(newBudget.year);
-  
-  const isDuplicate = existingBudgets.some(b => 
-    b.name.trim().toLowerCase() === newBudget.name.trim().toLowerCase() && 
-    b.user === newBudget.user &&
-    b.year === Number(newBudget.year) &&
-    !(b.name.trim().toLowerCase() === budget.name.trim().toLowerCase() && b.user === budget.user && b.year === budget.year)
+
+  const isDuplicate = existingBudgets.some(
+    (b: FbBudgetWithId) =>
+      b.name.trim().toLowerCase() === newBudget.name.trim().toLowerCase() &&
+      b.user === newBudget.user &&
+      (b.year || 0) === (newBudget.year || 0) &&
+      b.id !== ignoredBudgetId,
   );
 
   const disabled = isNameEmpty || isUserEmpty || isYearInvalid || isDuplicate;
@@ -72,18 +75,6 @@ export default function BudgetDialog({
       disabled={disabled}
     >
       <TextField
-        label="Year"
-        type="number"
-        value={newBudget.year}
-        onChange={(e) =>
-          setNewBudget((prev) => ({ ...prev, year: Number(e.target.value) }))
-        }
-        required
-        fullWidth
-        error={isYearInvalid}
-        helperText={isYearInvalid ? "Please provide a valid year" : ""}
-      />
-      <TextField
         label="Name"
         value={newBudget.name}
         onChange={(e) =>
@@ -92,8 +83,44 @@ export default function BudgetDialog({
         required
         fullWidth
         error={isNameEmpty || isDuplicate}
-        helperText={isNameEmpty ? "Please provide a name" : isDuplicate ? "This name/year combination is already used for this user." : ""}
+        helperText={
+          isNameEmpty
+            ? "Please provide a name"
+            : isDuplicate
+              ? "This name/year combination is already used for this user."
+              : ""
+        }
       />
+      <SelectWrapper
+        id="budget-year-select"
+        label="Year"
+        value={newBudget.year || ""}
+        onChange={(e) =>
+          setNewBudget((prev) => ({ ...prev, year: Number(e.target.value) }))
+        }
+        required
+        MenuProps={{
+          PaperProps: {
+            sx: {
+              maxHeight: 400,
+            },
+          },
+          anchorOrigin: {
+            vertical: "bottom",
+            horizontal: "left",
+          },
+          transformOrigin: {
+            vertical: "top",
+            horizontal: "left",
+          },
+        }}
+      >
+        {Array.from({ length: 2101 - 2020 }, (_, i) => 2020 + i).map((y) => (
+          <MenuItem key={y} value={y}>
+            {y}
+          </MenuItem>
+        ))}
+      </SelectWrapper>
       <SelectWrapper
         id="budget-number-of-months-select"
         label="Number of Months"
@@ -104,6 +131,7 @@ export default function BudgetDialog({
             numMonths: Number(e.target.value),
           }))
         }
+        required
       >
         {Array.from({ length: 12 }, (_, i) => (
           <MenuItem key={i + 1} value={i + 1}>
@@ -118,6 +146,7 @@ export default function BudgetDialog({
         onChange={(e) =>
           setNewBudget((prev) => ({ ...prev, user: e.target.value as string }))
         }
+        required
       >
         <MenuItem value="Em">Em</MenuItem>
         <MenuItem value="Z">Z</MenuItem>

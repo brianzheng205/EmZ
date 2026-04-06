@@ -27,14 +27,8 @@ import {
 } from "../types";
 import { convertToMonthlyAmount, convertToYearlyAmount } from "../utils";
 
-import {
-  FixedCurrencyCell,
-  FixedNameCell,
-  DisabledCell,
-} from "./BudgetCells";
-import {
-  FixedRepeatFreqCell,
-} from "./BudgetCells/RepeatCell";
+import { FixedCurrencyCell, FixedNameCell, DisabledCell } from "./BudgetCells";
+import { FixedRepeatFreqCell } from "./BudgetCells/RepeatCell";
 import { ACCORDION_SUMMAR_HEADING_VARIANT, gridSizes } from "./constants";
 import EditItemDialog from "./dialogs/EditItemDialog";
 
@@ -104,7 +98,6 @@ function CategoryItem({
         size={gridSizes.DELETE}
         sx={{ display: "flex", justifyContent: "center" }}
       >
-
         {!isItemCalculated && (
           <Grid container justifyContent="center" sx={{ gap: 0.5 }}>
             <IconButton
@@ -139,6 +132,7 @@ interface BudgetAccordionProps {
   onEditItem: (item: BudgetItem) => void;
   numMonths: number;
   viewType: ViewType;
+  defaultExpanded?: boolean;
 }
 
 function CategoryAccordion({
@@ -147,12 +141,14 @@ function CategoryAccordion({
   onEditItem,
   numMonths,
   viewType,
+  defaultExpanded,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
 
   return (
     <Accordion
       disabled={!hasItems}
+      defaultExpanded={defaultExpanded}
       sx={{
         "&.Mui-expanded": {
           margin: 0,
@@ -228,9 +224,9 @@ export default function BudgetAccordions({
   // TODO: add support for multiple active budgets. For now, just show the first one.
   return (
     <>
-      {categoryOrder.map((key, index) => (
+      {categoryOrder.map((key) => (
         <CategoryAccordion
-          key={index}
+          key={`${activeBudgets[0].id}-${key}`}
           category={categories[key]}
           onActiveBudgetItemDelete={(itemName) =>
             onItemDelete(activeBudgets[0].id, itemName)
@@ -238,6 +234,7 @@ export default function BudgetAccordions({
           onEditItem={setItemToEdit}
           numMonths={activeBudgets[0].numMonths}
           viewType={viewType}
+          defaultExpanded={key === "earnings"}
         />
       ))}
 

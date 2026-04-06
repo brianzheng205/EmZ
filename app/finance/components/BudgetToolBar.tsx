@@ -81,6 +81,7 @@ export default function BudgetToolBar({
 
       <EditBudgetDialog
         open={isEditDialogOpen}
+        budgetId={(budget as FbBudgetWithId).id}
         metadata={metadata}
         budgets={budgets}
         onClose={closeEditDialog}

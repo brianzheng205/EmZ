@@ -96,14 +96,15 @@ export default function AddBudgetDialog({
         label="Copy Items From"
         value={copyFromId}
         onChange={(e) => handleCopyFromChange(e.target.value as string)}
+        required
       >
         <MenuItem value="none">
           <em>None (Start Fresh)</em>
         </MenuItem>
         {budgets.map((b) => (
-           <MenuItem key={b.id!} value={b.id!}>
-             {`${b.year ? b.year + ' ' : ''}${b.name} (${b.user})`}
-           </MenuItem>
+          <MenuItem key={b.id!} value={b.id!}>
+            {`${b.year ? b.year + " " : ""}${b.name} (${b.user})`}
+          </MenuItem>
         ))}
       </SelectWrapper>
     </BudgetDialog>

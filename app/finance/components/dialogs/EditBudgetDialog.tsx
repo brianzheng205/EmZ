@@ -4,6 +4,7 @@ import BudgetDialog from "./BudgetDialog";
 
 interface EditBudgetDialogProps {
   open: boolean;
+  budgetId: string;
   metadata: FbBudgetMetadata;
   budgets: FbBudgetWithId[];
   onClose: () => void;
@@ -12,6 +13,7 @@ interface EditBudgetDialogProps {
 
 export default function EditBudgetDialog({
   open,
+  budgetId,
   metadata,
   budgets,
   onClose,
@@ -31,6 +33,7 @@ export default function EditBudgetDialog({
   return (
     <BudgetDialog
       open={open}
+      ignoredBudgetId={budgetId}
       budget={{ ...metadata, budgetItems: [] }}
       existingBudgets={budgets}
       onClose={onClose}
