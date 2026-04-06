@@ -266,7 +266,7 @@ export default function FinancePage() {
             </MenuItem>
             {budgets.map((b) => (
               <MenuItem key={b.id} value={b.id}>
-                {b.name}
+                {`${b.year ? b.year + ' ' : ''}${b.name} (${b.user})`}
               </MenuItem>
             ))}
           </Select>
@@ -300,6 +300,7 @@ export default function FinancePage() {
                   budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
                   ({} as FbBudget)
                 }
+                budgets={budgets}
                 onEditMetadata={handleBudgetMetadataChange}
                 onAddItem={handleAddItem}
                 onRefresh={fetchBudgetsData}

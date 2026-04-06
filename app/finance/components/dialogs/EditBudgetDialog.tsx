@@ -1,10 +1,11 @@
-import { FbBudget, FbBudgetMetadata } from "../../types";
+import { FbBudget, FbBudgetMetadata, FbBudgetWithId } from "../../types";
 
 import BudgetDialog from "./BudgetDialog";
 
 interface EditBudgetDialogProps {
   open: boolean;
   metadata: FbBudgetMetadata;
+  budgets: FbBudgetWithId[];
   onClose: () => void;
   onSubmit: (newMetadata: FbBudgetMetadata) => void;
 }
@@ -12,6 +13,7 @@ interface EditBudgetDialogProps {
 export default function EditBudgetDialog({
   open,
   metadata,
+  budgets,
   onClose,
   onSubmit,
 }: EditBudgetDialogProps) {
@@ -20,6 +22,7 @@ export default function EditBudgetDialog({
       name: newBudget.name,
       numMonths: newBudget.numMonths,
       user: newBudget.user,
+      year: newBudget.year,
     };
 
     onSubmit(newMetadata);
@@ -29,6 +32,7 @@ export default function EditBudgetDialog({
     <BudgetDialog
       open={open}
       budget={{ ...metadata, budgetItems: [] }}
+      existingBudgets={budgets}
       onClose={onClose}
       onSubmit={handleSubmit}
       title="Edit Budget"

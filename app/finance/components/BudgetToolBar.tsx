@@ -6,10 +6,11 @@ import useDialog from "@/hooks/useDialog";
 import AddItemDialog from "./dialogs/AddItemDialog";
 import DeleteConfirmationDialog from "./dialogs/DeleteConfirmationDialog";
 import EditBudgetDialog from "./dialogs/EditBudgetDialog";
-import { FbBudget, FbBudgetItem, FbBudgetMetadata } from "../types";
+import { FbBudget, FbBudgetItem, FbBudgetMetadata, FbBudgetWithId } from "../types";
 
 interface BudgetToolBarProps {
   budget: FbBudget;
+  budgets: FbBudgetWithId[];
   onEditMetadata: (metadata: FbBudget) => void;
   onAddItem: (item: FbBudgetItem) => void;
   onRefresh: () => Promise<void>;
@@ -18,6 +19,7 @@ interface BudgetToolBarProps {
 
 export default function BudgetToolBar({
   budget,
+  budgets,
   onEditMetadata,
   onAddItem,
   onRefresh,
@@ -43,6 +45,7 @@ export default function BudgetToolBar({
     name: budget.name,
     numMonths: budget.numMonths,
     user: budget.user,
+    year: budget.year,
   };
 
   const handleEditSubmit = (newMetadata: FbBudgetMetadata) => {
@@ -79,6 +82,7 @@ export default function BudgetToolBar({
       <EditBudgetDialog
         open={isEditDialogOpen}
         metadata={metadata}
+        budgets={budgets}
         onClose={closeEditDialog}
         onSubmit={handleEditSubmit}
       />

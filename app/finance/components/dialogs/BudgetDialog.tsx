@@ -11,6 +11,7 @@ interface BudgetDialogProps {
   title: string;
   submitText: string;
   budget: FbBudget;
+  existingBudgets: FbBudget[];
   onClose: () => void;
   onSubmit: (budget: FbBudget) => void;
   children?: React.ReactNode;
@@ -21,16 +22,25 @@ export default function BudgetDialog({
   title,
   submitText,
   budget,
+  existingBudgets,
   onClose,
   onSubmit,
   children,
 }: BudgetDialogProps) {
   const [newBudget, setNewBudget] = useState(budget);
 
-  // TODO disable if metadata is the same as current or if metadata is invalid
   const isNameEmpty = newBudget.name.trim() === "";
   const isUserEmpty = !newBudget.user || newBudget.user.trim() === "";
-  const disabled = isNameEmpty || isUserEmpty;
+  const isYearInvalid = !newBudget.year || isNaN(newBudget.year);
+  
+  const isDuplicate = existingBudgets.some(b => 
+    b.name.trim().toLowerCase() === newBudget.name.trim().toLowerCase() && 
+    b.user === newBudget.user &&
+    b.year === Number(newBudget.year) &&
+    !(b.name.trim().toLowerCase() === budget.name.trim().toLowerCase() && b.user === budget.user && b.year === budget.year)
+  );
+
+  const disabled = isNameEmpty || isUserEmpty || isYearInvalid || isDuplicate;
 
   useEffect(() => {
     if (open) {
@@ -39,9 +49,10 @@ export default function BudgetDialog({
         name: budget.name,
         numMonths: budget.numMonths,
         user: budget.user,
+        year: budget.year,
       }));
     }
-  }, [budget.name, budget.numMonths, budget.user, open]);
+  }, [budget.name, budget.numMonths, budget.user, budget.year, open]);
 
   const handleSubmit = () => {
     const newSanitizedBudget: FbBudget = {
@@ -61,6 +72,18 @@ export default function BudgetDialog({
       disabled={disabled}
     >
       <TextField
+        label="Year"
+        type="number"
+        value={newBudget.year}
+        onChange={(e) =>
+          setNewBudget((prev) => ({ ...prev, year: Number(e.target.value) }))
+        }
+        required
+        fullWidth
+        error={isYearInvalid}
+        helperText={isYearInvalid ? "Please provide a valid year" : ""}
+      />
+      <TextField
         label="Name"
         value={newBudget.name}
         onChange={(e) =>
@@ -68,8 +91,8 @@ export default function BudgetDialog({
         }
         required
         fullWidth
-        error={isNameEmpty}
-        helperText={isNameEmpty ? "Please provide a name" : ""}
+        error={isNameEmpty || isDuplicate}
+        helperText={isNameEmpty ? "Please provide a name" : isDuplicate ? "This name/year combination is already used for this user." : ""}
       />
       <SelectWrapper
         id="budget-number-of-months-select"

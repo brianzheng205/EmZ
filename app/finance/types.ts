@@ -32,6 +32,7 @@ export type FbBudgetMetadata = {
   name: string;
   numMonths: number;
   user: string;
+  year: number;
 };
 
 export type FbBudget = FbBudgetMetadata & {
