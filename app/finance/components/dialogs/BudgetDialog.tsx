@@ -1,4 +1,4 @@
-import { MenuItem, TextField } from "@mui/material";
+import { Alert, Box, MenuItem, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
@@ -82,14 +82,8 @@ export default function BudgetDialog({
         }
         required
         fullWidth
-        error={isNameEmpty || isDuplicate}
-        helperText={
-          isNameEmpty
-            ? "Please provide a name"
-            : isDuplicate
-              ? "This name/year combination is already used for this user."
-              : ""
-        }
+        error={isNameEmpty}
+        helperText={isNameEmpty ? "Please provide a name" : ""}
       />
       <SelectWrapper
         id="budget-year-select"
@@ -152,6 +146,13 @@ export default function BudgetDialog({
         <MenuItem value="Z">Z</MenuItem>
       </SelectWrapper>
       {children}
+      {isDuplicate && (
+        <Box>
+          <Alert severity="error" variant="filled">
+            This name/year/user combination is already used.
+          </Alert>
+        </Box>
+      )}
     </DialogWrapper>
   );
 }
