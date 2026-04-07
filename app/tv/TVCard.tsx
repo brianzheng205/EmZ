@@ -53,8 +53,12 @@ export default function TVCard({
   onDelete,
 }: TVCardProps) {
   const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
-  const [seasonEpisodes, setSeasonEpisodes] = useState<Record<number, any[]>>({});
-  const [fetchingSeasons, setFetchingSeasons] = useState<Set<number>>(new Set());
+  const [seasonEpisodes, setSeasonEpisodes] = useState<Record<number, any[]>>(
+    {},
+  );
+  const [fetchingSeasons, setFetchingSeasons] = useState<Set<number>>(
+    new Set(),
+  );
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const airedCount = ContentStatus.getAiredCount(item);
@@ -108,8 +112,6 @@ export default function TVCard({
 
     return { currentSeason: currS, currentEpisode: currE };
   })();
-
-
 
   const fetchSeason = async (seasonNum: number) => {
     if (seasonEpisodes[seasonNum] || fetchingSeasons.has(seasonNum)) return;
@@ -343,7 +345,13 @@ export default function TVCard({
                   gap: 1,
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Typography
                     variant="body2"
                     color="text.secondary"
@@ -751,7 +759,6 @@ export default function TVCard({
             "\\u00A0"
           )}
         </Typography>
-
       </CardContent>
     </Card>
   );

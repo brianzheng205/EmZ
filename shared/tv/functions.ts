@@ -108,12 +108,30 @@ export const MAX_RETRY_ATTEMPTS = 5;
 /** Base back-off delay (ms) before retrying after a 429. */
 export const RETRY_BASE_DELAY_MS = 1000;
 
+const isEqual = (a: any, b: any): boolean => {
+  if (a === b) return true;
+  if (
+    typeof a !== "object" ||
+    a === null ||
+    typeof b !== "object" ||
+    b === null
+  )
+    return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!keysB.includes(key) || !isEqual(a[key], b[key])) return false;
+  }
+  return true;
+};
+
 /**
  * Fetch a single TMDB URL with retry logic for 429 rate-limit responses.
  */
 export const fetchFromTMDB = async (
   url: string,
-  apiKey: string
+  apiKey: string,
 ): Promise<any> => {
   const options = {
     method: "GET",
@@ -138,7 +156,7 @@ export const fetchFromTMDB = async (
       attempts++;
       const waitMs = RETRY_BASE_DELAY_MS * attempts;
       console.warn(
-        `TMDB rate limit hit for ${url}. Retrying in ${waitMs}ms (attempt ${attempts}/${MAX_RETRY_ATTEMPTS})`
+        `TMDB rate limit hit for ${url}. Retrying in ${waitMs}ms (attempt ${attempts}/${MAX_RETRY_ATTEMPTS})`,
       );
       await delay(waitMs);
       continue;
@@ -149,7 +167,7 @@ export const fetchFromTMDB = async (
   }
 
   console.error(
-    `Exhausted retries for ${url} after ${MAX_RETRY_ATTEMPTS} attempts.`
+    `Exhausted retries for ${url} after ${MAX_RETRY_ATTEMPTS} attempts.`,
   );
   return null;
 };
@@ -162,7 +180,7 @@ export const updateDocument = async (
   docData: any,
   apiKey: string,
   saveDoc?: (id: string, data: any) => Promise<void>
-): Promise<{ updatedData: any; collection: CollectionRef | null } | null> => {
+): Promise<{ updatedData: any; collection: CollectionRef | null; changed: boolean } | null> => {
   const isTv = docData.media_type === "tv";
   const id = docData.id as number;
 
@@ -189,11 +207,13 @@ export const updateDocument = async (
       collection = result.collection;
     }
 
-    if (saveDoc) {
+    const changed = !isEqual(docData, updatedData);
+
+    if (changed && saveDoc) {
       await saveDoc(String(id), updatedData);
     }
 
-    return { updatedData, collection };
+    return { updatedData, collection, changed };
   } catch (err: any) {
     console.error(
       `Unexpected error updating ${isTv ? "TV" : "movie"} id=${id}:`,
@@ -297,6 +317,7 @@ export const fetchContentUpdatesFromTMDB = async (
 
     let updateSuccessCount = 0;
     let updateFailureCount = 0;
+    let updateActualChangedCount = 0;
 
     // Map from TMDB collection ID → who value inherited from the tracked sibling
     const collectionsToCheck = new Map<number, WhoSelection>();
@@ -316,22 +337,26 @@ export const fetchContentUpdatesFromTMDB = async (
           `(docs ${batchStart + 1}–${batchStart + batchDocs.length})`
       );
 
-      const results = await Promise.allSettled(
-        batchDocs.map(async (docData) => {
-           const result = await updateDocument(docData, apiKey, saveDoc);
-           if (result && onDocUpdated) {
-             onDocUpdated(docData.id, result.updatedData);
-           }
-           return result?.collection;
-        })
-      );
+          const results = await Promise.allSettled(
+            batchDocs.map(async (docData) => {
+              const result = await updateDocument(docData, apiKey, saveDoc);
+              if (result?.changed) {
+                updateActualChangedCount++;
+                if (onDocUpdated) {
+                  onDocUpdated(docData.id, result.updatedData);
+                }
+              }
+              return result;
+            })
+          );
 
       for (const result of results) {
         if (result.status === "fulfilled") {
           updateSuccessCount++;
           // Collect any franchise collection refs discovered
-          if (result.value) {
-            const { id, who } = result.value;
+          const updateResult = result.value;
+          if (updateResult?.collection) {
+            const { id, who } = updateResult.collection;
             if (!collectionsToCheck.has(id)) {
               collectionsToCheck.set(id, who);
             }
@@ -348,7 +373,7 @@ export const fetchContentUpdatesFromTMDB = async (
 
     console.log(
       `fetchContentUpdatesFromTMDB: updates done — ` +
-        `${updateSuccessCount} updated, ${updateFailureCount} failed. ` +
+        `${updateSuccessCount} refreshed, ${updateActualChangedCount} actually changed, ${updateFailureCount} failed. ` +
         `${collectionsToCheck.size} franchise collection(s) to check.`
     );
 
@@ -371,7 +396,7 @@ export const fetchContentUpdatesFromTMDB = async (
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(
       `fetchContentUpdatesFromTMDB: finished in ${elapsed}s — ` +
-        `${updateSuccessCount} updated, ${updateFailureCount} failed, ` +
+        `${updateSuccessCount} refreshed (${updateActualChangedCount} changed), ${updateFailureCount} failed, ` +
         `${totalNewMovies} new franchise movie(s) added`
     );
   }
