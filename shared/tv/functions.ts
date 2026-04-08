@@ -36,6 +36,7 @@ export const mapTvData = (
 ): Record<string, unknown> => {
   return {
     ...docData,
+    id: tmdbData.id,
     original_name: tmdbData.original_name,
     name: tmdbData.name,
     next_episode_to_air: tmdbData.next_episode_to_air ?? null,
@@ -76,6 +77,7 @@ export const mapMovieData = (
   return {
     data: {
       ...docData,
+      id: tmdbData.id,
       adult: tmdbData.adult,
       backdrop_path: tmdbData.backdrop_path,
       genre_ids: (tmdbData.genres as TMDBGenre[]).map((g) => g.id),
