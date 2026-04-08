@@ -19,6 +19,8 @@ import {
   Tooltip,
   Select,
   FormControl,
+  ListSubheader,
+  Skeleton,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
@@ -51,7 +53,12 @@ export default function TVCard({
   onDelete,
 }: TVCardProps) {
   const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
-  const [seasonEpisodes, setSeasonEpisodes] = useState<any[]>([]);
+  const [seasonEpisodes, setSeasonEpisodes] = useState<Record<number, any[]>>(
+    {},
+  );
+  const [fetchingSeasons, setFetchingSeasons] = useState<Set<number>>(
+    new Set(),
+  );
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const airedCount = ContentStatus.getAiredCount(item);
@@ -106,27 +113,27 @@ export default function TVCard({
     return { currentSeason: currS, currentEpisode: currE };
   })();
 
-  const watchedEpisodesBeforeCurrentSeason = currentSeason
-    ? nonSpecialSeasons
-        .filter((s) => s.season_number < currentSeason.season_number)
-        .reduce((acc, s) => acc + s.episode_count, 0)
-    : 0;
+  const fetchSeason = async (seasonNum: number) => {
+    if (seasonEpisodes[seasonNum] || fetchingSeasons.has(seasonNum)) return;
+
+    setFetchingSeasons((prev) => new Set(prev).add(seasonNum));
+    const url = `https://api.themoviedb.org/3/tv/${item.id}/season/${seasonNum}?language=en-US`;
+    const result = await fetchDataFromTMDB(url);
+
+    if (result && result.episodes) {
+      setSeasonEpisodes((prev) => ({ ...prev, [seasonNum]: result.episodes }));
+    }
+    setFetchingSeasons((prev) => {
+      const next = new Set(prev);
+      next.delete(seasonNum);
+      return next;
+    });
+  };
 
   useEffect(() => {
-    let isMounted = true;
     if (item.media_type === "tv" && currentSeason) {
-      const fetchEpisodes = async () => {
-        const url = `https://api.themoviedb.org/3/tv/${item.id}/season/${currentSeason.season_number}?language=en-US`;
-        const result = await fetchDataFromTMDB(url);
-        if (isMounted && result && result.episodes) {
-          setSeasonEpisodes(result.episodes);
-        }
-      };
-      fetchEpisodes();
+      fetchSeason(currentSeason.season_number);
     }
-    return () => {
-      isMounted = false;
-    };
   }, [item.media_type, item.id, currentSeason?.season_number]);
 
   const handleWatchedChange = (newWatched: number) => {
@@ -338,7 +345,13 @@ export default function TVCard({
                   gap: 1,
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <Typography
                     variant="body2"
                     color="text.secondary"
@@ -369,131 +382,76 @@ export default function TVCard({
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <FormControl size="small" sx={{ flex: 1 }}>
                     <Select
-                      value={currentSeason ? currentSeason.season_number : ""}
+                      value={item.watched}
+                      onChange={(e) =>
+                        handleWatchedChange(Number(e.target.value))
+                      }
                       displayEmpty
-                      onChange={(e) => {
-                        const newSeasonNum = Number(e.target.value);
-                        let currWatched = 0;
-                        for (const season of nonSpecialSeasons) {
-                          if (season.season_number < newSeasonNum) {
-                            currWatched += season.episode_count;
-                          }
-                        }
-                        const newSeasonData = nonSpecialSeasons.find(
-                          (s) => s.season_number === newSeasonNum,
-                        );
-                        const epOffset =
-                          newSeasonData && newSeasonData.episode_count > 0
-                            ? 1
-                            : 0;
-                        handleWatchedChange(currWatched + epOffset);
-                      }}
                       renderValue={(selected: any) => {
-                        if (selected === "" || selected == null) {
+                        const watchedValue = Number(selected);
+                        if (watchedValue === 0) {
                           return (
                             <Typography
                               noWrap
                               variant="body2"
                               color="text.secondary"
                             >
-                              Season
+                              Not Started
                             </Typography>
+                          );
+                        }
+
+                        if (currentSeason && currentEpisode !== null) {
+                          const epDataArr =
+                            seasonEpisodes[currentSeason.season_number];
+                          const epData = epDataArr?.find(
+                            (ep) => ep.episode_number === currentEpisode,
+                          );
+
+                          if (!epData) {
+                            return (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                  width: "100%",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ whiteSpace: "nowrap" }}
+                                >
+                                  S{currentSeason.season_number} E
+                                  {currentEpisode} -
+                                </Typography>
+                                <Skeleton variant="text" width={80} />
+                              </Box>
+                            );
+                          }
+
+                          const fullText = `S${currentSeason.season_number} E${currentEpisode} - ${epData.name}`;
+                          return (
+                            <Tooltip title={fullText} placement="top" arrow>
+                              <Box sx={{ width: "100%", overflow: "hidden" }}>
+                                <Typography
+                                  noWrap
+                                  variant="body2"
+                                  sx={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {fullText}
+                                </Typography>
+                              </Box>
+                            </Tooltip>
                           );
                         }
                         return (
                           <Typography noWrap variant="body2">
-                            Season {selected}
+                            Watched: {watchedValue}
                           </Typography>
-                        );
-                      }}
-                      sx={{
-                        borderRadius: 2,
-                        bgcolor: "rgba(255, 255, 255, 0.4)",
-                        backdropFilter: "blur(4px)",
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: "transparent",
-                        },
-                        "&:hover .MuiOutlinedInput-notchedOutline": {
-                          borderColor: "primary.main",
-                        },
-                      }}
-                    >
-                      <MenuItem
-                        value=""
-                        sx={{ fontStyle: "italic", color: "text.secondary" }}
-                      >
-                        Not Started
-                      </MenuItem>
-                      {(() => {
-                        let runningCount = 0;
-                        return nonSpecialSeasons.map((s) => {
-                          const firstEpAbsolute = runningCount + 1;
-                          const hasAired = firstEpAbsolute <= airedCount;
-                          runningCount += s.episode_count;
-
-                          return (
-                            <MenuItem
-                              key={s.season_number}
-                              value={s.season_number}
-                              disabled={!hasAired}
-                              sx={{
-                                color: hasAired ? "inherit" : "text.disabled",
-                                fontStyle: hasAired ? "normal" : "italic",
-                              }}
-                            >
-                              Season {s.season_number}
-                            </MenuItem>
-                          );
-                        });
-                      })()}
-                    </Select>
-                  </FormControl>
-                  <FormControl size="small" sx={{ flex: 1 }}>
-                    <Select
-                      value={currentEpisode !== null ? currentEpisode : ""}
-                      displayEmpty
-                      onChange={(e) => {
-                        const newEps = Number(e.target.value);
-                        if (currentEpisode !== null) {
-                          handleWatchedChange(
-                            watchedEpisodesBeforeCurrentSeason + newEps,
-                          );
-                        }
-                      }}
-                      disabled={!currentSeason}
-                      renderValue={(selected: any) => {
-                        if (selected === "" || selected == null) {
-                          return (
-                            <Typography
-                              noWrap
-                              variant="body2"
-                              color="text.disabled"
-                            >
-                              Episode
-                            </Typography>
-                          );
-                        }
-                        const epData = seasonEpisodes.find(
-                          (ep) => ep.episode_number === selected,
-                        );
-                        const epName =
-                          epData && epData.name ? ` - ${epData.name}` : "";
-                        const fullText = `Ep ${selected}${epName}`;
-                        return (
-                          <Tooltip title={fullText} placement="top" arrow>
-                            <Box sx={{ width: "100%", overflow: "hidden" }}>
-                              <Typography
-                                noWrap
-                                variant="body2"
-                                sx={{
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                              >
-                                {fullText}
-                              </Typography>
-                            </Box>
-                          </Tooltip>
                         );
                       }}
                       sx={{
@@ -510,49 +468,110 @@ export default function TVCard({
                       MenuProps={{
                         PaperProps: {
                           style: {
-                            maxWidth: 300,
+                            maxHeight: 400,
+                            maxWidth: 350,
+                          },
+                        },
+                        MenuListProps: {
+                          sx: {
+                            mt: 1,
                           },
                         },
                       }}
-                    >
-                      {currentSeason && [
-                        <MenuItem
-                          key="none"
-                          value={0}
-                          sx={{ fontStyle: "italic", color: "text.secondary" }}
-                        >
-                          None
-                        </MenuItem>,
-                        ...Array.from({
-                          length: currentSeason.episode_count,
-                        }).map((_, i) => {
-                          const episodeNum = i + 1;
-                          const absoluteEpNum =
-                            watchedEpisodesBeforeCurrentSeason + episodeNum;
-                          const hasAired = absoluteEpNum <= airedCount;
-                          const epData = seasonEpisodes.find(
-                            (ep) => ep.episode_number === episodeNum,
+                      onOpen={() => {
+                        if (item.media_type === "tv") {
+                          nonSpecialSeasons.forEach((s) =>
+                            fetchSeason(s.season_number),
                           );
-                          const epName =
-                            epData && epData.name ? ` - ${epData.name}` : "";
-                          return (
-                            <MenuItem
-                              key={episodeNum}
-                              value={episodeNum}
-                              disabled={!hasAired}
+                        }
+                      }}
+                    >
+                      <MenuItem
+                        value={0}
+                        sx={{ fontStyle: "italic", color: "text.secondary" }}
+                      >
+                        Not Started
+                      </MenuItem>
+                      {(() => {
+                        let absCount = 0;
+                        return nonSpecialSeasons.flatMap((s) => {
+                          const items = [
+                            <ListSubheader
+                              key={`s${s.season_number}`}
                               sx={{
-                                whiteSpace: "normal",
-                                wordBreak: "break-word",
-                                color: hasAired ? "inherit" : "text.disabled",
-                                fontStyle: hasAired ? "normal" : "italic",
+                                bgcolor: "background.paper",
+                                color: "primary.main",
+                                fontWeight: "bold",
+                                lineHeight: "28px",
+                                mt: 2,
+                                mb: 0.5,
+                                textAlign: "center",
+                                fontSize: "0.75rem",
+                                textTransform: "uppercase",
+                                letterSpacing: 1,
+                                pointerEvents: "none",
                               }}
                             >
-                              Ep {episodeNum}
-                              {epName}
-                            </MenuItem>
-                          );
-                        }),
-                      ]}
+                              Season {s.season_number}
+                            </ListSubheader>,
+                          ];
+
+                          for (let e = 1; e <= s.episode_count; e++) {
+                            absCount++;
+                            const currentAbs = absCount;
+                            const hasAired = currentAbs <= airedCount;
+                            const epDataArr = seasonEpisodes[s.season_number];
+                            const epData = epDataArr?.find(
+                              (ep) => ep.episode_number === e,
+                            );
+                            const epName =
+                              epData && epData.name ? ` - ${epData.name}` : "";
+
+                            items.push(
+                              <MenuItem
+                                key={`abs-${currentAbs}`}
+                                value={currentAbs}
+                                disabled={!hasAired}
+                                sx={{
+                                  whiteSpace: "normal",
+                                  wordBreak: "break-word",
+                                  color: hasAired ? "inherit" : "text.disabled",
+                                  fontStyle: hasAired ? "normal" : "italic",
+                                  fontSize: "0.875rem",
+                                  py: 0.5,
+                                  display: "flex",
+                                  alignItems: "flex-start",
+                                  gap: 0,
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ mr: 0.5, whiteSpace: "nowrap" }}
+                                >
+                                  S{s.season_number} E{e} -
+                                </Typography>
+                                {epData ? (
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      wordBreak: "break-word",
+                                    }}
+                                  >
+                                    {epData.name}
+                                  </Typography>
+                                ) : (
+                                  <Skeleton
+                                    variant="text"
+                                    width={100}
+                                    sx={{ mt: 0.5 }}
+                                  />
+                                )}
+                              </MenuItem>,
+                            );
+                          }
+                          return items;
+                        });
+                      })()}
                     </Select>
                   </FormControl>
                 </Box>
@@ -740,7 +759,6 @@ export default function TVCard({
             "\\u00A0"
           )}
         </Typography>
-
       </CardContent>
     </Card>
   );
