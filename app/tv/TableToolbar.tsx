@@ -107,8 +107,8 @@ export default function TableToolbar({
                     const nameMatch =
                       item.name?.toLowerCase().includes(val) ||
                       item.title?.toLowerCase().includes(val);
-                    const genreMatch = item.genre_ids?.some((id) =>
-                      genres?.[id]?.name.toLowerCase().includes(val),
+                    const genreMatch = item.genres?.some((g) =>
+                      g.name.toLowerCase().includes(val),
                     );
                     const whoMatch = item.who?.toLowerCase().includes(val);
                     return nameMatch || genreMatch || whoMatch;

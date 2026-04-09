@@ -65,6 +65,7 @@ export const fetchGenres = async () => {
   return [...movieGenres, ...tvGenres].reduce(
     (prev: Record<number, EmZGenre>, curr) => {
       prev[curr.id] = {
+        id: curr.id,
         name: curr.name,
         color: `hsl(${(curr.id * 50) % 360}, 70%, 80%)`,
       };

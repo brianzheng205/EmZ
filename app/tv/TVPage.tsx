@@ -37,7 +37,6 @@ import {
   Filter,
   Provider,
   applyFiltersAndSorts,
-  fetchDataFromTMDB,
   fetchContentSearchResults,
 } from "./utils";
 
@@ -64,7 +63,6 @@ export default function TVPage() {
     }
   };
 
-
   useEffect(() => {
     if (!genres) {
       fetchGenres().then((genreData) => {
@@ -88,10 +86,14 @@ export default function TVPage() {
       setRowsLoading(false);
     });
 
-    const unsubscribeProviders = subscribeToAllProvidersFromFirebase((snapshot) => {
-      const providersData = snapshot.docs.map((doc) => doc.data() as Provider);
-      setProviders(providersData);
-    });
+    const unsubscribeProviders = subscribeToAllProvidersFromFirebase(
+      (snapshot) => {
+        const providersData = snapshot.docs.map(
+          (doc) => doc.data() as Provider,
+        );
+        setProviders(providersData);
+      },
+    );
 
     return () => {
       unsubscribeContent();
@@ -100,10 +102,9 @@ export default function TVPage() {
   }, []);
 
   const handleDelete = (id: number) => {
-    deleteContentFromFirebase(id)
-      .catch((error) => {
-        console.error("Error deleting content:", error);
-      });
+    deleteContentFromFirebase(id).catch((error) => {
+      console.error("Error deleting content:", error);
+    });
   };
 
   return (

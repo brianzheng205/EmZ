@@ -309,16 +309,17 @@ export default function TVCard({
 
         {/* Genres */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-          {item.genre_ids?.map((id) => {
-            const genre = genres?.[id];
-            return genre ? (
+          {item.genres?.map((g) => {
+            const color =
+              genres?.[g.id]?.color || `hsl(${(g.id * 50) % 360}, 70%, 80%)`;
+            return (
               <Chip
-                key={id}
-                label={genre.name}
+                key={g.id}
+                label={g.name}
                 size="small"
-                sx={{ bgcolor: genre.color, fontSize: "0.7rem", height: 20 }}
+                sx={{ bgcolor: color, fontSize: "0.7rem", height: 20 }}
               />
-            ) : null;
+            );
           })}
         </Box>
 

@@ -50,10 +50,8 @@ export default function NextShow({ rows, genres }: NextShowProps) {
                 <Typography>Overview: {selectedContent.overview}</Typography>
                 <Typography>
                   Genres:{" "}
-                  {selectedContent.genre_ids
-                    .map((id) => {
-                      if (genres) return genres[id].name;
-                    })
+                  {selectedContent.genres
+                    ?.map((g) => g.name)
                     .join(", ")}
                 </Typography>
                 <Typography>Episodes: {selectedContent.episodes}</Typography>
