@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
+import ContentPoster from "@/components/ContentPoster";
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
 import {
@@ -186,16 +187,11 @@ export default function TVCard({
       }}
     >
       <Box sx={{ position: "relative" }}>
-        <CardMedia
-          component="img"
-          height="300"
-          image={
-            item.poster_path
-              ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-              : "/favicon.png"
-          }
-          alt={title}
-          sx={{ objectFit: "cover" }}
+        <ContentPoster
+          posterPath={item.poster_path}
+          title={title}
+          mediaType={item.media_type}
+          height={300}
         />
 
         {/* Status Chip */}

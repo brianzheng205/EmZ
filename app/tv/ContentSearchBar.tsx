@@ -14,6 +14,7 @@ import {
 import { debounce } from "lodash";
 import { useMemo, useState } from "react";
 
+import ContentPoster from "@/components/ContentPoster";
 import { addContentToFirebase } from "./firebaseUtils";
 import {
   Content,
@@ -205,16 +206,17 @@ export default function ContentSearchBar({
                 p: "8px !important",
               }}
             >
-              <Avatar
-                key={`${mediaKey}-avatar`}
-                alt={
+              <ContentPoster
+                posterPath={option.poster_path}
+                title={
                   option.media_type === "tv"
                     ? (option as TVShow).name
                     : (option as Movie).title
                 }
-                src={`https://image.tmdb.org/t/p/w154/${option.poster_path}`}
-                variant="rounded"
-                sx={{ height: 120, width: 80 }}
+                mediaType={option.media_type}
+                height={120}
+                width={80}
+                sx={{ borderRadius: 2 }}
               />
               <Box key={`${mediaKey}-info`}>
                 <Typography variant="body1" fontWeight="medium">

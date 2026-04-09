@@ -64,7 +64,7 @@ export interface Content {
   poster_path: string;
   vote_average: number;
   vote_count: number;
-  media_type?: string;
+  media_type?: "tv" | "movie";
 }
 
 export interface NextEpisodeToAir {
