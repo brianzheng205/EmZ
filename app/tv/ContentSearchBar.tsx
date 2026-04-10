@@ -1,7 +1,6 @@
 import { Add } from "@mui/icons-material";
 import {
   Autocomplete,
-  Avatar,
   Box,
   Typography,
   Paper,
