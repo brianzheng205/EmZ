@@ -34,6 +34,7 @@ export const mapTvData = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tmdbData: any
 ): Record<string, unknown> => {
+  // todo(emily): remove after backfill
   const { genre_ids, ...rest } = docData;
   return {
     ...rest,

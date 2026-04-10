@@ -10,16 +10,8 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Chip,
-  TextField,
-  Avatar,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from "@mui/material";
 import { useState, useEffect, useCallback } from "react";
-import ArrowDropDown from "@mui/icons-material/ArrowDropDown";
-
 import ContentSearchBar from "./ContentSearchBar";
 import {
   addContentToFirebase,
@@ -28,12 +20,10 @@ import {
   subscribeToAllProvidersFromFirebase,
 } from "./firebaseUtils";
 import NetworkPage from "./NetworkPage";
-import TableToolbar, { CustomToolbarProps } from "./TableToolbar";
+import TableToolbar from "./TableToolbar";
 import TVCard from "./TVCard";
 import {
   EmZContent,
-  fetchGenres,
-  EmZGenre,
   Filter,
   Provider,
   applyFiltersAndSorts,
@@ -42,7 +32,6 @@ import {
 
 export default function TVPage() {
   const [rows, setRows] = useState<EmZContent[]>([]);
-  const [genres, setGenres] = useState<Record<number, EmZGenre> | null>(null);
   const [filters, setFilters] = useState<Record<string, Filter<EmZContent>>>(
     {},
   );
@@ -62,14 +51,6 @@ export default function TVPage() {
       console.log("Failed to update, reverting changes");
     }
   };
-
-  useEffect(() => {
-    if (!genres) {
-      fetchGenres().then((genreData) => {
-        setGenres(genreData as Record<number, EmZGenre>);
-      });
-    }
-  }, [genres]);
 
   useEffect(() => {
     setRowsLoading(true);
@@ -121,7 +102,6 @@ export default function TVPage() {
         <Box sx={{ width: "100%" }}>
           <TableToolbar
             rows={rows}
-            genres={genres}
             filters={filters}
             setFilters={setFilters}
             setRows={setRows}
@@ -140,7 +120,6 @@ export default function TVPage() {
               <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TVCard
                   item={item}
-                  genres={genres}
                   providers={providers}
                   onUpdate={handleUpdateInfo}
                   onDelete={handleDelete}

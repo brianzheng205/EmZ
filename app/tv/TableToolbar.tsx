@@ -9,23 +9,9 @@ import {
   fetchAllContentFromFirebase,
 } from "./firebaseUtils";
 import NextShow from "./NextShow";
-import {
-  EmZContent,
-  fetchDataFromTMDB,
-  Filter,
-  TMDBError,
-  WhoSelection,
-  EmZGenre,
-} from "./utils";
+import { EmZContent, Filter } from "./utils";
 
-import {
-  mapTvData,
-  mapMovieData,
-  findNewCollectionMovies,
-  fetchContentUpdatesFromTMDB as sharedFetchContentUpdates,
-  CollectionRef,
-  delay,
-} from "@shared/tv/functions";
+import { fetchContentUpdatesFromTMDB as sharedFetchContentUpdates } from "@shared/tv/functions";
 export type TableToolbarProps = {
   filters: Record<string, Filter<EmZContent>>;
   setFilters: Dispatch<
@@ -35,7 +21,6 @@ export type TableToolbarProps = {
 
 export type CustomToolbarProps = {
   rows: EmZContent[];
-  genres: Record<number, EmZGenre> | null;
   filters: Record<string, Filter<EmZContent>>;
   setFilters: Dispatch<
     React.SetStateAction<Record<string, Filter<EmZContent>>>
@@ -46,7 +31,6 @@ export type CustomToolbarProps = {
 };
 export default function TableToolbar({
   rows,
-  genres,
   filters,
   setFilters,
   setRows,
@@ -59,7 +43,7 @@ export default function TableToolbar({
       spacing={2}
       sx={{ mb: 2, alignItems: "center", flexWrap: "wrap" }}
     >
-      <NextShow rows={rows} genres={genres} />
+      <NextShow rows={rows} />
 
       <FilterButton
         filters={filters}

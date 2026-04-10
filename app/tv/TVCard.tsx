@@ -5,14 +5,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
 import {
   Card,
-  CardMedia,
   CardContent,
   Typography,
   Box,
   LinearProgress,
   IconButton,
   Chip,
-  Stack,
   Menu,
   MenuItem,
   Avatar,
@@ -29,18 +27,17 @@ import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
 import {
   EmZContent,
-  EmZGenre,
   whoOptions,
   NextEpisodeToAir,
   Provider,
   ContentStatus,
   fetchDataFromTMDB,
   Season,
+  getGenreColor,
 } from "./utils";
 
 interface TVCardProps {
   item: EmZContent;
-  genres: Record<number, EmZGenre> | null;
   providers: Provider[];
   onUpdate: (updatedItem: EmZContent) => Promise<void>;
   onDelete: (id: number) => void;
@@ -48,7 +45,6 @@ interface TVCardProps {
 
 export default function TVCard({
   item,
-  genres,
   providers,
   onUpdate,
   onDelete,
@@ -310,8 +306,7 @@ export default function TVCard({
         {/* Genres */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
           {item.genres?.map((g) => {
-            const color =
-              genres?.[g.id]?.color || `hsl(${(g.id * 50) % 360}, 70%, 80%)`;
+            const color = getGenreColor(g.id);
             return (
               <Chip
                 key={g.id}

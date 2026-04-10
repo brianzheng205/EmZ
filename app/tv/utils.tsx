@@ -53,26 +53,8 @@ export const fetchWatchProvidersSearchResults = async (query: string) => {
   return filteredData;
 };
 
-export const fetchGenres = async () => {
-  const movieUrl = "https://api.themoviedb.org/3/genre/movie/list";
-  const movieData = await fetchDataFromTMDB(movieUrl);
-  const movieGenres: TMDBGenre[] = movieData?.genres || [];
-
-  const tvUrl = "https://api.themoviedb.org/3/genre/tv/list";
-  const tvData = await fetchDataFromTMDB(tvUrl);
-  const tvGenres: TMDBGenre[] = tvData?.genres || [];
-
-  return [...movieGenres, ...tvGenres].reduce(
-    (prev: Record<number, EmZGenre>, curr) => {
-      prev[curr.id] = {
-        id: curr.id,
-        name: curr.name,
-        color: `hsl(${(curr.id * 50) % 360}, 70%, 80%)`,
-      };
-      return prev;
-    },
-    {},
-  );
+export const getGenreColor = (id: number) => {
+  return `hsl(${(id * 50) % 360}, 70%, 80%)`;
 };
 
 export const fetchDataFromTMDB = async (url: string) => {

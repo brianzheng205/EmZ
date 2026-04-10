@@ -16,11 +16,10 @@ import { EmZContent, EmZGenre } from "./utils";
 import { applyFilters } from "./utils";
 type NextShowProps = {
   rows: GridRowsProp;
-  genres: Record<number, EmZGenre> | null;
 };
-export default function NextShow({ rows, genres }: NextShowProps) {
+export default function NextShow({ rows }: NextShowProps) {
   const [selectedContent, setSelectedContent] = useState<EmZContent | null>(
-    null
+    null,
   );
   const [open, setOpen] = useState(false);
   return (
@@ -49,10 +48,7 @@ export default function NextShow({ rows, genres }: NextShowProps) {
                 <Typography>Selected By: {selectedContent.who}</Typography>
                 <Typography>Overview: {selectedContent.overview}</Typography>
                 <Typography>
-                  Genres:{" "}
-                  {selectedContent.genres
-                    ?.map((g) => g.name)
-                    .join(", ")}
+                  {`Genres: ${selectedContent.genres?.map((g) => g.name).join(", ")}`}
                 </Typography>
                 <Typography>Episodes: {selectedContent.episodes}</Typography>
               </Stack>
