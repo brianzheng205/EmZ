@@ -4,7 +4,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  Avatar,
   Typography,
   Stack,
 } from "@mui/material";
@@ -12,7 +11,7 @@ import { GridRowsProp } from "@mui/x-data-grid";
 import { useState } from "react";
 
 import ContentPoster from "@/components/ContentPoster";
-import { EmZContent, EmZGenre } from "./utils";
+import { EmZContent } from "./utils";
 import { applyFilters } from "./utils";
 type NextShowProps = {
   rows: GridRowsProp;

@@ -8,7 +8,6 @@ import {
   Provider,
   TMDBSearchMultiResponse,
   TMDBGenre,
-  EmZGenre,
   WhoSelection,
   TMDBError,
   ContentStatus,
@@ -23,7 +22,6 @@ export type {
   Provider,
   TMDBSearchMultiResponse,
   TMDBGenre,
-  EmZGenre,
   WhoSelection,
   TMDBError,
 };

@@ -142,9 +142,7 @@ export interface TMDBGenre {
   name: string;
 }
 
-export interface EmZGenre extends TMDBGenre {
-  color: string;
-}
+
 
 export interface TMDBSearchItem {
   id: number;
