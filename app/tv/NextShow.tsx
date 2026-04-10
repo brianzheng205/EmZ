@@ -4,22 +4,21 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  Avatar,
   Typography,
   Stack,
 } from "@mui/material";
 import { GridRowsProp } from "@mui/x-data-grid";
 import { useState } from "react";
 
-import { EmZContent, EmZGenre } from "./utils";
+import ContentPoster from "@/components/ContentPoster";
+import { EmZContent } from "./utils";
 import { applyFilters } from "./utils";
 type NextShowProps = {
   rows: GridRowsProp;
-  genres: Record<number, EmZGenre> | null;
 };
-export default function NextShow({ rows, genres }: NextShowProps) {
+export default function NextShow({ rows }: NextShowProps) {
   const [selectedContent, setSelectedContent] = useState<EmZContent | null>(
-    null
+    null,
   );
   const [open, setOpen] = useState(false);
   return (
@@ -35,22 +34,20 @@ export default function NextShow({ rows, genres }: NextShowProps) {
         {selectedContent && (
           <DialogContent>
             <Stack direction={"row"} spacing={2} alignItems={"center"}>
-              <Avatar
-                src={`https://image.tmdb.org/t/p/w500${selectedContent.poster_path}`}
-                variant="square"
-                sx={{ width: 100, height: "100%" }}
+              <ContentPoster
+                posterPath={selectedContent.poster_path}
+                title={selectedContent.name || selectedContent.title || ""}
+                mediaType={selectedContent.media_type}
+                height={150}
+                width={100}
+                sx={{ borderRadius: 1 }}
               />
               <Stack>
                 <Typography variant="h4">{selectedContent.name}</Typography>
                 <Typography>Selected By: {selectedContent.who}</Typography>
                 <Typography>Overview: {selectedContent.overview}</Typography>
                 <Typography>
-                  Genres:{" "}
-                  {selectedContent.genre_ids
-                    .map((id) => {
-                      if (genres) return genres[id].name;
-                    })
-                    .join(", ")}
+                  {`Genres: ${selectedContent.genres?.map((g) => g.name).join(", ")}`}
                 </Typography>
                 <Typography>Episodes: {selectedContent.episodes}</Typography>
               </Stack>

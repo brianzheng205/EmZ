@@ -56,7 +56,7 @@ export type WhoSelection = "Emily" | "Brian" | "Both";
 export interface Content {
   adult: boolean;
   backdrop_path: string;
-  genre_ids: number[];
+  genres: TMDBGenre[];
   id: number;
   original_language: string;
   overview: string;
@@ -64,7 +64,7 @@ export interface Content {
   poster_path: string;
   vote_average: number;
   vote_count: number;
-  media_type?: string;
+  media_type?: "tv" | "movie";
 }
 
 export interface NextEpisodeToAir {
@@ -142,14 +142,27 @@ export interface TMDBGenre {
   name: string;
 }
 
-export interface EmZGenre {
-  name: string;
-  color: string;
+
+
+export interface TMDBSearchItem {
+  id: number;
+  media_type: "tv" | "movie";
+  poster_path: string;
+  genre_ids: number[];
+  adult: boolean;
+  backdrop_path: string;
+  original_language: string;
+  overview: string;
+  popularity: number;
+  vote_average: number;
+  vote_count: number;
+  name?: string;
+  title?: string;
 }
 
 export interface TMDBSearchMultiResponse {
   page: number;
-  results: Content[];
+  results: TMDBSearchItem[];
   total_pages: number;
   total_results: number;
 }
