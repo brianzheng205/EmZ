@@ -218,6 +218,7 @@ export default function ContentSearchBar({
                 height={120}
                 width={80}
                 sx={{ borderRadius: 2 }}
+                hideTitle={true}
               />
               <Box key={`${mediaKey}-info`}>
                 <Typography variant="body1" fontWeight="medium">

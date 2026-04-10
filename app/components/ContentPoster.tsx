@@ -10,6 +10,7 @@ interface ContentPosterProps {
   height?: number | string;
   width?: number | string;
   sx?: any;
+  hideTitle?: boolean;
 }
 
 export default function ContentPoster({
@@ -19,6 +20,7 @@ export default function ContentPoster({
   height = 300,
   width = "100%",
   sx,
+  hideTitle = false,
 }: ContentPosterProps) {
   const theme = useTheme();
 
@@ -128,29 +130,31 @@ export default function ContentPoster({
           )}
         </motion.div>
 
-        <Typography
-          variant="h6"
-          fontWeight="bold"
-          sx={{
-            lineHeight: 1.1,
-            textShadow: "0 2px 8px rgba(0,0,0,0.4)",
-            wordBreak: "break-word",
-            px: 1,
-            // Dynamic font size and clamping based on height
-            fontSize:
-              height && !isNaN(Number(height)) && Number(height) < 200
-                ? "0.85rem"
-                : "1.25rem",
-            display: "-webkit-box",
-            WebkitLineClamp:
-              height && !isNaN(Number(height)) && Number(height) < 200 ? 3 : 6,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {title}
-        </Typography>
+        {!hideTitle && (
+          <Typography
+            variant="h6"
+            fontWeight="bold"
+            sx={{
+              lineHeight: 1.1,
+              textShadow: "0 2px 8px rgba(0,0,0,0.4)",
+              wordBreak: "break-word",
+              px: 1,
+              // Dynamic font size and clamping based on height
+              fontSize:
+                height && !isNaN(Number(height)) && Number(height) < 200
+                  ? "0.85rem"
+                  : "1.25rem",
+              display: "-webkit-box",
+              WebkitLineClamp:
+                height && !isNaN(Number(height)) && Number(height) < 200 ? 3 : 6,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {title}
+          </Typography>
+        )}
 
         <Box
           sx={{
