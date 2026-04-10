@@ -48,7 +48,7 @@ describe("mapTvData", () => {
     expect(result.episodes).toBe(73);
     expect(result.ongoing).toBe(false);
     expect(result.adult).toBe(false);
-    expect(result.genre_ids).toEqual([18, 10765]);
+    expect(result.genres).toEqual(tmdbTvResponse.genres);
     expect(result.original_language).toBe("en");
     expect(result.popularity).toBe(369.594);
     expect(result.vote_average).toBe(8.4);
@@ -116,7 +116,7 @@ describe("mapMovieData", () => {
     expect(data.title).toBe("The Matrix");
     expect(data.original_title).toBe("The Matrix");
     expect(data.release_date).toBe("1999-03-31");
-    expect(data.genre_ids).toEqual([28]);
+    expect(data.genres).toEqual(tmdbMovieResponse.genres);
     expect(data.episodes).toBe(1);
     expect(data.ongoing).toBe(false);
     expect(data.vote_average).toBe(8.7);

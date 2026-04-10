@@ -14,17 +14,16 @@ import {
 import { debounce } from "lodash";
 import { useMemo, useState } from "react";
 
+import ContentPoster from "@/components/ContentPoster";
 import { addContentToFirebase } from "./firebaseUtils";
 import {
-  Content,
   EmZContent,
   fetchDataFromTMDB,
-  Movie,
   TMDBSearchMultiResponse,
-  TVShow,
   whoOptions,
   WhoSelection,
 } from "./utils";
+import { TMDBSearchItem } from "@shared/tv/types";
 
 import {
   mapTvData,
@@ -45,10 +44,12 @@ export default function ContentSearchBar({
   fetchSearchResults,
 }: SearchBarProps<TMDBSearchMultiResponse>) {
   const [inputValue, setInputValue] = useState("");
-  const [options, setOptions] = useState<Content[]>([]);
+  const [options, setOptions] = useState<TMDBSearchItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [who, setWho] = useState<WhoSelection>("Both");
-  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [selectedContent, setSelectedContent] = useState<TMDBSearchItem | null>(
+    null,
+  );
 
   const debouncedFetch = useMemo(() => {
     const fetchResults = async (query) => {
@@ -76,7 +77,7 @@ export default function ContentSearchBar({
     debouncedFetch(value);
   };
 
-  const addContent = async (value: Content, who: WhoSelection) => {
+  const addContent = async (value: TMDBSearchItem, who: WhoSelection) => {
     const isTv = value.media_type === "tv";
     const id = value.id;
     const url = isTv
@@ -120,7 +121,12 @@ export default function ContentSearchBar({
             );
             if (!movieData) continue;
 
-            const partBase = { id: movieId, who, watched: 0, media_type: "movie" };
+            const partBase = {
+              id: movieId,
+              who,
+              watched: 0,
+              media_type: "movie",
+            };
             const { data: partData } = mapMovieData(partBase as any, movieData);
             const partDoc = partData as unknown as EmZContent;
 
@@ -153,13 +159,11 @@ export default function ContentSearchBar({
         getOptionLabel={(option) => {
           return typeof option === "string"
             ? option
-            : option.media_type === "tv"
-              ? (option as TVShow).name
-              : (option as Movie).title;
+            : option.name || option.title || "";
         }}
         onInputChange={handleInputChange}
         onChange={(event, value) => {
-          setSelectedContent(value as Content | null);
+          setSelectedContent(value as TMDBSearchItem | null);
         }}
         loading={loading}
         sx={{ flex: 1 }}
@@ -205,22 +209,19 @@ export default function ContentSearchBar({
                 p: "8px !important",
               }}
             >
-              <Avatar
-                key={`${mediaKey}-avatar`}
-                alt={
-                  option.media_type === "tv"
-                    ? (option as TVShow).name
-                    : (option as Movie).title
+              <ContentPoster
+                posterPath={option.poster_path}
+                title={
+                  option.media_type === "tv" ? option.name! : option.title!
                 }
-                src={`https://image.tmdb.org/t/p/w154/${option.poster_path}`}
-                variant="rounded"
-                sx={{ height: 120, width: 80 }}
+                mediaType={option.media_type}
+                height={120}
+                width={80}
+                sx={{ borderRadius: 2 }}
               />
               <Box key={`${mediaKey}-info`}>
                 <Typography variant="body1" fontWeight="medium">
-                  {option.media_type === "tv"
-                    ? (option as TVShow).name
-                    : (option as Movie).title}
+                  {option.media_type === "tv" ? option.name : option.title}
                 </Typography>
                 <Typography
                   variant="caption"

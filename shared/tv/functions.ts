@@ -34,8 +34,11 @@ export const mapTvData = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tmdbData: any
 ): Record<string, unknown> => {
+  // todo(emily): remove after backfill
+  const { genre_ids, ...rest } = docData;
   return {
-    ...docData,
+    ...rest,
+    id: tmdbData.id,
     original_name: tmdbData.original_name,
     name: tmdbData.name,
     next_episode_to_air: tmdbData.next_episode_to_air ?? null,
@@ -47,7 +50,7 @@ export const mapTvData = (
     ongoing: tmdbData.in_production,
     adult: tmdbData.adult,
     backdrop_path: tmdbData.backdrop_path,
-    genre_ids: (tmdbData.genres as TMDBGenre[]).map((g) => g.id),
+    genres: tmdbData.genres as TMDBGenre[],
     original_language: tmdbData.original_language,
     overview: tmdbData.overview,
     popularity: tmdbData.popularity,
@@ -72,13 +75,16 @@ export const mapMovieData = (
         who: (docData.who as WhoSelection) ?? "Both",
       }
     : null;
+    
+  const { genre_ids, ...rest } = docData;
 
   return {
     data: {
-      ...docData,
+      ...rest,
+      id: tmdbData.id,
       adult: tmdbData.adult,
       backdrop_path: tmdbData.backdrop_path,
-      genre_ids: (tmdbData.genres as TMDBGenre[]).map((g) => g.id),
+      genres: tmdbData.genres as TMDBGenre[],
       overview: tmdbData.overview,
       popularity: tmdbData.popularity,
       poster_path: tmdbData.poster_path,

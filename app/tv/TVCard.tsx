@@ -5,14 +5,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import RemoveIcon from "@mui/icons-material/Remove";
 import {
   Card,
-  CardMedia,
   CardContent,
   Typography,
   Box,
   LinearProgress,
   IconButton,
   Chip,
-  Stack,
   Menu,
   MenuItem,
   Avatar,
@@ -24,22 +22,22 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 
+import ContentPoster from "@/components/ContentPoster";
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
 import {
   EmZContent,
-  EmZGenre,
   whoOptions,
   NextEpisodeToAir,
   Provider,
   ContentStatus,
   fetchDataFromTMDB,
   Season,
+  getGenreColor,
 } from "./utils";
 
 interface TVCardProps {
   item: EmZContent;
-  genres: Record<number, EmZGenre> | null;
   providers: Provider[];
   onUpdate: (updatedItem: EmZContent) => Promise<void>;
   onDelete: (id: number) => void;
@@ -47,7 +45,6 @@ interface TVCardProps {
 
 export default function TVCard({
   item,
-  genres,
   providers,
   onUpdate,
   onDelete,
@@ -186,16 +183,11 @@ export default function TVCard({
       }}
     >
       <Box sx={{ position: "relative" }}>
-        <CardMedia
-          component="img"
-          height="300"
-          image={
-            item.poster_path
-              ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-              : "/favicon.png"
-          }
-          alt={title}
-          sx={{ objectFit: "cover" }}
+        <ContentPoster
+          posterPath={item.poster_path}
+          title={title}
+          mediaType={item.media_type}
+          height={300}
         />
 
         {/* Status Chip */}
@@ -313,16 +305,16 @@ export default function TVCard({
 
         {/* Genres */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-          {item.genre_ids?.map((id) => {
-            const genre = genres?.[id];
-            return genre ? (
+          {item.genres?.map((g) => {
+            const color = getGenreColor(g.id);
+            return (
               <Chip
-                key={id}
-                label={genre.name}
+                key={g.id}
+                label={g.name}
                 size="small"
-                sx={{ bgcolor: genre.color, fontSize: "0.7rem", height: 20 }}
+                sx={{ bgcolor: color, fontSize: "0.7rem", height: 20 }}
               />
-            ) : null;
+            );
           })}
         </Box>
 
