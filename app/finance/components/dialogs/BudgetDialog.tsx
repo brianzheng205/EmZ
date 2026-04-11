@@ -82,7 +82,7 @@ export default function BudgetDialog({
         }
         required
         fullWidth
-        error={isNameEmpty}
+        error={isNameEmpty || isDuplicate}
         helperText={isNameEmpty ? "Please provide a name" : ""}
       />
       <SelectWrapper
@@ -93,6 +93,7 @@ export default function BudgetDialog({
           setNewBudget((prev) => ({ ...prev, year: Number(e.target.value) }))
         }
         required
+        error={isDuplicate}
         MenuProps={{
           PaperProps: {
             sx: {
@@ -141,6 +142,7 @@ export default function BudgetDialog({
           setNewBudget((prev) => ({ ...prev, user: e.target.value as string }))
         }
         required
+        error={isDuplicate}
       >
         <MenuItem value="Em">Em</MenuItem>
         <MenuItem value="Z">Z</MenuItem>
