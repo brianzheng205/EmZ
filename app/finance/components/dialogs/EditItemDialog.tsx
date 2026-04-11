@@ -124,18 +124,6 @@ export default function EditItemDialog({
           border: "2px solid",
           borderColor: "secondary.main",
         },
-        "& .MuiOutlinedInput-root": {
-          borderRadius: 3,
-          "& fieldset": {
-            borderColor: "secondary.main",
-          },
-          "&:hover fieldset": {
-            borderColor: "primary.main",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "primary.main",
-          },
-        },
       }}
     >
       <TextField
