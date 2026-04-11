@@ -99,7 +99,10 @@ export default function EditItemDialog({
   const disabled = isNameEmpty || isNameTaken;
 
   const handleSubmit = () => {
-    onSubmit(item.name, editItem);
+    onSubmit(item.name, {
+      ...editItem,
+      type: isNecessaryItem ? ItemType.EARNINGS : editItem.type,
+    });
   };
 
   const formatCurrency = (value: number) =>
@@ -151,7 +154,7 @@ export default function EditItemDialog({
       <SelectWrapper
         id="edit-budget-item-type-select"
         label="Type"
-        value={editItem.type || ""}
+        value={isNecessaryItem ? ItemType.EARNINGS : editItem.type || ""}
         onChange={(event) =>
           setEditItem((prev) => ({
             ...prev,
@@ -159,6 +162,10 @@ export default function EditItemDialog({
           }))
         }
         MenuProps={{ PaperProps: { sx: { borderRadius: 3 } } }}
+        disabled={isNecessaryItem}
+        helperText={
+          isNecessaryItem ? "This item's type cannot be changed." : ""
+        }
       >
         {Object.entries(ItemType).map(([key, value]) => (
           <MenuItem key={key} value={value}>

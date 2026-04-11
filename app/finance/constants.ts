@@ -15,6 +15,13 @@ export const NECESSARY_BUDGET_ITEMS: FbBudgetItem[] = [
     frequency: Frequency.MONTHLY,
     isDefinedYearly: true,
   },
+  {
+    type: ItemType.EARNINGS,
+    name: "Bonus",
+    amount: 0,
+    frequency: Frequency.ONE_TIME,
+    isDefinedYearly: false,
+  },
 ];
 
 export const NECESSARY_BUDGET_ITEM_NAMES = NECESSARY_BUDGET_ITEMS.map((item) => item.name);
