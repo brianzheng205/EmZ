@@ -188,7 +188,9 @@ export const convertToMonthlyAmount = (
 ): number => {
   if (item.frequency === Frequency.ONE_TIME) {
     return 0;
-  } else if (item.isDefinedYearly) {
+  }
+
+  if (item.isDefinedYearly) {
     switch (item.frequency) {
       case Frequency.MONTHLY:
         return item.amount / NUM_MONTHS_IN_YEAR;
@@ -202,20 +204,22 @@ export const convertToMonthlyAmount = (
             return item.amount * (3 / NUM_PAYCHECKS_IN_YEAR);
         }
     }
-  } else {
-    // isDefinedYearly = false indicates the amount is defined Monthly
-    if (item.frequency === Frequency.MONTHLY) {
-      return item.amount;
-    } else if (item.frequency === Frequency.BIWEEKLY) {
-      const perPaycheck = (item.amount * numMonths) / NUM_PAYCHECKS_IN_YEAR;
-      switch (viewType) {
-        case ViewType.MONTHLY_AVERAGE:
-          return item.amount;
-        case ViewType.TWO_PAYCHECK:
-          return perPaycheck * 2;
-        case ViewType.THREE_PAYCHECK:
-          return perPaycheck * 3;
-      }
+  }
+
+  // isDefinedYearly = false indicates the amount is defined Monthly
+  if (item.frequency === Frequency.MONTHLY) {
+    return item.amount;
+  } else if (item.frequency === Frequency.BIWEEKLY) {
+    const perPaycheck = (item.amount * numMonths) / NUM_PAYCHECKS_IN_YEAR;
+    switch (viewType) {
+      case ViewType.MONTHLY_AVERAGE:
+        return item.amount;
+      case ViewType.TWO_PAYCHECK:
+        return perPaycheck * 2;
+      case ViewType.THREE_PAYCHECK:
+        return perPaycheck * 3;
     }
   }
+
+  return 0;
 };
