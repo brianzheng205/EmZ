@@ -12,6 +12,7 @@ import {
   Accordion,
   AccordionSummary,
   Grid,
+  Tooltip,
 } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
@@ -305,13 +306,15 @@ export default function FinancePage() {
                   </MenuItem>
                 ))}
               </Select>
-              <IconButton
-                onClick={openAddBudgetDialog}
-                color="primary"
-                sx={{ ml: 1 }}
-              >
-                <Add fontSize="large" />
-              </IconButton>
+              <Tooltip title="Add Budget">
+                <IconButton
+                  onClick={openAddBudgetDialog}
+                  color="primary"
+                  sx={{ ml: 1 }}
+                >
+                  <Add fontSize="large" />
+                </IconButton>
+              </Tooltip>
             </>
           )}
         </Stack>
