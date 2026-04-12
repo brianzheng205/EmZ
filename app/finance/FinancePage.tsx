@@ -1,18 +1,29 @@
 "use client";
 
 import { Add } from "@mui/icons-material";
-import { Typography, Select, MenuItem, SelectChangeEvent, IconButton } from "@mui/material";
+import { 
+  Typography, 
+  Select, 
+  MenuItem, 
+  SelectChangeEvent, 
+  IconButton,
+  Container,
+  Skeleton,
+  Accordion,
+  AccordionSummary,
+  Grid
+} from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
-import LoadingContainer from "@/components/LoadingContainer";
 import useDialog from "@/hooks/useDialog";
 import { fetchData, fetchDocuments } from "@/utils";
 
 import { BudgetHeaders, BudgetAccordions, ViewToggle } from "./components";
 import AddBudgetDialog from "./components/dialogs/AddBudgetDialog";
 import BudgetToolBar from "./components/BudgetToolBar";
+import { gridSizes } from "./components/constants";
 import {
   deleteBudgetItem,
   updateBudgetMetadata,
@@ -99,8 +110,7 @@ export default function FinancePage() {
     };
 
     setLoading(true);
-    fetchAllBudgets();
-    fetchActiveBudgets();
+    await Promise.all([fetchAllBudgets(), fetchActiveBudgets()]);
     setLoading(false);
   };
 
@@ -260,36 +270,42 @@ export default function FinancePage() {
   };
 
   return (
-    <LoadingContainer loading={loading}>
+    <Container>
       <Stack sx={{ gap: 2, marginTop: 4, marginBottom: 4 }}>
         <Stack direction="row" alignItems="baseline" justifyContent="center">
-          <Select
-            value={activeBudgetIds[0] || ""}
-            onChange={handleBudgetChange}
-            variant="standard"
-            disableUnderline
-            displayEmpty
-            sx={{
-              typography: "h3",
-              fontWeight: "bold",
-              "& .MuiSelect-select": {
-                padding: 0,
-                paddingRight: "32px !important",
-              },
-            }}
-          >
-            <MenuItem disabled value="">
-              <em>Select a budget...</em>
-            </MenuItem>
-            {budgets.map((b) => (
-              <MenuItem key={b.id} value={b.id}>
-                {`${b.year ? b.year + ' ' : ''}${b.name} (${b.user})`}
-              </MenuItem>
-            ))}
-          </Select>
-          <IconButton onClick={openAddBudgetDialog} color="primary" sx={{ ml: 1 }}>
-            <Add fontSize="large" />
-          </IconButton>
+          {loading ? (
+            <Skeleton width={300} height={50} sx={{ transform: "none", my: "4px" }} />
+          ) : (
+            <>
+              <Select
+                value={activeBudgetIds[0] || ""}
+                onChange={handleBudgetChange}
+                variant="standard"
+                disableUnderline
+                displayEmpty
+                sx={{
+                  typography: "h3",
+                  fontWeight: "bold",
+                  "& .MuiSelect-select": {
+                    padding: 0,
+                    paddingRight: "32px !important",
+                  },
+                }}
+              >
+                <MenuItem disabled value="">
+                  <em>Select a budget...</em>
+                </MenuItem>
+                {budgets.map((b) => (
+                  <MenuItem key={b.id} value={b.id}>
+                    {`${b.year ? b.year + ' ' : ''}${b.name} (${b.user})`}
+                  </MenuItem>
+                ))}
+              </Select>
+              <IconButton onClick={openAddBudgetDialog} color="primary" sx={{ ml: 1 }}>
+                <Add fontSize="large" />
+              </IconButton>
+            </>
+          )}
         </Stack>
 
         <AddBudgetDialog
@@ -300,7 +316,54 @@ export default function FinancePage() {
           onSubmit={handleAddBudget}
         />
 
-        {activeBudgets.length > 0 ? (
+        {loading ? (
+          <>
+            <Stack
+              sx={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
+              <Stack direction="row" gap={1}>
+                <Skeleton variant="rounded" width={100} height={36} />
+                <Skeleton variant="rounded" width={100} height={36} />
+                <Skeleton variant="circular" width={36} height={36} />
+              </Stack>
+            </Stack>
+
+            <BudgetHeaders 
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <Accordion key={i} disabled sx={{ mb: 1, m: 0 }}>
+                  <AccordionSummary>
+                    <Grid container spacing={2} sx={{ width: "100%", alignItems: "center" }}>
+                      <Grid size={gridSizes.NAME}>
+                        <Skeleton variant="text" width="60%" />
+                      </Grid>
+                      <Grid size={gridSizes.REPEAT_FREQ} />
+                      <Grid size={gridSizes.AMOUNT_MONTHLY} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                        <Skeleton variant="text" width="40%" />
+                      </Grid>
+                      <Grid size={gridSizes.AMOUNT_YEARLY} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                        <Skeleton variant="text" width="40%" />
+                      </Grid>
+                      <Grid size={gridSizes.DELETE} />
+                    </Grid>
+                  </AccordionSummary>
+                </Accordion>
+              ))}
+            </>
+          </>
+        ) : activeBudgets.length > 0 ? (
           <>
             <Stack
               sx={{
@@ -343,6 +406,6 @@ export default function FinancePage() {
           <Typography textAlign="center">No active budgets.</Typography>
         )}
       </Stack>
-    </LoadingContainer>
+    </Container>
   );
 }
