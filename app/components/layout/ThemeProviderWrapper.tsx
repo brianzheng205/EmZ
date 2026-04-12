@@ -96,6 +96,29 @@ theme = createTheme(theme, {
       defaultProps: {
         variant: "contained",
       },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+          "&:first-of-type": {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+          },
+          "&:last-of-type": {
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
+          },
+          "&:before": {
+            display: "none",
+          },
+        },
+      },
     },
   },
 });

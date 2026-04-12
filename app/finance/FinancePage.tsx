@@ -1,17 +1,17 @@
 "use client";
 
 import { Add } from "@mui/icons-material";
-import { 
-  Typography, 
-  Select, 
-  MenuItem, 
-  SelectChangeEvent, 
+import {
+  Typography,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
   IconButton,
   Container,
   Skeleton,
   Accordion,
   AccordionSummary,
-  Grid
+  Grid,
 } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
@@ -271,10 +271,14 @@ export default function FinancePage() {
 
   return (
     <Container>
-      <Stack sx={{ gap: 2, marginTop: 4, marginBottom: 4 }}>
+      <Stack sx={{ gap: 2 }}>
         <Stack direction="row" alignItems="baseline" justifyContent="center">
           {loading ? (
-            <Skeleton width={300} height={50} sx={{ transform: "none", my: "4px" }} />
+            <Skeleton
+              width={300}
+              height={50}
+              sx={{ transform: "none", my: "4px" }}
+            />
           ) : (
             <>
               <Select
@@ -297,11 +301,15 @@ export default function FinancePage() {
                 </MenuItem>
                 {budgets.map((b) => (
                   <MenuItem key={b.id} value={b.id}>
-                    {`${b.year ? b.year + ' ' : ''}${b.name} (${b.user})`}
+                    {`${b.year ? b.year + " " : ""}${b.name} (${b.user})`}
                   </MenuItem>
                 ))}
               </Select>
-              <IconButton onClick={openAddBudgetDialog} color="primary" sx={{ ml: 1 }}>
+              <IconButton
+                onClick={openAddBudgetDialog}
+                color="primary"
+                sx={{ ml: 1 }}
+              >
                 <Add fontSize="large" />
               </IconButton>
             </>
@@ -328,14 +336,15 @@ export default function FinancePage() {
               }}
             >
               <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
-              <Stack direction="row" gap={1}>
-                <Skeleton variant="rounded" width={100} height={36} />
-                <Skeleton variant="rounded" width={100} height={36} />
-                <Skeleton variant="circular" width={36} height={36} />
+              <Stack direction="row" gap={0.5}>
+                <Skeleton variant="circular" width={40} height={40} />
+                <Skeleton variant="circular" width={40} height={40} />
+                <Skeleton variant="circular" width={40} height={40} />
+                <Skeleton variant="circular" width={40} height={40} />
               </Stack>
             </Stack>
 
-            <BudgetHeaders 
+            <BudgetHeaders
               sortColumn={sortColumn}
               sortDirection={sortDirection}
               onSort={handleSort}
@@ -345,15 +354,25 @@ export default function FinancePage() {
               {[1, 2, 3, 4].map((i) => (
                 <Accordion key={i} disabled sx={{ mb: 1, m: 0 }}>
                   <AccordionSummary>
-                    <Grid container spacing={2} sx={{ width: "100%", alignItems: "center" }}>
+                    <Grid
+                      container
+                      spacing={2}
+                      sx={{ width: "100%", alignItems: "center" }}
+                    >
                       <Grid size={gridSizes.NAME}>
                         <Skeleton variant="text" width="60%" />
                       </Grid>
                       <Grid size={gridSizes.REPEAT_FREQ} />
-                      <Grid size={gridSizes.AMOUNT_MONTHLY} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      <Grid
+                        size={gridSizes.AMOUNT_MONTHLY}
+                        sx={{ display: "flex", justifyContent: "flex-end" }}
+                      >
                         <Skeleton variant="text" width="40%" />
                       </Grid>
-                      <Grid size={gridSizes.AMOUNT_YEARLY} sx={{ display: "flex", justifyContent: "flex-end" }}>
+                      <Grid
+                        size={gridSizes.AMOUNT_YEARLY}
+                        sx={{ display: "flex", justifyContent: "flex-end" }}
+                      >
                         <Skeleton variant="text" width="40%" />
                       </Grid>
                       <Grid size={gridSizes.DELETE} />
@@ -388,7 +407,7 @@ export default function FinancePage() {
               />
             </Stack>
 
-            <BudgetHeaders 
+            <BudgetHeaders
               sortColumn={sortColumn}
               sortDirection={sortDirection}
               onSort={handleSort}

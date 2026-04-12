@@ -73,7 +73,6 @@ export default function DialogWrapper({
           onClick={onClose} 
           variant="contained" 
           sx={{ 
-            borderRadius: 2,
             bgcolor: "grey.300",
             color: "text.primary",
             "&:hover": {
@@ -88,7 +87,6 @@ export default function DialogWrapper({
           disabled={disabled} 
           color={submitColor}
           variant="contained"
-          sx={{ borderRadius: 2 }}
         >
           {submitText || "Submit"}
         </Button>

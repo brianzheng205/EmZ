@@ -1,5 +1,5 @@
 import { Add, Delete, Edit, Refresh } from "@mui/icons-material";
-import { Button, Stack } from "@mui/material";
+import { IconButton, Tooltip, Stack } from "@mui/material";
 
 import useDialog from "@/hooks/useDialog";
 
@@ -57,27 +57,29 @@ export default function BudgetToolBar({
       sx={{
         flexDirection: "row",
         justifyContent: "flex-end",
-        gap: 1,
-        "& .MuiButton-root": {
-          height: "42px",
-          "&:hover": {
-            backgroundColor: "primary.dark",
-          },
-        },
+        gap: 0.5,
       }}
     >
-      <Button startIcon={<Edit />} onClick={openEditDialog}>
-        Edit
-      </Button>
-      <Button startIcon={<Add />} onClick={openAddItemDialog}>
-        Item
-      </Button>
-      <Button startIcon={<Delete />} color="error" onClick={openDeleteDialog}>
-        Delete
-      </Button>
-      <Button startIcon={<Refresh />} onClick={onRefresh}>
-        Refresh
-      </Button>
+      <Tooltip title="Delete Budget">
+        <IconButton color="error" onClick={openDeleteDialog}>
+          <Delete />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Refresh Budgets">
+        <IconButton color="primary" onClick={onRefresh}>
+          <Refresh />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Edit Budget">
+        <IconButton color="primary" onClick={openEditDialog}>
+          <Edit />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Add Budget Item">
+        <IconButton color="primary" onClick={openAddItemDialog}>
+          <Add />
+        </IconButton>
+      </Tooltip>
 
       <EditBudgetDialog
         open={isEditDialogOpen}
