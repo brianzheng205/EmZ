@@ -37,6 +37,10 @@ export default function FinancePage() {
   const [budgets, setBudgets] = useState<FbBudgetWithId[]>([]);
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
   const [viewType, setViewType] = useState<ViewType>(ViewType.MONTHLY_AVERAGE);
+  const [sortColumn, setSortColumn] = useState<"monthly" | "yearly" | null>(
+    "yearly",
+  );
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const {
     isDialogOpen: isAddBudgetDialogOpen,
@@ -242,6 +246,19 @@ export default function FinancePage() {
     deleteBudgetItem(budgetId, targetItem);
   };
 
+  const handleSort = (column: "monthly" | "yearly") => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortColumn(null);
+      } else {
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
+
   return (
     <LoadingContainer loading={loading}>
       <Stack sx={{ gap: 2, marginTop: 4, marginBottom: 4 }}>
@@ -308,12 +325,18 @@ export default function FinancePage() {
               />
             </Stack>
 
-            <BudgetHeaders />
+            <BudgetHeaders 
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
             <BudgetAccordions
               activeBudgets={activeBudgets}
               onItemChange={handleChangeItem}
               onItemDelete={handleDeleteItem}
               viewType={viewType}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
             />
           </>
         ) : (

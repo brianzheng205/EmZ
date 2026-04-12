@@ -1,8 +1,14 @@
-import { Grid, Typography } from "@mui/material";
+import { Grid, Typography, TableSortLabel } from "@mui/material";
 
 import { ACCORDION_SUMMAR_HEADING_VARIANT, gridSizes } from "./constants";
 
-export default function BudgetHeaders() {
+interface BudgetHeadersProps {
+  sortColumn?: "monthly" | "yearly" | null;
+  sortDirection?: "asc" | "desc";
+  onSort?: (column: "monthly" | "yearly") => void;
+}
+
+export default function BudgetHeaders({ sortColumn, sortDirection, onSort }: BudgetHeadersProps) {
   return (
     <Grid container spacing={2} sx={{ paddingX: 2 }}>
       <Grid size={gridSizes.NAME}>
@@ -17,14 +23,26 @@ export default function BudgetHeaders() {
         </Typography>
       </Grid>
       <Grid size={gridSizes.AMOUNT_MONTHLY} sx={{ textAlign: "right" }}>
-        <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}>
-          Monthly
-        </Typography>
+        <TableSortLabel
+          active={sortColumn === "monthly"}
+          direction={sortColumn === "monthly" ? sortDirection : "desc"}
+          onClick={() => onSort && onSort("monthly")}
+        >
+          <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}>
+            Monthly
+          </Typography>
+        </TableSortLabel>
       </Grid>
       <Grid size={gridSizes.AMOUNT_YEARLY} sx={{ textAlign: "right" }}>
-        <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}>
-          Yearly
-        </Typography>
+        <TableSortLabel
+          active={sortColumn === "yearly"}
+          direction={sortColumn === "yearly" ? sortDirection : "desc"}
+          onClick={() => onSort && onSort("yearly")}
+        >
+          <Typography variant={ACCORDION_SUMMAR_HEADING_VARIANT}>
+            Yearly
+          </Typography>
+        </TableSortLabel>
       </Grid>
       <Grid size={gridSizes.DELETE} />
     </Grid>

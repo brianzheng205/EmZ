@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import * as R from "ramda";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import { NECESSARY_BUDGET_ITEM_NAMES } from "../constants";
 
@@ -133,6 +133,8 @@ interface BudgetAccordionProps {
   numMonths: number;
   viewType: ViewType;
   defaultExpanded?: boolean;
+  sortColumn?: "monthly" | "yearly" | null;
+  sortDirection?: "asc" | "desc";
 }
 
 function CategoryAccordion({
@@ -142,8 +144,28 @@ function CategoryAccordion({
   numMonths,
   viewType,
   defaultExpanded,
+  sortColumn,
+  sortDirection,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
+
+  const sortedItems = useMemo(() => {
+    if (!hasItems) return [];
+    const itemsList = [...(category as CategoryWithItems).items];
+    if (sortColumn) {
+      itemsList.sort((a, b) => {
+        const valA = sortColumn === "monthly" 
+          ? convertToMonthlyAmount(a, viewType, numMonths) 
+          : convertToYearlyAmount(a, numMonths);
+        const valB = sortColumn === "monthly" 
+          ? convertToMonthlyAmount(b, viewType, numMonths) 
+          : convertToYearlyAmount(b, numMonths);
+          
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      });
+    }
+    return itemsList;
+  }, [category, hasItems, sortColumn, sortDirection, viewType, numMonths]);
 
   return (
     <Accordion
@@ -162,9 +184,9 @@ function CategoryAccordion({
         <AccordionDetails
           sx={{ display: "flex", flexDirection: "column", gap: 1 }}
         >
-          {(category as CategoryWithItems).items.map((item, index) => (
+          {sortedItems.map((item, index) => (
             <CategoryItem
-              key={index}
+              key={item.name || index}
               item={item}
               onActiveBudgetItemDelete={() =>
                 onActiveBudgetItemDelete(item.name)
@@ -189,6 +211,8 @@ interface BudgetAccordionsProps {
   ) => void;
   onItemDelete: (budgetId: string, itemName: string) => void;
   viewType: ViewType;
+  sortColumn?: "monthly" | "yearly" | null;
+  sortDirection?: "asc" | "desc";
 }
 
 export default function BudgetAccordions({
@@ -196,6 +220,8 @@ export default function BudgetAccordions({
   onItemChange,
   onItemDelete,
   viewType,
+  sortColumn,
+  sortDirection,
 }: BudgetAccordionsProps) {
   const [itemToEdit, setItemToEdit] = useState<BudgetItem | null>(null);
 
@@ -235,6 +261,8 @@ export default function BudgetAccordions({
           numMonths={activeBudgets[0].numMonths}
           viewType={viewType}
           defaultExpanded={key === "earnings"}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
         />
       ))}
 
