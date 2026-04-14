@@ -1,13 +1,17 @@
 import { Add, Delete, Edit, Refresh } from "@mui/icons-material";
-import { IconButton, Tooltip, Stack } from "@mui/material";
+import { IconButton, Tooltip, Stack, Skeleton } from "@mui/material";
 
 import useDialog from "@/hooks/useDialog";
 
 import AddItemDialog from "./dialogs/AddItemDialog";
 import DeleteConfirmationDialog from "./dialogs/DeleteConfirmationDialog";
 import EditBudgetDialog from "./dialogs/EditBudgetDialog";
-import { FbBudget, FbBudgetItem, FbBudgetMetadata, FbBudgetWithId } from "../types";
-
+import {
+  FbBudget,
+  FbBudgetItem,
+  FbBudgetMetadata,
+  FbBudgetWithId,
+} from "../types";
 interface BudgetToolBarProps {
   budget: FbBudget;
   budgets: FbBudgetWithId[];
@@ -15,6 +19,12 @@ interface BudgetToolBarProps {
   onAddItem: (item: FbBudgetItem) => void;
   onRefresh: () => Promise<void>;
   onDeleteBudget: () => void;
+  loading?: boolean;
+  hidden?: boolean;
+}
+
+function ActionIconSkeleton() {
+  return <Skeleton variant="circular" width={40} height={40} />;
 }
 
 export default function BudgetToolBar({
@@ -24,7 +34,21 @@ export default function BudgetToolBar({
   onAddItem,
   onRefresh,
   onDeleteBudget,
+  loading,
+  hidden,
 }: BudgetToolBarProps) {
+  if (hidden) return null;
+
+  if (loading) {
+    return (
+      <Stack direction="row" gap={2}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ActionIconSkeleton key={i} />
+        ))}
+      </Stack>
+    );
+  }
+
   const {
     isDialogOpen: isEditDialogOpen,
     openDialog: openEditDialog,

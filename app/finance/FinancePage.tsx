@@ -1,19 +1,6 @@
 "use client";
 
-import { Add } from "@mui/icons-material";
-import {
-  Typography,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
-  IconButton,
-  Container,
-  Skeleton,
-  Accordion,
-  AccordionSummary,
-  Grid,
-  Tooltip,
-} from "@mui/material";
+import { Container } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
@@ -21,10 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import useDialog from "@/hooks/useDialog";
 import { fetchData, fetchDocuments } from "@/utils";
 
-import { BudgetHeaders, BudgetAccordions, ViewToggle } from "./components";
 import AddBudgetDialog from "./components/dialogs/AddBudgetDialog";
-import BudgetToolBar from "./components/BudgetToolBar";
-import { gridSizes } from "./components/constants";
 import {
   deleteBudgetItem,
   updateBudgetMetadata,
@@ -43,6 +27,12 @@ import {
   ViewType,
 } from "./types";
 import { calculateCategories } from "./utils";
+
+import {
+  BudgetSelector,
+  BudgetToolBar,
+  BudgetContent,
+} from "./components";
 
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
@@ -121,6 +111,10 @@ export default function FinancePage() {
 
   const handleBudgetChange = (event: SelectChangeEvent<string>) => {
     const newBudgetId = event.target.value;
+    if (newBudgetId === "ADD_NEW_BUDGET") {
+      openAddBudgetDialog();
+      return;
+    }
     setActiveBudgetIds([newBudgetId]);
     updateSharedActiveBudgets([newBudgetId]);
   };
@@ -273,50 +267,32 @@ export default function FinancePage() {
   return (
     <Container>
       <Stack sx={{ gap: 2 }}>
-        <Stack direction="row" alignItems="baseline" justifyContent="center">
-          {loading ? (
-            <Skeleton
-              width={300}
-              height={50}
-              sx={{ transform: "none", my: "4px" }}
-            />
-          ) : (
-            <>
-              <Select
-                value={activeBudgetIds[0] || ""}
-                onChange={handleBudgetChange}
-                variant="standard"
-                disableUnderline
-                displayEmpty
-                sx={{
-                  typography: "h3",
-                  fontWeight: "bold",
-                  "& .MuiSelect-select": {
-                    padding: 0,
-                    paddingRight: "32px !important",
-                  },
-                }}
-              >
-                <MenuItem disabled value="">
-                  <em>Select a budget...</em>
-                </MenuItem>
-                {budgets.map((b) => (
-                  <MenuItem key={b.id} value={b.id}>
-                    {`${b.year ? b.year + " " : ""}${b.name} (${b.user})`}
-                  </MenuItem>
-                ))}
-              </Select>
-              <Tooltip title="Add Budget">
-                <IconButton
-                  onClick={openAddBudgetDialog}
-                  color="primary"
-                  sx={{ ml: 1 }}
-                >
-                  <Add fontSize="large" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ flexWrap: "wrap", gap: 2 }}
+        >
+          <BudgetSelector
+            loading={loading}
+            activeBudgetId={activeBudgetIds[0] || ""}
+            budgets={budgets}
+            onBudgetChange={handleBudgetChange}
+          />
+
+          <BudgetToolBar
+            loading={loading}
+            hidden={!loading && activeBudgets.length === 0}
+            budget={
+              budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
+              ({} as FbBudget)
+            }
+            budgets={budgets}
+            onEditMetadata={handleBudgetMetadataChange}
+            onAddItem={handleAddItem}
+            onRefresh={fetchBudgetsData}
+            onDeleteBudget={handleDeleteBudget}
+          />
         </Stack>
 
         <AddBudgetDialog
@@ -327,106 +303,17 @@ export default function FinancePage() {
           onSubmit={handleAddBudget}
         />
 
-        {loading ? (
-          <>
-            <Stack
-              sx={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 2,
-              }}
-            >
-              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
-              <Stack direction="row" gap={0.5}>
-                <Skeleton variant="circular" width={40} height={40} />
-                <Skeleton variant="circular" width={40} height={40} />
-                <Skeleton variant="circular" width={40} height={40} />
-                <Skeleton variant="circular" width={40} height={40} />
-              </Stack>
-            </Stack>
-
-            <BudgetHeaders
-              sortColumn={sortColumn}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-
-            <>
-              {[1, 2, 3, 4].map((i) => (
-                <Accordion key={i} disabled sx={{ mb: 1, m: 0 }}>
-                  <AccordionSummary>
-                    <Grid
-                      container
-                      spacing={2}
-                      sx={{ width: "100%", alignItems: "center" }}
-                    >
-                      <Grid size={gridSizes.NAME}>
-                        <Skeleton variant="text" width="60%" />
-                      </Grid>
-                      <Grid size={gridSizes.REPEAT_FREQ} />
-                      <Grid
-                        size={gridSizes.AMOUNT_MONTHLY}
-                        sx={{ display: "flex", justifyContent: "flex-end" }}
-                      >
-                        <Skeleton variant="text" width="40%" />
-                      </Grid>
-                      <Grid
-                        size={gridSizes.AMOUNT_YEARLY}
-                        sx={{ display: "flex", justifyContent: "flex-end" }}
-                      >
-                        <Skeleton variant="text" width="40%" />
-                      </Grid>
-                      <Grid size={gridSizes.DELETE} />
-                    </Grid>
-                  </AccordionSummary>
-                </Accordion>
-              ))}
-            </>
-          </>
-        ) : activeBudgets.length > 0 ? (
-          <>
-            <Stack
-              sx={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 2,
-              }}
-            >
-              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
-              <BudgetToolBar
-                budget={
-                  budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
-                  ({} as FbBudget)
-                }
-                budgets={budgets}
-                onEditMetadata={handleBudgetMetadataChange}
-                onAddItem={handleAddItem}
-                onRefresh={fetchBudgetsData}
-                onDeleteBudget={handleDeleteBudget}
-              />
-            </Stack>
-
-            <BudgetHeaders
-              sortColumn={sortColumn}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-            <BudgetAccordions
-              activeBudgets={activeBudgets}
-              onItemChange={handleChangeItem}
-              onItemDelete={handleDeleteItem}
-              viewType={viewType}
-              sortColumn={sortColumn}
-              sortDirection={sortDirection}
-            />
-          </>
-        ) : (
-          <Typography textAlign="center">No active budgets.</Typography>
-        )}
+        <BudgetContent
+          loading={loading}
+          activeBudgets={activeBudgets}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          viewType={viewType}
+          onViewTypeChange={setViewType}
+          onItemChange={handleChangeItem}
+          onItemDelete={handleDeleteItem}
+        />
       </Stack>
     </Container>
   );
