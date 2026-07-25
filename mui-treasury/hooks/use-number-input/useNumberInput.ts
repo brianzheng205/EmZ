@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useLayoutEffect } from "react";
 
 import { useSpinner } from "./useSpinner";
 
@@ -69,7 +69,7 @@ export const numberToString = (value: number | undefined, precision = 0) => {
 export const getStepFactor = (
   event: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }>,
   step: number,
-  precision: number
+  precision: number,
 ) => {
   let ratio = 1;
   if (event.metaKey || event.ctrlKey) {
@@ -100,7 +100,7 @@ export const useNumberBoundary = (options: UseNumberInputOptions = {}) => {
     parser = noop,
   } = options;
   const [interfaceValue, setInterfaceValue] = useState<string>(
-    formatter(numberToString(defaultValue, precision))
+    formatter(numberToString(defaultValue, precision)),
   );
   const numberValue = toNumber(parser(interfaceValue));
 
@@ -181,7 +181,7 @@ export type UseNumberInputOptions = {
       error: NumberInputError | null;
       eventType?: NumberInputEventType;
       valueText?: string;
-    }
+    },
   ) => void;
 } & BoundaryParams &
   SpinParams;
@@ -221,7 +221,7 @@ const useIsFirstMount = () => {
 function getError(
   value: number | undefined,
   min: number,
-  max: number
+  max: number,
 ): NumberInputError | null {
   if (typeof value === "number") {
     if (value < min) return "below-min";
@@ -341,13 +341,34 @@ function NumberInput() {
     }
   };
 
+  const cursorDistanceRef = useRef<number | null>(null);
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const el = event.target;
+    cursorDistanceRef.current = el.value.length - (el.selectionStart || 0);
+
     tempInterfaceValue.current = interfaceValue;
     const result = parser(event.target.value);
     if (result.match(/^(-|\+)?(0|[1-9]\d*)?(\.)?(\d+)?$/)) {
       setInterfaceValue(result);
     }
   };
+
+  useLayoutEffect(() => {
+    if (
+      cursorDistanceRef.current !== null &&
+      inputRef.current &&
+      document.activeElement === inputRef.current
+    ) {
+      const el = inputRef.current;
+      let newPos = Math.max(0, el.value.length - cursorDistanceRef.current);
+      if (el.value.startsWith("$") && newPos === 0) {
+        newPos = 1;
+      }
+      el.setSelectionRange(newPos, newPos);
+      cursorDistanceRef.current = null;
+    }
+  }, [interfaceValue]);
 
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const parsedValue = parser(event.target.value);

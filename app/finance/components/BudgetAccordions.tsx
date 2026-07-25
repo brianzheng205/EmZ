@@ -11,7 +11,9 @@ import {
   Typography,
 } from "@mui/material";
 import * as R from "ramda";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+
+import { NECESSARY_BUDGET_ITEM_NAMES } from "../constants";
 
 import {
   CategoryWithItems,
@@ -25,14 +27,8 @@ import {
 } from "../types";
 import { convertToMonthlyAmount, convertToYearlyAmount } from "../utils";
 
-import {
-  FixedCurrencyCell,
-  FixedNameCell,
-  DisabledCell,
-} from "./BudgetCells";
-import {
-  FixedRepeatFreqCell,
-} from "./BudgetCells/RepeatCell";
+import { FixedCurrencyCell, FixedNameCell, DisabledCell } from "./BudgetCells";
+import { FixedRepeatFreqCell } from "./BudgetCells/RepeatCell";
 import { ACCORDION_SUMMAR_HEADING_VARIANT, gridSizes } from "./constants";
 import EditItemDialog from "./dialogs/EditItemDialog";
 
@@ -103,22 +99,27 @@ function CategoryItem({
         sx={{ display: "flex", justifyContent: "center" }}
       >
         {!isItemCalculated && (
-          <>
+          <Grid container justifyContent="center" sx={{ gap: 0.5 }}>
             <IconButton
               aria-label="edit"
               onClick={onEditItem}
-              sx={{ padding: 0, mr: 0.5 }}
+              sx={{ padding: 0 }}
             >
               <EditIcon fontSize="small" color="primary" />
             </IconButton>
             <IconButton
               aria-label="delete"
               onClick={onActiveBudgetItemDelete}
-              sx={{ padding: 0 }}
+              sx={{
+                padding: 0,
+                visibility: NECESSARY_BUDGET_ITEM_NAMES.includes(item.name)
+                  ? "hidden"
+                  : "visible",
+              }}
             >
               <DeleteIcon fontSize="small" color="primary" />
             </IconButton>
-          </>
+          </Grid>
         )}
       </Grid>
     </Grid>
@@ -131,6 +132,9 @@ interface BudgetAccordionProps {
   onEditItem: (item: BudgetItem) => void;
   numMonths: number;
   viewType: ViewType;
+  defaultExpanded?: boolean;
+  sortColumn?: "monthly" | "yearly" | null;
+  sortDirection?: "asc" | "desc";
 }
 
 function CategoryAccordion({
@@ -139,12 +143,34 @@ function CategoryAccordion({
   onEditItem,
   numMonths,
   viewType,
+  defaultExpanded,
+  sortColumn,
+  sortDirection,
 }: BudgetAccordionProps) {
   const hasItems = "items" in category;
+
+  const sortedItems = useMemo(() => {
+    if (!hasItems) return [];
+    const itemsList = [...(category as CategoryWithItems).items];
+    if (sortColumn) {
+      itemsList.sort((a, b) => {
+        const valA = sortColumn === "monthly" 
+          ? convertToMonthlyAmount(a, viewType, numMonths) 
+          : convertToYearlyAmount(a, numMonths);
+        const valB = sortColumn === "monthly" 
+          ? convertToMonthlyAmount(b, viewType, numMonths) 
+          : convertToYearlyAmount(b, numMonths);
+          
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      });
+    }
+    return itemsList;
+  }, [category, hasItems, sortColumn, sortDirection, viewType, numMonths]);
 
   return (
     <Accordion
       disabled={!hasItems}
+      defaultExpanded={defaultExpanded}
       sx={{
         "&.Mui-expanded": {
           margin: 0,
@@ -158,9 +184,9 @@ function CategoryAccordion({
         <AccordionDetails
           sx={{ display: "flex", flexDirection: "column", gap: 1 }}
         >
-          {(category as CategoryWithItems).items.map((item, index) => (
+          {sortedItems.map((item, index) => (
             <CategoryItem
-              key={index}
+              key={item.name || index}
               item={item}
               onActiveBudgetItemDelete={() =>
                 onActiveBudgetItemDelete(item.name)
@@ -185,6 +211,8 @@ interface BudgetAccordionsProps {
   ) => void;
   onItemDelete: (budgetId: string, itemName: string) => void;
   viewType: ViewType;
+  sortColumn?: "monthly" | "yearly" | null;
+  sortDirection?: "asc" | "desc";
 }
 
 export default function BudgetAccordions({
@@ -192,6 +220,8 @@ export default function BudgetAccordions({
   onItemChange,
   onItemDelete,
   viewType,
+  sortColumn,
+  sortDirection,
 }: BudgetAccordionsProps) {
   const [itemToEdit, setItemToEdit] = useState<BudgetItem | null>(null);
 
@@ -220,9 +250,9 @@ export default function BudgetAccordions({
   // TODO: add support for multiple active budgets. For now, just show the first one.
   return (
     <>
-      {categoryOrder.map((key, index) => (
+      {categoryOrder.map((key) => (
         <CategoryAccordion
-          key={index}
+          key={`${activeBudgets[0].id}-${key}`}
           category={categories[key]}
           onActiveBudgetItemDelete={(itemName) =>
             onItemDelete(activeBudgets[0].id, itemName)
@@ -230,6 +260,9 @@ export default function BudgetAccordions({
           onEditItem={setItemToEdit}
           numMonths={activeBudgets[0].numMonths}
           viewType={viewType}
+          defaultExpanded={key === "earnings"}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
         />
       ))}
 

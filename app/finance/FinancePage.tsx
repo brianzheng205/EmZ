@@ -1,20 +1,22 @@
 "use client";
 
-import { Typography, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { Container } from "@mui/material";
 import { Stack } from "@mui/system";
 import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 
-import LoadingContainer from "@/components/LoadingContainer";
+import useDialog from "@/hooks/useDialog";
 import { fetchData, fetchDocuments } from "@/utils";
 
-import { BudgetHeaders, BudgetAccordions, ViewToggle } from "./components";
-import BudgetToolBar from "./components/BudgetToolBar";
+import AddBudgetDialog from "./components/dialogs/AddBudgetDialog";
 import {
   deleteBudgetItem,
   updateBudgetMetadata,
   updateBudgetItem,
   createBudgetItem,
+  updateSharedActiveBudgets,
+  createBudget,
+  deleteBudget,
 } from "./firebaseUtils";
 import {
   CalculatedBudget,
@@ -26,11 +28,27 @@ import {
 } from "./types";
 import { calculateCategories } from "./utils";
 
+import {
+  BudgetSelector,
+  BudgetToolBar,
+  BudgetContent,
+} from "./components";
+
 export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [budgets, setBudgets] = useState<FbBudgetWithId[]>([]);
   const [activeBudgetIds, setActiveBudgetIds] = useState<string[]>([]);
   const [viewType, setViewType] = useState<ViewType>(ViewType.MONTHLY_AVERAGE);
+  const [sortColumn, setSortColumn] = useState<"monthly" | "yearly" | null>(
+    "yearly",
+  );
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const {
+    isDialogOpen: isAddBudgetDialogOpen,
+    openDialog: openAddBudgetDialog,
+    closeDialog: closeAddBudgetDialog,
+  } = useDialog();
 
   const activeBudgets: CalculatedBudget[] = useMemo(
     () =>
@@ -83,14 +101,49 @@ export default function FinancePage() {
     };
 
     setLoading(true);
-    fetchAllBudgets();
-    fetchActiveBudgets();
+    await Promise.all([fetchAllBudgets(), fetchActiveBudgets()]);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchBudgetsData();
   }, []);
+
+  const handleBudgetChange = (event: SelectChangeEvent<string>) => {
+    const newBudgetId = event.target.value;
+    if (newBudgetId === "ADD_NEW_BUDGET") {
+      openAddBudgetDialog();
+      return;
+    }
+    setActiveBudgetIds([newBudgetId]);
+    updateSharedActiveBudgets([newBudgetId]);
+  };
+
+  const handleAddBudget = async (newBudget: FbBudget) => {
+    const result = await createBudget(newBudget);
+    if (result) {
+      setBudgets([...budgets, { ...newBudget, id: result.id }]);
+      setActiveBudgetIds([result.id]);
+      updateSharedActiveBudgets([result.id]);
+    }
+    closeAddBudgetDialog();
+  };
+
+  const handleDeleteBudget = async () => {
+    const activeBudgetId = activeBudgetIds[0];
+    if (activeBudgetId) {
+      await deleteBudget(activeBudgetId);
+      const newBudgets = budgets.filter((b) => b.id !== activeBudgetId);
+      setBudgets(newBudgets);
+      if (newBudgets.length > 0) {
+        setActiveBudgetIds([newBudgets[0].id]);
+        updateSharedActiveBudgets([newBudgets[0].id]);
+      } else {
+        setActiveBudgetIds([]);
+        updateSharedActiveBudgets([]);
+      }
+    }
+  };
 
   const handleBudgetMetadataChange = (newMetadata: FbBudgetMetadata) => {
     const activeBudgetId = activeBudgetIds[0];
@@ -198,43 +251,70 @@ export default function FinancePage() {
     deleteBudgetItem(budgetId, targetItem);
   };
 
-  return (
-    <LoadingContainer loading={loading}>
-      {activeBudgets.length > 0 ? (
-        <Stack sx={{ gap: 2, marginBottom: 4 }}>
-          <Typography variant="h1" sx={{ textAlign: "center" }}>
-            {activeBudgets[0].name}
-          </Typography>
-          <Stack
-            sx={{
-              gap: 2,
-            }}
-          >
-            <Stack sx={{ alignItems: "center" }}>
-              <ViewToggle viewType={viewType} onViewTypeChange={setViewType} />
-            </Stack>
-            <BudgetToolBar
-              budget={
-                budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
-                ({} as FbBudget)
-              }
-              onEditMetadata={handleBudgetMetadataChange}
-              onAddItem={handleAddItem}
-              onRefresh={fetchBudgetsData}
-            />
-          </Stack>
+  const handleSort = (column: "monthly" | "yearly") => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortColumn(null);
+      } else {
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc");
+    }
+  };
 
-          <BudgetHeaders />
-          <BudgetAccordions
-            activeBudgets={activeBudgets}
-            onItemChange={handleChangeItem}
-            onItemDelete={handleDeleteItem}
-            viewType={viewType}
+  return (
+    <Container>
+      <Stack sx={{ gap: 2 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ flexWrap: "wrap", gap: 2 }}
+        >
+          <BudgetSelector
+            loading={loading}
+            activeBudgetId={activeBudgetIds[0] || ""}
+            budgets={budgets}
+            onBudgetChange={handleBudgetChange}
+          />
+
+          <BudgetToolBar
+            loading={loading}
+            hidden={!loading && activeBudgets.length === 0}
+            budget={
+              budgets.find((budget) => budget.id === activeBudgetIds[0]) ||
+              ({} as FbBudget)
+            }
+            budgets={budgets}
+            onEditMetadata={handleBudgetMetadataChange}
+            onAddItem={handleAddItem}
+            onRefresh={fetchBudgetsData}
+            onDeleteBudget={handleDeleteBudget}
           />
         </Stack>
-      ) : (
-        <Typography>No active budgets.</Typography>
-      )}
-    </LoadingContainer>
+
+        <AddBudgetDialog
+          open={isAddBudgetDialogOpen}
+          budgets={budgets}
+          activeBudgetId={activeBudgetIds[0] || null}
+          onClose={closeAddBudgetDialog}
+          onSubmit={handleAddBudget}
+        />
+
+        <BudgetContent
+          loading={loading}
+          activeBudgets={activeBudgets}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          viewType={viewType}
+          onViewTypeChange={setViewType}
+          onItemChange={handleChangeItem}
+          onItemDelete={handleDeleteItem}
+        />
+      </Stack>
+    </Container>
   );
 }

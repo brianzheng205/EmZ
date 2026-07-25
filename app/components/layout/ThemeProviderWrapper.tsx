@@ -8,7 +8,7 @@ import { ReactNode, useState } from "react";
 import Header from "./Header";
 import SideBar from "./SideBar";
 
-const theme = createTheme({
+let theme = createTheme({
   palette: {
     primary: {
       main: "#904C77",
@@ -26,6 +26,9 @@ const theme = createTheme({
   typography: {
     fontFamily: "Quicksand, Arial, sans-serif",
   },
+});
+
+theme = createTheme(theme, {
   components: {
     MuiDialogTitle: {
       styleOverrides: {
@@ -39,6 +42,22 @@ const theme = createTheme({
       defaultProps: {
         InputLabelProps: {
           shrink: true,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          "& fieldset": {
+            borderColor: theme.palette.secondary.main,
+          },
+          "&:hover fieldset": {
+            borderColor: theme.palette.primary.main,
+          },
+          "&.Mui-focused fieldset": {
+            borderColor: theme.palette.primary.main,
+          },
         },
       },
     },
@@ -76,6 +95,29 @@ const theme = createTheme({
     MuiButton: {
       defaultProps: {
         variant: "contained",
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+          "&:first-of-type": {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+          },
+          "&:last-of-type": {
+            borderBottomLeftRadius: 16,
+            borderBottomRightRadius: 16,
+          },
+          "&:before": {
+            display: "none",
+          },
+        },
       },
     },
   },

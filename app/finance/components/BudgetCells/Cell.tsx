@@ -119,13 +119,14 @@ export function EditableTextFieldCell({
 
 export function DisabledCell() {
   return (
-    <Box
+    <Typography
       sx={{
-        width: "100%",
-        height: "100%",
-        bgcolor: "action.disabledBackground",
-        borderRadius: 1,
+        textAlign: "right",
+        color: "text.disabled",
+        userSelect: "none",
       }}
-    />
+    >
+      —
+    </Typography>
   );
 }

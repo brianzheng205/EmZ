@@ -1,4 +1,14 @@
-import { Box, Divider, MenuItem, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+  ToggleButtonGroup,
+  ToggleButton,
+  FormHelperText,
+} from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import DialogWrapper from "@/components/DialogWrapper";
@@ -6,6 +16,7 @@ import SelectWrapper from "@/components/SelectWrapper";
 import { NumberInputField } from "mui-treasury/components/number-input";
 
 import { BudgetItem, FbBudgetItem, Frequency, ItemType } from "../../types";
+import { NECESSARY_BUDGET_ITEM_NAMES } from "../../constants";
 
 const NUM_MONTHS_IN_YEAR = 12;
 const NUM_PAYCHECKS_IN_YEAR = 26;
@@ -18,6 +29,15 @@ interface EditItemDialogProps {
   onSubmit: (oldName: string, newItem: Partial<FbBudgetItem>) => void;
 }
 
+const currencyFormatter = (value: string) => {
+  if (!value) return "$";
+  const parts = value.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `$${parts.join(".")}`;
+};
+
+const currencyParser = (value: string) => value.replace(/\$|,/g, "");
+
 export default function EditItemDialog({
   open,
   item,
@@ -29,27 +49,12 @@ export default function EditItemDialog({
 
   useEffect(() => {
     if (open && item) {
-      // Convert stored amount to per-frequency amount for editing.
-      // If isDefinedYearly, the stored amount is the yearly total,
-      // so divide it back to the per-frequency amount.
-      let perFreqAmount = item.amount;
-      if (item.isDefinedYearly && item.frequency !== Frequency.ONE_TIME) {
-        switch (item.frequency) {
-          case Frequency.MONTHLY:
-            perFreqAmount = item.amount / NUM_MONTHS_IN_YEAR;
-            break;
-          case Frequency.BIWEEKLY:
-            perFreqAmount = item.amount / NUM_PAYCHECKS_IN_YEAR;
-            break;
-        }
-      }
-
       setEditItem({
         name: item.name,
         type: item.type as ItemType,
-        amount: Math.round(perFreqAmount),
+        amount: item.amount,
         frequency: item.frequency,
-        isDefinedYearly: false,
+        isDefinedYearly: item.isDefinedYearly || false,
       });
     }
   }, [open, item]);
@@ -64,30 +69,25 @@ export default function EditItemDialog({
 
   const { monthlyTotal, yearlyTotal } = useMemo(() => {
     const amount = editItem.amount ?? 0;
-    const frequency = editItem.frequency;
 
-    if (frequency === Frequency.ONE_TIME) {
+    if (editItem.frequency === Frequency.ONE_TIME) {
       return { monthlyTotal: 0, yearlyTotal: amount };
     }
 
-    // Amount is always per-frequency in the dialog
-    switch (frequency) {
-      case Frequency.MONTHLY:
-        return {
-          monthlyTotal: amount,
-          yearlyTotal: amount * NUM_MONTHS_IN_YEAR,
-        };
-      case Frequency.BIWEEKLY:
-        return {
-          monthlyTotal: amount * (NUM_PAYCHECKS_IN_YEAR / NUM_MONTHS_IN_YEAR),
-          yearlyTotal: amount * NUM_PAYCHECKS_IN_YEAR,
-        };
-      default:
-        return { monthlyTotal: 0, yearlyTotal: 0 };
+    let yearly = amount;
+    if (!editItem.isDefinedYearly) {
+      yearly = amount * NUM_MONTHS_IN_YEAR;
     }
-  }, [editItem.amount, editItem.frequency]);
+
+    return {
+      monthlyTotal: yearly / NUM_MONTHS_IN_YEAR,
+      yearlyTotal: yearly,
+    };
+  }, [editItem.amount, editItem.isDefinedYearly, editItem.frequency]);
 
   if (!item) return null;
+
+  const isNecessaryItem = NECESSARY_BUDGET_ITEM_NAMES.includes(item.name);
 
   const isNameEmpty = (editItem.name || "").trim() === "";
   const isNameTaken =
@@ -96,7 +96,10 @@ export default function EditItemDialog({
   const disabled = isNameEmpty || isNameTaken;
 
   const handleSubmit = () => {
-    onSubmit(item.name, editItem);
+    onSubmit(item.name, {
+      ...editItem,
+      type: isNecessaryItem ? ItemType.EARNINGS : editItem.type,
+    });
   };
 
   const formatCurrency = (value: number) =>
@@ -121,18 +124,6 @@ export default function EditItemDialog({
           border: "2px solid",
           borderColor: "secondary.main",
         },
-        "& .MuiOutlinedInput-root": {
-          borderRadius: 3,
-          "& fieldset": {
-            borderColor: "secondary.main",
-          },
-          "&:hover fieldset": {
-            borderColor: "primary.main",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "primary.main",
-          },
-        },
       }}
     >
       <TextField
@@ -144,20 +135,23 @@ export default function EditItemDialog({
             name: event.target.value,
           }))
         }
+        disabled={isNecessaryItem}
         error={isNameEmpty || isNameTaken}
         helperText={
           isNameEmpty
             ? "Please provide a name"
             : isNameTaken
               ? "Name already exists"
-              : ""
+              : isNecessaryItem
+                ? "This item's name cannot be changed."
+                : ""
         }
       />
 
       <SelectWrapper
         id="edit-budget-item-type-select"
         label="Type"
-        value={editItem.type || ""}
+        value={isNecessaryItem ? ItemType.EARNINGS : editItem.type || ""}
         onChange={(event) =>
           setEditItem((prev) => ({
             ...prev,
@@ -165,6 +159,10 @@ export default function EditItemDialog({
           }))
         }
         MenuProps={{ PaperProps: { sx: { borderRadius: 3 } } }}
+        disabled={isNecessaryItem}
+        helperText={
+          isNecessaryItem ? "This item's type cannot be changed." : ""
+        }
       >
         {Object.entries(ItemType).map(([key, value]) => (
           <MenuItem key={key} value={value}>
@@ -173,13 +171,50 @@ export default function EditItemDialog({
         ))}
       </SelectWrapper>
 
-      <NumberInputField
-        label="Base Amount"
-        value={editItem.amount ?? 0}
-        onChange={handleAmountChange}
-        min={0}
-        step={100}
-      />
+      <Stack direction="row" sx={{ gap: 1 }}>
+        <Box sx={{ flex: 1 }}>
+          <NumberInputField
+            label="Amount"
+            value={editItem.amount ?? 0}
+            onChange={handleAmountChange}
+            min={0}
+            step={100}
+            formatter={currencyFormatter}
+            parser={currencyParser}
+            fullWidth
+          />
+        </Box>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <ToggleButtonGroup
+            color="primary"
+            value={editItem.frequency === Frequency.ONE_TIME ? "Year" : (editItem.isDefinedYearly ? "Year" : "Month")}
+            exclusive
+            onChange={(event, newValue) => {
+              if (newValue !== null) {
+                setEditItem((prev) => ({
+                  ...prev,
+                  isDefinedYearly: newValue === "Year",
+                }));
+              }
+            }}
+            fullWidth
+            sx={{ height: "56px" }}
+            disabled={editItem.frequency === Frequency.ONE_TIME}
+          >
+            <ToggleButton value="Year" sx={{ borderRadius: 3 }}>
+              / Year
+            </ToggleButton>
+            <ToggleButton value="Month" sx={{ borderRadius: 3 }}>
+              / Month
+            </ToggleButton>
+          </ToggleButtonGroup>
+          {editItem.frequency === Frequency.ONE_TIME && (
+            <FormHelperText sx={{ ml: 1 }}>
+              Required for one time items
+            </FormHelperText>
+          )}
+        </Box>
+      </Stack>
 
       <SelectWrapper
         id="edit-budget-item-frequency-select"
