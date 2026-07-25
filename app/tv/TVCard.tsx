@@ -25,6 +25,7 @@ import { useState, useEffect, useRef } from "react";
 import ContentPoster from "@/components/ContentPoster";
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
 
+import TVOverviewDialog from "./TVOverviewDialog";
 import {
   EmZContent,
   whoOptions,
@@ -50,6 +51,7 @@ export default function TVCard({
   onDelete,
 }: TVCardProps) {
   const [whoAnchorEl, setWhoAnchorEl] = useState<null | HTMLElement>(null);
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const [seasonEpisodes, setSeasonEpisodes] = useState<Record<number, any[]>>(
     {},
   );
@@ -183,7 +185,10 @@ export default function TVCard({
         position: "relative",
       }}
     >
-      <Box sx={{ position: "relative" }}>
+      <Box
+        sx={{ position: "relative", cursor: "pointer" }}
+        onClick={() => setOverviewOpen(true)}
+      >
         <ContentPoster
           posterPath={item.poster_path}
           title={title}
@@ -222,12 +227,13 @@ export default function TVCard({
         {/* Complete Toggle Button */}
         <IconButton
           size="small"
-          onClick={() =>
+          onClick={(e) => {
+            e.stopPropagation();
             onUpdate({
               ...item,
               override_as_complete: !item.override_as_complete,
-            })
-          }
+            });
+          }}
           sx={{
             position: "absolute",
             top: 8,
@@ -259,7 +265,10 @@ export default function TVCard({
         {/* Delete Button */}
         <IconButton
           size="small"
-          onClick={() => onDelete(item.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(item.id);
+          }}
           sx={{
             position: "absolute",
             top: 8,
@@ -766,6 +775,12 @@ export default function TVCard({
           )}
         </Typography>
       </CardContent>
+
+      <TVOverviewDialog
+        item={item}
+        open={overviewOpen}
+        onClose={() => setOverviewOpen(false)}
+      />
     </Card>
   );
 }
