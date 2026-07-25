@@ -35,7 +35,11 @@ export class ContentStatus {
     }
 
     static getAiredCount(content: EmZContent): number {
-      if (content.media_type === "movie") return 1;
+      if (content.media_type === "movie") {
+        if (!content.release_date) return 0;
+        const releaseDate = new Date(content.release_date + "T00:00:00");
+        return releaseDate <= new Date() ? 1 : 0;
+      }
       if (!content.last_episode_to_air) return 0;
 
       const last = content.next_episode_to_air != null && new Date(content.next_episode_to_air.air_date) <= new Date() ? content.next_episode_to_air : content.last_episode_to_air;
