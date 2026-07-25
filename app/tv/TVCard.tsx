@@ -20,7 +20,7 @@ import {
   ListSubheader,
   Skeleton,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import ContentPoster from "@/components/ContentPoster";
 import CircularProgressWithLabel from "@/components/CircularProgressWithLabel";
@@ -56,6 +56,7 @@ export default function TVCard({
   const [fetchingSeasons, setFetchingSeasons] = useState<Set<number>>(
     new Set(),
   );
+  const selectedEpisodeRef = useRef<HTMLLIElement | null>(null);
 
   const title = item.media_type === "movie" ? item.title : item.name;
   const airedCount = ContentStatus.getAiredCount(item);
@@ -469,6 +470,13 @@ export default function TVCard({
                             mt: 1,
                           },
                         },
+                        TransitionProps: {
+                          onEntered: () => {
+                            selectedEpisodeRef.current?.scrollIntoView({
+                              block: "center",
+                            });
+                          },
+                        },
                       }}
                       onOpen={() => {
                         if (item.media_type === "tv") {
@@ -480,6 +488,7 @@ export default function TVCard({
                     >
                       <MenuItem
                         value={0}
+                        ref={item.watched === 0 ? selectedEpisodeRef : undefined}
                         sx={{ fontStyle: "italic", color: "text.secondary" }}
                       >
                         Not Started
@@ -523,6 +532,11 @@ export default function TVCard({
                               <MenuItem
                                 key={`abs-${currentAbs}`}
                                 value={currentAbs}
+                                ref={
+                                  currentAbs === item.watched
+                                    ? selectedEpisodeRef
+                                    : undefined
+                                }
                                 disabled={!hasAired}
                                 sx={{
                                   whiteSpace: "normal",
